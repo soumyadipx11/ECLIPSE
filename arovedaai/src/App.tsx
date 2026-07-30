@@ -32,7 +32,16 @@ function AppContent() {
   } = useReports();
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('aroveda_theme');
+      if (saved !== null) {
+        return saved === 'dark';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -50,12 +59,18 @@ function AppContent() {
     }
   };
 
-  // Sync dark mode class with root html element
+  // Sync dark mode class with root html and body elements
   useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
     if (darkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      body.classList.add('dark');
+      localStorage.setItem('aroveda_theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+      body.classList.remove('dark');
+      localStorage.setItem('aroveda_theme', 'light');
     }
   }, [darkMode]);
 
