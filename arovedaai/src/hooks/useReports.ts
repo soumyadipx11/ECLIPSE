@@ -22,6 +22,7 @@ import {
 } from '../types';
 import { SAMPLE_LAB_REPORTS } from '../data/sampleReports';
 import { cleanUndefined } from '../utils/sanitize';
+import { normalizeBiomarkerName, areBiomarkersEqual } from '../utils/biomarkerNormalizer';
 
 export function useReports() {
   const { user } = useAuth();
@@ -241,7 +242,7 @@ export function useReports() {
 
     sortedChronological.forEach(r => {
       const matched = (r.extractedData || []).find(
-        b => b.testName.toLowerCase().trim() === biomarkerName.toLowerCase().trim()
+        b => areBiomarkersEqual(b.testName, biomarkerName)
       );
       if (matched) {
         category = matched.category || category;

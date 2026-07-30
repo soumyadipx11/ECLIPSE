@@ -101,6 +101,121 @@ apiRouter.get("/health", (_req, res) => {
   res.json({ status: "ok", app: "HealthLens AI Server", timestamp: new Date().toISOString() });
 });
 
+const BIOMARKER_ALIASES: Record<string, string> = {
+  'ldl': 'LDL Cholesterol',
+  'ldl c': 'LDL Cholesterol',
+  'ldl-c': 'LDL Cholesterol',
+  'ldl cholesterol': 'LDL Cholesterol',
+  'cholesterol ldl': 'LDL Cholesterol',
+  'cholesterol (ldl)': 'LDL Cholesterol',
+  'low density lipoprotein': 'LDL Cholesterol',
+  'low density lipoprotein cholesterol': 'LDL Cholesterol',
+  'low-density lipoprotein': 'LDL Cholesterol',
+
+  'hdl': 'HDL Cholesterol',
+  'hdl c': 'HDL Cholesterol',
+  'hdl-c': 'HDL Cholesterol',
+  'hdl cholesterol': 'HDL Cholesterol',
+  'cholesterol hdl': 'HDL Cholesterol',
+  'cholesterol (hdl)': 'HDL Cholesterol',
+  'high density lipoprotein': 'HDL Cholesterol',
+
+  'total cholesterol': 'Total Cholesterol',
+  'cholesterol total': 'Total Cholesterol',
+  'cholesterol (total)': 'Total Cholesterol',
+  'serum cholesterol': 'Total Cholesterol',
+  'cholesterol': 'Total Cholesterol',
+
+  'triglycerides': 'Triglycerides',
+  'triglyceride': 'Triglycerides',
+  'serum triglycerides': 'Triglycerides',
+  'tg': 'Triglycerides',
+
+  'fasting blood sugar': 'Fasting Blood Sugar',
+  'fasting blood glucose': 'Fasting Blood Sugar',
+  'fasting glucose': 'Fasting Blood Sugar',
+  'glucose fasting': 'Fasting Blood Sugar',
+  'glucose (fasting)': 'Fasting Blood Sugar',
+  'fbs': 'Fasting Blood Sugar',
+
+  'hba1c': 'HbA1c',
+  'hemoglobin a1c': 'HbA1c',
+  'haemoglobin a1c': 'HbA1c',
+  'hb a1c': 'HbA1c',
+  'a1c': 'HbA1c',
+  'glycated hemoglobin': 'HbA1c',
+
+  'vitamin d': 'Vitamin D (25-OH)',
+  'vitamin d (25-oh)': 'Vitamin D (25-OH)',
+  '25-oh vitamin d': 'Vitamin D (25-OH)',
+  '25 hydroxy vitamin d': 'Vitamin D (25-OH)',
+  'vit d': 'Vitamin D (25-OH)',
+  'vitamin d3': 'Vitamin D (25-OH)',
+
+  'vitamin b12': 'Vitamin B12',
+  'vit b12': 'Vitamin B12',
+  'vitamin b-12': 'Vitamin B12',
+  'b12': 'Vitamin B12',
+
+  'tsh': 'TSH',
+  'thyroid stimulating hormone': 'TSH',
+  'tsh (thyroid stimulating hormone)': 'TSH',
+
+  'creatinine': 'Serum Creatinine',
+  'serum creatinine': 'Serum Creatinine',
+  'creatinine serum': 'Serum Creatinine',
+  'creatinine (serum)': 'Serum Creatinine',
+
+  'uric acid': 'Uric Acid',
+  'serum uric acid': 'Uric Acid',
+
+  'alt': 'ALT (SGPT)',
+  'sgpt': 'ALT (SGPT)',
+  'alt (sgpt)': 'ALT (SGPT)',
+  'sgpt (alt)': 'ALT (SGPT)',
+
+  'ast': 'AST (SGOT)',
+  'sgot': 'AST (SGOT)',
+  'ast (sgot)': 'AST (SGOT)',
+
+  'hemoglobin': 'Hemoglobin',
+  'haemoglobin': 'Hemoglobin',
+  'hb': 'Hemoglobin',
+  'hgb': 'Hemoglobin',
+
+  'platelets': 'Platelet Count',
+  'platelet count': 'Platelet Count',
+  'plt': 'Platelet Count'
+};
+
+function normalizeServerBiomarkerName(rawName: string): string {
+  if (!rawName) return 'Biomarker';
+  const cleaned = rawName.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (BIOMARKER_ALIASES[cleaned]) return BIOMARKER_ALIASES[cleaned];
+
+  if (rawName.includes(',')) {
+    const parts = rawName.split(',').map(p => p.trim());
+    if (parts.length === 2) {
+      const reversed = `${parts[1]} ${parts[0]}`.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (BIOMARKER_ALIASES[reversed]) return BIOMARKER_ALIASES[reversed];
+    }
+  }
+
+  if (cleaned.includes('ldl') && cleaned.includes('cholesterol')) return 'LDL Cholesterol';
+  if (cleaned.includes('hdl') && cleaned.includes('cholesterol')) return 'HDL Cholesterol';
+  if (cleaned.includes('fasting') && (cleaned.includes('glucose') || cleaned.includes('sugar'))) return 'Fasting Blood Sugar';
+  if (cleaned.includes('hba1c') || cleaned.includes('a1c')) return 'HbA1c';
+  if (cleaned.includes('vitamin d') || cleaned.includes('25 oh')) return 'Vitamin D (25-OH)';
+  if (cleaned.includes('tsh')) return 'TSH';
+  if (cleaned.includes('creatinine')) return 'Serum Creatinine';
+  if (cleaned.includes('triglycerides')) return 'Triglycerides';
+  if (cleaned.includes('sgpt') || (cleaned.includes('alt') && !cleaned.includes('salt'))) return 'ALT (SGPT)';
+  if (cleaned.includes('sgot') || cleaned.includes('ast')) return 'AST (SGOT)';
+  if (cleaned.includes('hemoglobin') || cleaned.includes('haemoglobin')) return 'Hemoglobin';
+
+  return rawName.trim().replace(/\s+/g, ' ').replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
 // Endpoint: OCR & AI Biomarker Extraction
 apiRouter.post("/ocr-analyze", async (req, res) => {
   try {
@@ -252,7 +367,7 @@ apiRouter.post("/trend-insights", async (req, res) => {
       const title = rep.title || rep.labName || "Lab Report";
       const list = rep.extractedData || rep.biomarkers || [];
       const biomarkers = (Array.isArray(list) ? list : []).map((b: any) => ({
-        name: b.testName || b.name || b.biomarkerName || "Biomarker",
+        name: normalizeServerBiomarkerName(b.testName || b.name || b.biomarkerName || "Biomarker"),
         value: b.value,
         unit: b.unit || "",
         referenceRange: b.referenceRange || b.range || "",
@@ -346,7 +461,7 @@ apiRouter.post("/doctor-summary-ai", async (req, res) => {
       const title = rep.title || rep.labName || "Lab Report";
       const list = rep.extractedData || rep.biomarkers || [];
       const biomarkers = (Array.isArray(list) ? list : []).map((b: any) => ({
-        testName: b.testName || b.name || b.biomarkerName || "Biomarker",
+        testName: normalizeServerBiomarkerName(b.testName || b.name || b.biomarkerName || "Biomarker"),
         value: b.value,
         unit: b.unit || "",
         referenceRange: b.referenceRange || b.range || "",

@@ -20,6 +20,7 @@ import {
 import { LabBiomarker, LabReport, ReportAiSummary } from '../types';
 import { safeFetchJson } from '../lib/api';
 import { cleanUndefined } from '../utils/sanitize';
+import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 
 interface ReportUploadProps {
   onSaveReport: (report: Omit<LabReport, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string>;
@@ -162,7 +163,8 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
         : (Array.isArray(d.biomarkers) ? d.biomarkers : []);
 
       const mappedItems: LabBiomarker[] = rawList.map((b: any, index: number) => {
-        const testName = b.testName || b.name || b.biomarkerName || `Test ${index + 1}`;
+        const rawTestName = b.testName || b.name || b.biomarkerName || `Test ${index + 1}`;
+        const testName = normalizeBiomarkerName(rawTestName);
         const rawVal = b.value;
         const valNum = typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal || '0').replace(/[^0-9.-]/g, '')) || 0;
         const unit = b.unit || 'mg/dL';

@@ -14,6 +14,7 @@ import { LabReport, DoctorVisitSummaryData } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { safeFetchJson } from '../lib/api';
+import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 
 interface DoctorVisitSummaryProps {
   reports: LabReport[];
@@ -54,7 +55,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
         generalNote: rawData.generalNote || rawData.visitGoal || "Executive Patient Summary prepared based on active laboratory records for upcoming physician discussion.",
         latestAbnormalities: Array.isArray(rawData.latestAbnormalities) && rawData.latestAbnormalities.length > 0
           ? rawData.latestAbnormalities.map((item: any) => ({
-              testName: item.testName || item.name || "Biomarker",
+              testName: normalizeBiomarkerName(item.testName || item.name || "Biomarker"),
               value: Number(item.value || item.latestValue) || 0,
               unit: item.unit || "",
               referenceRange: item.referenceRange || item.range || "Out of range",
@@ -62,14 +63,19 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
               testDate: item.testDate || "Recent"
             }))
           : (Array.isArray(rawData.abnormalBiomarkers) ? rawData.abnormalBiomarkers.map((ab: any) => ({
-              testName: ab.testName || ab.name || "Biomarker",
+              testName: normalizeBiomarkerName(ab.testName || ab.name || "Biomarker"),
               value: Number(ab.value || ab.latestValue) || 0,
               unit: ab.unit || "",
               referenceRange: ab.referenceRange || ab.range || "Out of range",
               flag: (ab.flag || ab.status || "high").toLowerCase() as any,
               testDate: ab.testDate || "Recent"
             })) : []),
-        reportComparisons: Array.isArray(rawData.reportComparisons) ? rawData.reportComparisons : [],
+        reportComparisons: Array.isArray(rawData.reportComparisons)
+          ? rawData.reportComparisons.map((c: any) => ({
+              ...c,
+              biomarkerName: normalizeBiomarkerName(c.biomarkerName || c.testName || "Biomarker")
+            }))
+          : [],
         suggestedQuestions: Array.isArray(rawData.suggestedQuestions) && rawData.suggestedQuestions.length > 0
           ? rawData.suggestedQuestions
           : (Array.isArray(rawData.questionsForDoctor) && rawData.questionsForDoctor.length > 0

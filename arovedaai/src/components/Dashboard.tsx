@@ -21,6 +21,8 @@ import {
 import { LabReport } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 
+import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
+
 interface DashboardProps {
   reports: LabReport[];
   loading: boolean;
@@ -43,7 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   let totalAbnormalCount = 0;
   reports.forEach(r => {
     (r.extractedData || []).forEach(b => {
-      uniqueBiomarkers.add(b.testName.toLowerCase());
+      uniqueBiomarkers.add(normalizeBiomarkerName(b.testName));
       if (b.isAbnormal) totalAbnormalCount++;
     });
   });

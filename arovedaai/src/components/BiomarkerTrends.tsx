@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { LabReport, BiomarkerTrendSummary } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
+import { normalizeBiomarkerName, areBiomarkersEqual } from '../utils/biomarkerNormalizer';
 
 interface BiomarkerTrendsProps {
   reports: LabReport[];
@@ -35,9 +36,26 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
     'Vitamin D (25-OH)',
     'Vitamin B12',
     'TSH',
-    'Creatinine',
+    'Serum Creatinine',
     'Hemoglobin'
   ];
+
+  // Dynamically extract all unique normalized biomarker names present in user's reports
+  const userBiomarkersSet = new Set<string>();
+  reports.forEach(r => {
+    (r.extractedData || []).forEach(b => {
+      const norm = normalizeBiomarkerName(b.testName);
+      if (norm) userBiomarkersSet.add(norm);
+    });
+  });
+
+  // Combine presets with user's actual biomarkers, avoiding duplicates
+  const allAvailableBiomarkers = [...commonBiomarkers];
+  userBiomarkersSet.forEach(userBm => {
+    if (!allAvailableBiomarkers.some(cb => areBiomarkersEqual(cb, userBm))) {
+      allAvailableBiomarkers.push(userBm);
+    }
+  });
 
   const [selectedBiomarker, setSelectedBiomarker] = useState<string>('LDL Cholesterol');
 
@@ -90,8 +108,8 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
         </label>
 
         <div className="flex flex-wrap gap-2">
-          {commonBiomarkers.map((name) => {
-            const isSelected = selectedBiomarker.toLowerCase() === name.toLowerCase();
+          {allAvailableBiomarkers.map((name) => {
+            const isSelected = areBiomarkersEqual(selectedBiomarker, name);
             const hasData = getBiomarkerTrend(name) !== null;
 
             return (
