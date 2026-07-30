@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "users": {
+      "title": "Users",
+      "description": "User profiles and privacy consent settings",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "privacyConsent": { "type": "boolean" },
+        "consentDate": { "type": "string" }
+      },
+      "required": ["email", "privacyConsent"]
+    },
+    "reports": {
+      "title": "Reports",
+      "description": "Lab reports, extracted biomarkers, and AI summaries",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "testDate": { "type": "string" },
+        "labName": { "type": "string" },
+        "fileType": { "type": "string" },
+        "fileName": { "type": "string" },
+        "status": { "type": "string" },
+        "extractedData": { "type": "array" },
+        "aiSummary": { "type": "object" },
+        "anonymizedTextSentToAi": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "testDate", "extractedData"]
+    },
+    "audit_logs": {
+      "title": "Audit Logs",
+      "description": "Append-only security and privacy audit logs",
+      "properties": {
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["userId", "action", "timestamp"]
+    },
+    "smart_alerts": {
+      "title": "Smart Alerts",
+      "description": "User alerts for abnormal values and follow-up reminders",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "type"]
+    }
+  }
+}
