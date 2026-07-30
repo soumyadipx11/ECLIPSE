@@ -21,6 +21,7 @@ import {
   HealthTrendPoint 
 } from '../types';
 import { SAMPLE_LAB_REPORTS } from '../data/sampleReports';
+import { cleanUndefined } from '../utils/sanitize';
 
 export function useReports() {
   const { user } = useAuth();
@@ -89,12 +90,12 @@ export function useReports() {
   const addAuditLog = async (action: AuditLogEntry['action'], details: string) => {
     if (!user) return;
     try {
-      await addDoc(collection(db, 'audit_logs'), {
+      await addDoc(collection(db, 'audit_logs'), cleanUndefined({
         userId: user.uid,
         action,
         details,
         timestamp: new Date().toISOString()
-      });
+      }));
     } catch (e) {
       console.error("Failed to write audit log:", e);
     }
@@ -144,12 +145,13 @@ export function useReports() {
   const addReport = async (reportData: Omit<LabReport, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     if (!user) throw new Error("Must be logged in to add a report.");
     const now = new Date().toISOString();
-    const docRef = await addDoc(collection(db, 'reports'), {
+    const payload = cleanUndefined({
       ...reportData,
       userId: user.uid,
       createdAt: now,
       updatedAt: now
     });
+    const docRef = await addDoc(collection(db, 'reports'), payload);
     await addAuditLog('UPLOAD_REPORT', `Uploaded lab report "${reportData.title}" (${reportData.testDate})`);
     return docRef.id;
   };
@@ -159,12 +161,12 @@ export function useReports() {
     if (!user) return;
     for (const sample of SAMPLE_LAB_REPORTS) {
       const { id: _ignoreId, ...sampleData } = sample;
-      await addDoc(collection(db, 'reports'), {
+      await addDoc(collection(db, 'reports'), cleanUndefined({
         ...sampleData,
         userId: user.uid,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      });
+      }));
     }
     await addAuditLog('UPLOAD_REPORT', 'Loaded 3 sample demonstration lab reports into personal record.');
   };
@@ -173,10 +175,10 @@ export function useReports() {
   const updateReport = async (reportId: string, updatedFields: Partial<LabReport>) => {
     if (!user) return;
     const reportRef = doc(db, 'reports', reportId);
-    await updateDoc(reportRef, {
+    await updateDoc(reportRef, cleanUndefined({
       ...updatedFields,
       updatedAt: new Date().toISOString()
-    });
+    }));
     await addAuditLog('UPDATE_REPORT', `Edited report data for ID ${reportId}`);
   };
 

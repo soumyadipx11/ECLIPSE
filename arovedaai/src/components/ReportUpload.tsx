@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { LabBiomarker, LabReport, ReportAiSummary } from '../types';
 import { safeFetchJson } from '../lib/api';
+import { cleanUndefined } from '../utils/sanitize';
 
 interface ReportUploadProps {
   onSaveReport: (report: Omit<LabReport, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string>;
@@ -253,7 +254,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
     setError(null);
 
     try {
-      await onSaveReport({
+      await onSaveReport(cleanUndefined({
         title: reportTitle,
         testDate,
         labName,
@@ -263,7 +264,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
         extractedData: extractedItems,
         aiSummary: aiSummary,
         anonymizedTextSentToAi: anonymizedTextSent
-      });
+      }));
 
       // Save insights and recommendations to display THEN AND THERE
       setSavedReportInsights({
@@ -423,7 +424,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-rose-200/40 dark:border-rose-900/40 hover:border-rose-500 dark:hover:border-rose-400 rounded-3xl p-10 text-center cursor-pointer bg-white/10 dark:bg-slate-950/15 backdrop-blur-sm transition-all space-y-4"
+            className="border-2 border-dashed border-rose-200/40 dark:border-rose-900/40 hover:border-rose-500 dark:hover:border-rose-400 rounded-3xl p-10 text-center cursor-pointer bg-white/10 dark:bg-slate-950/15 backdrop-blur-sm transition-all space-y-4 max-w-full overflow-hidden"
           >
             <input
               type="file"
@@ -433,12 +434,15 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
               className="hidden"
             />
 
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm border border-rose-100 dark:border-rose-900/40">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-sm border border-rose-100 dark:border-rose-900/40 shrink-0">
               <Upload className="w-7 h-7" />
             </div>
 
-            <div className="space-y-1">
-              <p className="text-base font-bold text-slate-900 dark:text-white">
+            <div className="space-y-1 max-w-full px-2 overflow-hidden">
+              <p
+                className="text-base font-bold text-slate-900 dark:text-white truncate max-w-md mx-auto"
+                title={selectedFile ? selectedFile.name : undefined}
+              >
                 {selectedFile ? selectedFile.name : 'Drag & Drop Clinical Records'}
               </p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
@@ -447,9 +451,9 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
             </div>
 
             {selectedFile ? (
-              <div className="inline-flex items-center gap-2 bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-3.5 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border border-rose-200 dark:border-rose-900">
-                <FileText className="w-3.5 h-3.5" />
-                <span>Ready for OCR Analysis ({Math.round(selectedFile.size / 1024)} KB)</span>
+              <div className="inline-flex max-w-full items-center gap-2 bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 px-3.5 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border border-rose-200 dark:border-rose-900 overflow-hidden">
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate max-w-xs">Ready for OCR Analysis ({Math.round(selectedFile.size / 1024)} KB)</span>
               </div>
             ) : (
               <button

@@ -21,6 +21,7 @@ import {
   User
 } from '../lib/firebase';
 import { UserProfile } from '../types';
+import { cleanUndefined } from '../utils/sanitize';
 
 interface AuthContextType {
   user: User | null;
@@ -61,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               privacyConsent: true,
               consentDate: new Date().toISOString()
             };
-            await setDoc(userDocRef, newProfile);
+            await setDoc(userDocRef, cleanUndefined(newProfile));
             setUserProfile(newProfile);
           }
         } catch (err) {
@@ -102,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         privacyConsent: true,
         consentDate: new Date().toISOString()
       };
-      await setDoc(doc(db, 'users', res.user.uid), newProfile);
+      await setDoc(doc(db, 'users', res.user.uid), cleanUndefined(newProfile));
       setUserProfile(newProfile);
     }
   };
@@ -141,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } as UserProfile;
     setUserProfile(updated);
     try {
-      await setDoc(doc(db, 'users', user.uid), data, { merge: true });
+      await setDoc(doc(db, 'users', user.uid), cleanUndefined(data), { merge: true });
     } catch (e) {
       console.error("Failed to update profile in Firestore:", e);
     }
