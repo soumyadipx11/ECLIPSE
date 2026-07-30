@@ -26,7 +26,14 @@ function getGeminiClient(): GoogleGenAI {
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY environment variable is missing on server. Please configure GEMINI_API_KEY in your deployment environment variables.");
   }
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build'
+      }
+    }
+  });
 }
 
 // Helper to execute generateContent with retries and fallback models for transient 503/429 errors
@@ -39,11 +46,11 @@ async function generateContentWithRetry(
   },
   maxRetries = 2
 ) {
-  const primaryModel = params.model || "gemini-2.5-flash";
+  const primaryModel = params.model || "gemini-3.6-flash";
   const modelsToTry = [
     primaryModel,
-    "gemini-2.5-flash",
-    "gemini-2.0-flash"
+    "gemini-3.6-flash",
+    "gemini-flash-latest"
   ];
 
   let lastError: any = null;
@@ -169,7 +176,7 @@ Return ONLY a valid JSON object with the following schema:
     contents.push({ text: promptText });
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: contents,
       config: {
         responseMimeType: "application/json"
@@ -261,7 +268,7 @@ Return ONLY a JSON object matching this schema:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -348,7 +355,7 @@ Return ONLY a JSON object with schema:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
