@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
-import { createServer as createViteServer } from "vite";
 
 dotenv.config();
 
@@ -102,12 +101,12 @@ async function generateContentWithRetry(
 
 // ---------------- API ROUTES ----------------
 
-app.get("/api/health", (_req, res) => {
+app.get(["/api/health", "/health"], (_req, res) => {
   res.json({ status: "ok", app: "HealthLens AI Server", timestamp: new Date().toISOString() });
 });
 
 // Endpoint: OCR & Structured Report Analysis
-app.post("/api/ocr-analyze", async (req, res) => {
+app.post(["/api/ocr-analyze", "/ocr-analyze"], async (req, res) => {
   try {
     const { fileBase64, mimeType, rawText, userConsentGiven } = req.body;
 
@@ -209,7 +208,7 @@ ${rawText ? `Raw Report Text (PII Scrubbed): ${scrubPiiFromText(rawText)}` : "Ex
 });
 
 // Endpoint: Multi-Report Trend Insights & Recommendations
-app.post("/api/trend-insights", async (req, res) => {
+app.post(["/api/trend-insights", "/trend-insights"], async (req, res) => {
   try {
     const { reportHistory, userConsentGiven } = req.body;
 
@@ -280,7 +279,7 @@ Return JSON format:
 });
 
 // Endpoint: Doctor Visit Summary Generator
-app.post("/api/doctor-summary-ai", async (req, res) => {
+app.post(["/api/doctor-summary-ai", "/doctor-summary-ai"], async (req, res) => {
   try {
     const { reportHistory } = req.body;
     if (!reportHistory || reportHistory.length === 0) {
@@ -343,19 +342,30 @@ Return JSON with:
   }
 });
 
+// Global express error handler to ensure JSON responses on errors
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("Unhandled express error:", err);
+  res.status(500).json({
+    success: false,
+    error: err?.message || "An internal server error occurred.",
+    details: String(err)
+  });
+});
+
 // ---------------- VITE / STATIC SERVING ----------------
 
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (!process.env.VERCEL) {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
