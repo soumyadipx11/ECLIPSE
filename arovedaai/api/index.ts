@@ -225,17 +225,20 @@ apiRouter.post("/trend-insights", async (req, res) => {
 
     const ai = getGeminiClient();
 
-    const sanitizedHistory = reportHistory.map((rep: any) => ({
-      date: rep.reportDate,
-      title: rep.title,
-      biomarkers: (rep.biomarkers || []).map((b: any) => ({
-        name: b.name,
+    const sanitizedHistory = reportHistory.map((rep: any) => {
+      const date = rep.testDate || rep.reportDate || rep.createdAt || "Recent Date";
+      const title = rep.title || rep.labName || "Lab Report";
+      const list = rep.extractedData || rep.biomarkers || [];
+      const biomarkers = (Array.isArray(list) ? list : []).map((b: any) => ({
+        name: b.testName || b.name || b.biomarkerName || "Biomarker",
         value: b.value,
-        unit: b.unit,
-        status: b.status,
-        category: b.category
-      }))
-    }));
+        unit: b.unit || "",
+        referenceRange: b.referenceRange || b.range || "",
+        flag: b.flag || (b.isAbnormal ? "abnormal" : "normal") || b.status || "normal",
+        category: b.category || "General"
+      }));
+      return { date, title, biomarkers };
+    });
 
     const prompt = `You are a clinical biomarker analytics expert for HealthLens AI.
 Analyze this user's historical lab reports across time and identify longitudinal trends, positive trajectories, areas of concern, and evidence-based health recommendations.
@@ -244,15 +247,16 @@ User Report History:
 ${JSON.stringify(sanitizedHistory, null, 2)}
 
 Provide an in-depth longitudinal health analysis with:
-1. overallTrendSummary: 2-3 paragraph synthesis of health progression across reports.
-2. keyTrends: array of objects with { biomarkerName, direction ("improving"|"worsening"|"stable"), summary, recommendation }.
-3. lifestyleActionables: array of 3-5 specific lifestyle, nutrition, sleep, or exercise habits backed by clinical guidelines.
+1. overallTrendSummary / overallTrajectory: 2-3 paragraph synthesis of health progression across reports.
+2. keyTrends / keyInsights: array of objects or strings describing notable trends and findings.
+3. lifestyleActionables / lifestyleRecommendations: array of 3-5 specific lifestyle, nutrition, sleep, or exercise habits backed by clinical guidelines.
 4. flaggedRisks: array of markers that remain consistently out of range or are showing negative momentum.
 5. positiveMilestones: array of markers that have normalized or improved.
 
 Return ONLY a JSON object matching this schema:
 {
   "overallTrendSummary": "string",
+  "overallTrajectory": "string",
   "keyTrends": [
     {
       "biomarkerName": "string",
@@ -261,7 +265,9 @@ Return ONLY a JSON object matching this schema:
       "recommendation": "string"
     }
   ],
+  "keyInsights": ["string"],
   "lifestyleActionables": ["string"],
+  "lifestyleRecommendations": ["string"],
   "flaggedRisks": ["string"],
   "positiveMilestones": ["string"]
 }
@@ -313,17 +319,20 @@ apiRouter.post("/doctor-summary-ai", async (req, res) => {
 
     const ai = getGeminiClient();
 
-    const sanitizedHistory = reportHistory.map((rep: any) => ({
-      date: rep.reportDate,
-      title: rep.title,
-      biomarkers: (rep.biomarkers || []).map((b: any) => ({
-        name: b.name,
+    const sanitizedHistory = reportHistory.map((rep: any) => {
+      const date = rep.testDate || rep.reportDate || rep.createdAt || "Recent Date";
+      const title = rep.title || rep.labName || "Lab Report";
+      const list = rep.extractedData || rep.biomarkers || [];
+      const biomarkers = (Array.isArray(list) ? list : []).map((b: any) => ({
+        testName: b.testName || b.name || b.biomarkerName || "Biomarker",
         value: b.value,
-        unit: b.unit,
-        status: b.status,
-        range: b.referenceRange
-      }))
-    }));
+        unit: b.unit || "",
+        referenceRange: b.referenceRange || b.range || "",
+        flag: b.flag || (b.isAbnormal ? "high" : "normal") || b.status || "normal",
+        category: b.category || "General"
+      }));
+      return { date, title, biomarkers };
+    });
 
     const prompt = `You are a clinical physician assistant tool creating a concise, high-yield "Doctor Visit Prep Brief".
 Review these lab reports and synthesize a 1-page structured briefing for the patient's upcoming physician consultation.
@@ -332,26 +341,41 @@ Report Data:
 ${JSON.stringify(sanitizedHistory, null, 2)}
 
 Requirements:
-1. Patient Overview: concise recap of recent lab history.
-2. Primary Topics to Discuss: 3-4 key clinical priorities or out-of-range trends.
-3. Out-Of-Range Highlights: clear bullet list of abnormal markers with dates and values.
-4. Suggested Physician Questions: 4 specific, actionable questions for the doctor (e.g. retesting timelines, dosage adjustments, specialist referrals).
-5. Lifestyle / Medication Notes: items the patient should mention to their doctor.
+1. generalNote: 2-3 sentence executive recap of patient's overall lab trajectory and goals for the consultation.
+2. latestAbnormalities: array of out-of-range biomarkers across recent reports with testName, value (numeric), unit, referenceRange, flag ("high"|"low"|"normal"), testDate.
+3. reportComparisons: array of comparisons for key biomarkers over time with biomarkerName, previous, current, unit.
+4. suggestedQuestions: array of 4-5 specific, actionable questions for the doctor (e.g. retesting timelines, dosage adjustments, lifestyle guidance).
+5. keyTrends: array of objects with biomarkerName, description, direction ("improving"|"worsening"|"stable").
 
-Return ONLY a JSON object with schema:
+Return ONLY a JSON object with this schema:
 {
-  "visitGoal": "string",
-  "keyTopics": ["string"],
-  "abnormalBiomarkers": [
+  "generalNote": "string",
+  "latestAbnormalities": [
     {
-      "name": "string",
-      "latestValue": "string",
-      "status": "string",
-      "clinicalNote": "string"
+      "testName": "string",
+      "value": 0,
+      "unit": "string",
+      "referenceRange": "string",
+      "flag": "high" | "low" | "normal",
+      "testDate": "string"
     }
   ],
-  "questionsForDoctor": ["string"],
-  "discussionPoints": ["string"]
+  "reportComparisons": [
+    {
+      "biomarkerName": "string",
+      "previous": "string",
+      "current": "string",
+      "unit": "string"
+    }
+  ],
+  "suggestedQuestions": ["string"],
+  "keyTrends": [
+    {
+      "biomarkerName": "string",
+      "description": "string",
+      "direction": "improving" | "worsening" | "stable"
+    }
+  ]
 }
 `;
 

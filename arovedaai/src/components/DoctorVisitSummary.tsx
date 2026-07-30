@@ -47,7 +47,42 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
         throw new Error(resData.error || 'Failed to generate summary.');
       }
 
-      setSummaryData(resData.summary || resData.data);
+      const rawData = resData.summary || resData.data || resData;
+
+      const formattedSummary: DoctorVisitSummaryData = {
+        patientAgeGroup: rawData.patientAgeGroup || "Adult",
+        generalNote: rawData.generalNote || rawData.visitGoal || "Executive Patient Summary prepared based on active laboratory records for upcoming physician discussion.",
+        latestAbnormalities: Array.isArray(rawData.latestAbnormalities) && rawData.latestAbnormalities.length > 0
+          ? rawData.latestAbnormalities.map((item: any) => ({
+              testName: item.testName || item.name || "Biomarker",
+              value: Number(item.value || item.latestValue) || 0,
+              unit: item.unit || "",
+              referenceRange: item.referenceRange || item.range || "Out of range",
+              flag: (item.flag || item.status || "high").toLowerCase() as any,
+              testDate: item.testDate || "Recent"
+            }))
+          : (Array.isArray(rawData.abnormalBiomarkers) ? rawData.abnormalBiomarkers.map((ab: any) => ({
+              testName: ab.testName || ab.name || "Biomarker",
+              value: Number(ab.value || ab.latestValue) || 0,
+              unit: ab.unit || "",
+              referenceRange: ab.referenceRange || ab.range || "Out of range",
+              flag: (ab.flag || ab.status || "high").toLowerCase() as any,
+              testDate: ab.testDate || "Recent"
+            })) : []),
+        reportComparisons: Array.isArray(rawData.reportComparisons) ? rawData.reportComparisons : [],
+        suggestedQuestions: Array.isArray(rawData.suggestedQuestions) && rawData.suggestedQuestions.length > 0
+          ? rawData.suggestedQuestions
+          : (Array.isArray(rawData.questionsForDoctor) && rawData.questionsForDoctor.length > 0
+              ? rawData.questionsForDoctor
+              : [
+                  "Are my recent lab values within expected limits for my age and profile?",
+                  "Are there any specific follow-up tests or retesting schedules you recommend?",
+                  "Do any of these biomarker trends warrant dietary or medication adjustments?"
+                ]),
+        keyTrends: Array.isArray(rawData.keyTrends) ? rawData.keyTrends : []
+      };
+
+      setSummaryData(formattedSummary);
     } catch (err: any) {
       console.error("Doctor summary error:", err);
       setErrorMsg(err.message || "Failed to generate doctor visit summary. Please try again.");
