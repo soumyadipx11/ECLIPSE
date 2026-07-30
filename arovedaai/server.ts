@@ -39,6 +39,67 @@ function getGeminiClient(): GoogleGenAI {
   });
 }
 
+// Helper to execute generateContent with retries and fallback models for transient 503/429 errors
+async function generateContentWithRetry(
+  ai: GoogleGenAI,
+  params: {
+    model?: string;
+    contents: any;
+    config?: any;
+  },
+  maxRetries = 2
+) {
+  const primaryModel = params.model || "gemini-3.6-flash";
+  const modelsToTry = [
+    primaryModel,
+    "gemini-flash-latest",
+    "gemini-3.1-flash-lite"
+  ];
+
+  let lastError: any = null;
+
+  for (const modelName of modelsToTry) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          ...params,
+          model: modelName,
+        });
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const message = String(err?.message || err || "").toLowerCase();
+        const status = err?.status || err?.code || err?.statusCode;
+
+        const isTransient = 
+          status === 503 || 
+          status === 429 || 
+          message.includes("503") || 
+          message.includes("unavailable") || 
+          message.includes("high demand") || 
+          message.includes("resource_exhausted") ||
+          message.includes("quota");
+
+        if (isTransient && attempt < maxRetries) {
+          // Wait before retry
+          await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 1200));
+          continue;
+        }
+
+        // If transient error after retries or model unavailable, try next fallback model
+        if (isTransient) {
+          break;
+        }
+
+        // Non-transient error, throw immediately
+        throw err;
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // ---------------- API ROUTES ----------------
 
 app.get("/api/health", (_req, res) => {
@@ -119,7 +180,7 @@ ${rawText ? `Raw Report Text (PII Scrubbed): ${scrubPiiFromText(rawText)}` : "Ex
 
     contents.push({ text: promptText });
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: "gemini-3.6-flash",
       contents: contents,
       config: {
@@ -197,7 +258,7 @@ Return JSON format:
 }
 `;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: "gemini-3.6-flash",
       contents: prompt,
       config: {
@@ -262,7 +323,7 @@ Return JSON with:
 }
 `;
 
-    const response = await ai.models.generateContent({
+    const response = await generateContentWithRetry(ai, {
       model: "gemini-3.6-flash",
       contents: prompt,
       config: {
