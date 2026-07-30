@@ -290,7 +290,8 @@ Return ONLY a JSON object matching this schema:
 
     res.json({
       success: true,
-      data: parsedData
+      data: parsedData,
+      insights: parsedData
     });
   } catch (err: any) {
     console.error("Error in /trend-insights:", err);
@@ -377,7 +378,8 @@ Return ONLY a JSON object with schema:
 
     res.json({
       success: true,
-      data: parsedData
+      data: parsedData,
+      summary: parsedData
     });
   } catch (err: any) {
     console.error("Error in /doctor-summary-ai:", err);

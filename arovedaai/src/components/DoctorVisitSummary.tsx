@@ -47,7 +47,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
         throw new Error(resData.error || 'Failed to generate summary.');
       }
 
-      setSummaryData(resData.summary);
+      setSummaryData(resData.summary || resData.data);
     } catch (err: any) {
       console.error("Doctor summary error:", err);
       setErrorMsg(err.message || "Failed to generate doctor visit summary. Please try again.");

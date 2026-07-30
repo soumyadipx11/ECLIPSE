@@ -80,7 +80,20 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
         throw new Error(resData.error || 'Failed to generate trend insights.');
       }
 
-      setInsightsData(resData.insights);
+      const rawData = resData.data || resData.insights || resData;
+
+      const formattedInsights = {
+        overallTrajectory: rawData.overallTrendSummary || rawData.overallTrajectory || "Overall health trajectory generated successfully.",
+        keyInsights: rawData.keyTrends && Array.isArray(rawData.keyTrends)
+          ? rawData.keyTrends.map((kt: any) =>
+              typeof kt === 'string' ? kt : `${kt.biomarkerName} (${kt.direction || 'observed'}): ${kt.summary || ''}${kt.recommendation ? ' — ' + kt.recommendation : ''}`
+            )
+          : (rawData.keyInsights || rawData.flaggedRisks || []),
+        lifestyleRecommendations: rawData.lifestyleActionables || rawData.lifestyleRecommendations || rawData.positiveMilestones || [],
+        suggestedReminders: rawData.suggestedReminders || []
+      };
+
+      setInsightsData(formattedInsights);
     } catch (err: any) {
       console.error("Insights error:", err);
       setError(err.message || 'An error occurred while fetching AI insights.');
