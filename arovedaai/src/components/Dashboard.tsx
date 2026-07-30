@@ -245,7 +245,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     >
                       <div>
                         <span className="font-bold text-slate-900 dark:text-white block">
-                          {item.testName}
+                          {normalizeBiomarkerName(item.testName)}
                         </span>
                         <span className="text-[11px] text-slate-400">Ref: {item.referenceRange} {item.unit}</span>
                       </div>

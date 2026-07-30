@@ -15,6 +15,7 @@ import {
   Tag
 } from 'lucide-react';
 import { LabReport } from '../types';
+import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 
 interface ReportTimelineProps {
   reports: LabReport[];
@@ -346,7 +347,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {(activeReportModal.extractedData || []).map((b) => (
                       <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                        <td className="p-3 font-semibold text-slate-900 dark:text-white">{b.testName}</td>
+                        <td className="p-3 font-semibold text-slate-900 dark:text-white">{normalizeBiomarkerName(b.testName)}</td>
                         <td className="p-3 text-slate-500">{b.category}</td>
                         <td className="p-3 font-bold text-slate-900 dark:text-white">
                           {b.value} <span className="font-normal text-slate-400 text-[10px]">{b.unit}</span>

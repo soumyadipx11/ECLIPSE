@@ -102,15 +102,20 @@ apiRouter.get("/health", (_req, res) => {
 });
 
 const BIOMARKER_ALIASES: Record<string, string> = {
+  // --- LIPID PROFILE ---
   'ldl': 'LDL Cholesterol',
   'ldl c': 'LDL Cholesterol',
   'ldl-c': 'LDL Cholesterol',
   'ldl cholesterol': 'LDL Cholesterol',
   'cholesterol ldl': 'LDL Cholesterol',
   'cholesterol (ldl)': 'LDL Cholesterol',
+  'ldl cholesterol calculated': 'LDL Cholesterol',
+  'ldl cholesterol, calculated': 'LDL Cholesterol',
   'low density lipoprotein': 'LDL Cholesterol',
   'low density lipoprotein cholesterol': 'LDL Cholesterol',
   'low-density lipoprotein': 'LDL Cholesterol',
+  'calculated ldl': 'LDL Cholesterol',
+  'direct ldl': 'LDL Cholesterol',
 
   'hdl': 'HDL Cholesterol',
   'hdl c': 'HDL Cholesterol',
@@ -119,6 +124,28 @@ const BIOMARKER_ALIASES: Record<string, string> = {
   'cholesterol hdl': 'HDL Cholesterol',
   'cholesterol (hdl)': 'HDL Cholesterol',
   'high density lipoprotein': 'HDL Cholesterol',
+  'high-density lipoprotein': 'HDL Cholesterol',
+
+  'vldl': 'VLDL Cholesterol',
+  'vldl c': 'VLDL Cholesterol',
+  'vldl-c': 'VLDL Cholesterol',
+  'vldl cholesterol': 'VLDL Cholesterol',
+  'vldl cholesterol calculated': 'VLDL Cholesterol',
+  'vldl cholesterol, calculated': 'VLDL Cholesterol',
+  'vldl-cholesterol': 'VLDL Cholesterol',
+  'vldl-cholesterol calculated': 'VLDL Cholesterol',
+  'cholesterol vldl': 'VLDL Cholesterol',
+  'cholesterol (vldl)': 'VLDL Cholesterol',
+  'very low density lipoprotein': 'VLDL Cholesterol',
+  'very low-density lipoprotein': 'VLDL Cholesterol',
+  'very low density lipoprotein cholesterol': 'VLDL Cholesterol',
+
+  'non hdl': 'Non-HDL Cholesterol',
+  'non-hdl': 'Non-HDL Cholesterol',
+  'non hdl cholesterol': 'Non-HDL Cholesterol',
+  'non-hdl cholesterol': 'Non-HDL Cholesterol',
+  'cholesterol non hdl': 'Non-HDL Cholesterol',
+  'cholesterol non-hdl': 'Non-HDL Cholesterol',
 
   'total cholesterol': 'Total Cholesterol',
   'cholesterol total': 'Total Cholesterol',
@@ -131,12 +158,26 @@ const BIOMARKER_ALIASES: Record<string, string> = {
   'serum triglycerides': 'Triglycerides',
   'tg': 'Triglycerides',
 
+  // --- BLOOD GLUCOSE & DIABETES ---
   'fasting blood sugar': 'Fasting Blood Sugar',
   'fasting blood glucose': 'Fasting Blood Sugar',
   'fasting glucose': 'Fasting Blood Sugar',
+  'fasting plasma glucose': 'Fasting Blood Sugar',
   'glucose fasting': 'Fasting Blood Sugar',
   'glucose (fasting)': 'Fasting Blood Sugar',
   'fbs': 'Fasting Blood Sugar',
+  'fpg': 'Fasting Blood Sugar',
+
+  'postprandial blood sugar': 'Postprandial Blood Sugar',
+  'postprandial blood glucose': 'Postprandial Blood Sugar',
+  'post prandial glucose': 'Postprandial Blood Sugar',
+  'glucose post prandial': 'Postprandial Blood Sugar',
+  'ppbs': 'Postprandial Blood Sugar',
+
+  'random blood sugar': 'Random Blood Sugar',
+  'random blood glucose': 'Random Blood Sugar',
+  'rbs': 'Random Blood Sugar',
+  'glucose random': 'Random Blood Sugar',
 
   'hba1c': 'HbA1c',
   'hemoglobin a1c': 'HbA1c',
@@ -145,6 +186,98 @@ const BIOMARKER_ALIASES: Record<string, string> = {
   'a1c': 'HbA1c',
   'glycated hemoglobin': 'HbA1c',
 
+  'fasting insulin': 'Fasting Insulin',
+  'insulin fasting': 'Fasting Insulin',
+
+  // --- THYROID PANEL ---
+  'tsh': 'TSH',
+  'thyroid stimulating hormone': 'TSH',
+  'tsh (thyroid stimulating hormone)': 'TSH',
+  'serum tsh': 'TSH',
+
+  'free t3': 'Free T3',
+  'ft3': 'Free T3',
+  'free t4': 'Free T4',
+  'ft4': 'Free T4',
+  'total t3': 'Total T3',
+  't3': 'Total T3',
+  'total t4': 'Total T4',
+  't4': 'Total T4',
+
+  // --- KIDNEY / RENAL FUNCTION ---
+  'creatinine': 'Serum Creatinine',
+  'serum creatinine': 'Serum Creatinine',
+  'creatinine serum': 'Serum Creatinine',
+  'creatinine (serum)': 'Serum Creatinine',
+
+  'blood urea nitrogen': 'BUN (Blood Urea Nitrogen)',
+  'bun': 'BUN (Blood Urea Nitrogen)',
+  'urea': 'Blood Urea',
+  'blood urea': 'Blood Urea',
+
+  'uric acid': 'Uric Acid',
+  'serum uric acid': 'Uric Acid',
+  'egfr': 'eGFR',
+
+  // --- LIVER FUNCTION (LFT) ---
+  'alt': 'ALT (SGPT)',
+  'sgpt': 'ALT (SGPT)',
+  'alt (sgpt)': 'ALT (SGPT)',
+  'sgpt (alt)': 'ALT (SGPT)',
+  'alanine aminotransferase': 'ALT (SGPT)',
+
+  'ast': 'AST (SGOT)',
+  'sgot': 'AST (SGOT)',
+  'ast (sgot)': 'AST (SGOT)',
+  'sgot (ast)': 'AST (SGOT)',
+  'aspartate aminotransferase': 'AST (SGOT)',
+
+  'alkaline phosphatase': 'Alkaline Phosphatase (ALP)',
+  'alp': 'Alkaline Phosphatase (ALP)',
+
+  'ggt': 'Gamma-GT (GGT)',
+  'ggtp': 'Gamma-GT (GGT)',
+
+  'total bilirubin': 'Total Bilirubin',
+  'direct bilirubin': 'Direct Bilirubin',
+  'indirect bilirubin': 'Indirect Bilirubin',
+  'total protein': 'Total Protein',
+  'albumin': 'Serum Albumin',
+  'globulin': 'Serum Globulin',
+
+  // --- COMPLETE BLOOD COUNT (CBC) ---
+  'hemoglobin': 'Hemoglobin',
+  'haemoglobin': 'Hemoglobin',
+  'hb': 'Hemoglobin',
+  'hgb': 'Hemoglobin',
+
+  'hematocrit': 'Hematocrit (PCV)',
+  'pcv': 'Hematocrit (PCV)',
+  'packed cell volume': 'Hematocrit (PCV)',
+
+  'platelets': 'Platelet Count',
+  'platelet count': 'Platelet Count',
+  'plt': 'Platelet Count',
+
+  'wbc': 'WBC Count',
+  'wbc count': 'WBC Count',
+  'white blood cell count': 'WBC Count',
+
+  'rbc': 'RBC Count',
+  'rbc count': 'RBC Count',
+
+  'mcv': 'MCV',
+  'mch': 'MCH',
+  'mchc': 'MCHC',
+  'rdw': 'RDW',
+  'esr': 'ESR',
+  'neutrophils': 'Neutrophils',
+  'lymphocytes': 'Lymphocytes',
+  'monocytes': 'Monocytes',
+  'eosinophils': 'Eosinophils',
+  'basophils': 'Basophils',
+
+  // --- VITAMINS & MINERALS ---
   'vitamin d': 'Vitamin D (25-OH)',
   'vitamin d (25-oh)': 'Vitamin D (25-OH)',
   '25-oh vitamin d': 'Vitamin D (25-OH)',
@@ -157,35 +290,22 @@ const BIOMARKER_ALIASES: Record<string, string> = {
   'vitamin b-12': 'Vitamin B12',
   'b12': 'Vitamin B12',
 
-  'tsh': 'TSH',
-  'thyroid stimulating hormone': 'TSH',
-  'tsh (thyroid stimulating hormone)': 'TSH',
+  'iron': 'Serum Iron',
+  'serum iron': 'Serum Iron',
+  'ferritin': 'Serum Ferritin',
+  'serum ferritin': 'Serum Ferritin',
+  'tibc': 'TIBC',
+  'calcium': 'Calcium',
+  'serum calcium': 'Calcium',
+  'potassium': 'Potassium',
+  'sodium': 'Sodium',
+  'magnesium': 'Magnesium',
 
-  'creatinine': 'Serum Creatinine',
-  'serum creatinine': 'Serum Creatinine',
-  'creatinine serum': 'Serum Creatinine',
-  'creatinine (serum)': 'Serum Creatinine',
-
-  'uric acid': 'Uric Acid',
-  'serum uric acid': 'Uric Acid',
-
-  'alt': 'ALT (SGPT)',
-  'sgpt': 'ALT (SGPT)',
-  'alt (sgpt)': 'ALT (SGPT)',
-  'sgpt (alt)': 'ALT (SGPT)',
-
-  'ast': 'AST (SGOT)',
-  'sgot': 'AST (SGOT)',
-  'ast (sgot)': 'AST (SGOT)',
-
-  'hemoglobin': 'Hemoglobin',
-  'haemoglobin': 'Hemoglobin',
-  'hb': 'Hemoglobin',
-  'hgb': 'Hemoglobin',
-
-  'platelets': 'Platelet Count',
-  'platelet count': 'Platelet Count',
-  'plt': 'Platelet Count'
+  // --- CARDIAC & INFLAMMATION ---
+  'hs-crp': 'hs-CRP',
+  'hscrp': 'hs-CRP',
+  'crp': 'CRP',
+  'c-reactive protein': 'CRP'
 };
 
 function normalizeServerBiomarkerName(rawName: string): string {
@@ -201,17 +321,43 @@ function normalizeServerBiomarkerName(rawName: string): string {
     }
   }
 
-  if (cleaned.includes('ldl') && cleaned.includes('cholesterol')) return 'LDL Cholesterol';
-  if (cleaned.includes('hdl') && cleaned.includes('cholesterol')) return 'HDL Cholesterol';
+  if (cleaned.includes('vldl') || cleaned.includes('very low density')) return 'VLDL Cholesterol';
+  if (cleaned.includes('non hdl') || cleaned.includes('non-hdl')) return 'Non-HDL Cholesterol';
+  if (!cleaned.includes('vldl') && cleaned.includes('ldl')) return 'LDL Cholesterol';
+  if (!cleaned.includes('vldl') && !cleaned.includes('non') && cleaned.includes('hdl')) return 'HDL Cholesterol';
+
   if (cleaned.includes('fasting') && (cleaned.includes('glucose') || cleaned.includes('sugar'))) return 'Fasting Blood Sugar';
+  if ((cleaned.includes('postprandial') || cleaned.includes('post prandial') || cleaned.includes('pp')) && (cleaned.includes('glucose') || cleaned.includes('sugar'))) return 'Postprandial Blood Sugar';
+  if (cleaned.includes('random') && (cleaned.includes('glucose') || cleaned.includes('sugar'))) return 'Random Blood Sugar';
   if (cleaned.includes('hba1c') || cleaned.includes('a1c')) return 'HbA1c';
-  if (cleaned.includes('vitamin d') || cleaned.includes('25 oh')) return 'Vitamin D (25-OH)';
+
+  if (cleaned.includes('vitamin d') || cleaned.includes('25 oh') || cleaned.includes('vit d')) return 'Vitamin D (25-OH)';
+  if (cleaned.includes('vitamin b12') || cleaned.includes('vit b12') || cleaned.includes('b12')) return 'Vitamin B12';
+
   if (cleaned.includes('tsh')) return 'TSH';
+  if (cleaned.includes('free t3') || cleaned.includes('ft3')) return 'Free T3';
+  if (cleaned.includes('free t4') || cleaned.includes('ft4')) return 'Free T4';
+
   if (cleaned.includes('creatinine')) return 'Serum Creatinine';
-  if (cleaned.includes('triglycerides')) return 'Triglycerides';
+  if (cleaned.includes('blood urea nitrogen') || cleaned.includes('bun')) return 'BUN (Blood Urea Nitrogen)';
+  if (cleaned.includes('uric acid')) return 'Uric Acid';
+
   if (cleaned.includes('sgpt') || (cleaned.includes('alt') && !cleaned.includes('salt'))) return 'ALT (SGPT)';
   if (cleaned.includes('sgot') || cleaned.includes('ast')) return 'AST (SGOT)';
+  if (cleaned.includes('alkaline phosphatase') || cleaned.includes('alk phos')) return 'Alkaline Phosphatase (ALP)';
+  if (cleaned.includes('gamma gt') || cleaned.includes('ggt')) return 'Gamma-GT (GGT)';
+
+  if (cleaned.includes('total bilirubin')) return 'Total Bilirubin';
+  if (cleaned.includes('direct bilirubin')) return 'Direct Bilirubin';
+
   if (cleaned.includes('hemoglobin') || cleaned.includes('haemoglobin')) return 'Hemoglobin';
+  if (cleaned.includes('hematocrit') || cleaned.includes('pcv')) return 'Hematocrit (PCV)';
+  if (cleaned.includes('platelet')) return 'Platelet Count';
+  if (cleaned.includes('wbc') || cleaned.includes('white blood cell')) return 'WBC Count';
+  if (cleaned.includes('rbc') || cleaned.includes('red blood cell')) return 'RBC Count';
+
+  if (cleaned.includes('hs crp') || cleaned.includes('hscrp')) return 'hs-CRP';
+  if (cleaned.includes('c reactive protein') || cleaned.includes('crp')) return 'CRP';
 
   return rawName.trim().replace(/\s+/g, ' ').replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 }
@@ -241,8 +387,16 @@ CRITICAL INSTRUCTIONS:
    - labName: facility/lab name if present (e.g. "Quest Diagnostics", "Labcorp"), or "Laboratory Center"
 2. Extract ALL biological markers, lab values, measurements, and reference ranges found in the report.
 3. For each biomarker, provide:
-   - testName: standard clinical name (e.g., "Fasting Blood Glucose", "Hemoglobin A1c", "TSH", "Total Cholesterol")
-   - value: numeric value as a number (e.g. 110, 5.8)
+   - testName: standard canonical clinical name. Always normalize test names consistently across ALL test categories:
+     * Lipids: Strictly distinguish VLDL Cholesterol (Very Low Density Lipoprotein) from LDL Cholesterol (Low Density Lipoprotein), HDL Cholesterol, Total Cholesterol, and Non-HDL Cholesterol.
+     * Diabetes: 'Fasting Blood Sugar', 'Postprandial Blood Sugar', 'Random Blood Sugar', 'HbA1c', 'Fasting Insulin'.
+     * Liver (LFT): 'ALT (SGPT)', 'AST (SGOT)', 'Alkaline Phosphatase (ALP)', 'Gamma-GT (GGT)', 'Total Bilirubin', 'Direct Bilirubin', 'Serum Albumin', 'Total Protein'.
+     * Kidney (KFT): 'Serum Creatinine', 'BUN (Blood Urea Nitrogen)', 'Blood Urea', 'Uric Acid', 'eGFR'.
+     * Thyroid: 'TSH', 'Free T3', 'Free T4', 'Total T3', 'Total T4'.
+     * Hematology (CBC): 'Hemoglobin', 'Hematocrit (PCV)', 'WBC Count', 'RBC Count', 'Platelet Count', 'MCV', 'MCH', 'MCHC', 'RDW', 'ESR', 'Neutrophils', 'Lymphocytes'.
+     * Vitamins & Minerals: 'Vitamin D (25-OH)', 'Vitamin B12', 'Serum Iron', 'Serum Ferritin', 'Calcium', 'Potassium', 'Sodium'.
+     Never use confusing abbreviations or inverted phrase structures (e.g., use 'Total Cholesterol' instead of 'Cholesterol, Total').
+   - value: numeric value as a number (e.g. 112.6, 27.2, 190)
    - unit: unit string (e.g. "mg/dL", "%", "uIU/mL")
    - referenceRange: standard range string (e.g. "70 - 99", "< 5.7")
    - category: one of ["Metabolic", "Lipids", "Hematology", "Thyroid", "Renal", "Liver", "Vitamins", "Hormones", "General"]

@@ -378,7 +378,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                 <ul className="space-y-1.5">
                   {savedReportInsights.extractedItems.filter(i => i.isAbnormal).map(item => (
                     <li key={item.id} className="flex items-center justify-between bg-white/10 dark:bg-slate-950/15 p-2 rounded-xl text-slate-800 dark:text-slate-200 border border-amber-500/25 backdrop-blur-sm">
-                      <span className="font-semibold">{item.testName}</span>
+                      <span className="font-semibold">{normalizeBiomarkerName(item.testName)}</span>
                       <span className="font-bold text-amber-600 dark:text-amber-400">{item.value} {item.unit} ({item.flag.toUpperCase()})</span>
                     </li>
                   ))}
