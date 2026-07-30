@@ -342,6 +342,23 @@ Return JSON with:
   }
 });
 
+// 404 handler for API endpoints to prevent HTML error responses
+app.use((req, res, next) => {
+  if (
+    req.path.startsWith("/api") || 
+    req.url.includes("ocr-analyze") || 
+    req.url.includes("trend-insights") || 
+    req.url.includes("doctor-summary-ai") ||
+    req.url.includes("health")
+  ) {
+    return res.status(404).json({
+      success: false,
+      error: `API route '${req.originalUrl || req.url}' was not found on server.`
+    });
+  }
+  next();
+});
+
 // Global express error handler to ensure JSON responses on errors
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Unhandled express error:", err);
@@ -351,6 +368,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
     details: String(err)
   });
 });
+
 
 // ---------------- VITE / STATIC SERVING ----------------
 

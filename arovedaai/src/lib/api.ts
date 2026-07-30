@@ -6,29 +6,34 @@ export async function safeFetchJson<T = any>(url: string, options?: RequestInit)
     throw new Error(`Network request failed to ${url}: ${netErr.message || String(netErr)}`);
   }
 
-  const contentType = response.headers.get("content-type") || "";
-
-  if (!contentType.includes("application/json")) {
-    const rawText = await response.text();
-    if (response.status === 404) {
-      throw new Error(
-        `API endpoint not found (404). Please ensure the API route is configured on Vercel.`
-      );
-    }
-    if (response.status >= 500) {
-      throw new Error(
-        `Server Error (${response.status}): ${rawText.slice(0, 100)}. Please verify GEMINI_API_KEY environment variable is configured in Vercel project settings.`
-      );
-    }
-    throw new Error(
-      `Unexpected response format (${response.status}): ${rawText.slice(0, 100)}`
-    );
-  }
+  const rawText = await response.text();
+  let data: any;
 
   try {
-    const data = await response.json();
-    return data;
-  } catch (jsonErr: any) {
-    throw new Error(`Failed to parse server response as JSON: ${jsonErr.message}`);
+    data = JSON.parse(rawText);
+  } catch (jsonErr) {
+    // Response is not valid JSON (e.g. HTML error page from Vercel/proxy or Express fallback)
+    const cleanText = rawText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    const snippet = cleanText.length > 120 ? cleanText.slice(0, 120) + "..." : cleanText;
+
+    if (response.status === 404) {
+      throw new Error(`API route not found (404): ${snippet || "The requested endpoint does not exist."}`);
+    }
+
+    if (response.status >= 500) {
+      throw new Error(
+        `Server error (${response.status}): ${snippet || "A server error occurred"}. Please ensure GEMINI_API_KEY environment variable is set in production deployment settings.`
+      );
+    }
+
+    throw new Error(`Unexpected server response (${response.status}): ${snippet || rawText.slice(0, 100)}`);
   }
+
+  if (!response.ok || (data && data.success === false)) {
+    const errorMsg = data?.error || data?.details || `Server returned error (${response.status})`;
+    throw new Error(errorMsg);
+  }
+
+  return data;
 }
+
