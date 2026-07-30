@@ -125,7 +125,9 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
     setError(null);
 
     try {
-      const mimeType = selectedFile ? selectedFile.type : 'text/plain';
+      const mimeType = selectedFile
+        ? (selectedFile.type || (selectedFile.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/png'))
+        : 'text/plain';
 
       const resData = await safeFetchJson('/api/ocr-analyze', {
         method: 'POST',
@@ -142,34 +144,55 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
         throw new Error(resData.details ? `${resData.error} (${resData.details})` : (resData.error || 'Failed to extract lab data.'));
       }
 
-      const d = resData.data;
+      const d = resData.data || {};
       setReportTitle(d.title || selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Laboratory Test Report');
       
       // Check if test date is present
-      const hasValidDate = Boolean(d.testDate && d.testDate.trim().length === 10);
-      setTestDate(hasValidDate ? d.testDate : '');
+      const hasValidDate = Boolean(d.testDate && typeof d.testDate === 'string' && d.testDate.trim().length === 10);
+      setTestDate(hasValidDate ? d.testDate : (new Date().toISOString().split('T')[0]));
       setIsDateMissing(!hasValidDate);
 
       setLabName(d.labName || 'Laboratory Center');
       setAnonymizedTextSent(d.anonymizedTextSentToAi || 'PII removed before AI processing.');
 
       // Map extracted data with unique IDs for editing
-      const mappedItems: LabBiomarker[] = (d.extractedData || []).map((b: any, index: number) => ({
-        id: `extracted-${index}-${Date.now()}`,
-        testName: b.testName || `Test ${index + 1}`,
-        category: b.category || 'General',
-        value: Number(b.value) || 0,
-        unit: b.unit || 'mg/dL',
-        referenceRange: b.referenceRange || 'Standard',
-        minRef: b.minRef !== undefined ? Number(b.minRef) : undefined,
-        maxRef: b.maxRef !== undefined ? Number(b.maxRef) : undefined,
-        flag: b.flag === 'high' ? 'high' : b.flag === 'low' ? 'low' : 'normal',
-        isAbnormal: b.flag === 'high' || b.flag === 'low',
-        notes: b.notes || ''
-      }));
+      const rawList = Array.isArray(d.extractedData) && d.extractedData.length > 0
+        ? d.extractedData
+        : (Array.isArray(d.biomarkers) ? d.biomarkers : []);
+
+      const mappedItems: LabBiomarker[] = rawList.map((b: any, index: number) => {
+        const testName = b.testName || b.name || b.biomarkerName || `Test ${index + 1}`;
+        const rawVal = b.value;
+        const valNum = typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const unit = b.unit || 'mg/dL';
+        const referenceRange = b.referenceRange || b.range || 'Standard';
+        const flagStatus = String(b.flag || b.status || 'normal').toLowerCase();
+        const isAbnormal = flagStatus === 'high' || flagStatus === 'low' || flagStatus === 'critical' || flagStatus === 'borderline' || b.isAbnormal === true;
+        const flag = flagStatus.includes('high') || flagStatus.includes('critical') ? 'high' : (flagStatus.includes('low') ? 'low' : 'normal');
+
+        return {
+          id: `extracted-${index}-${Date.now()}`,
+          testName,
+          category: b.category || 'General',
+          value: valNum,
+          unit,
+          referenceRange,
+          minRef: b.minRef !== undefined ? Number(b.minRef) : undefined,
+          maxRef: b.maxRef !== undefined ? Number(b.maxRef) : undefined,
+          flag,
+          isAbnormal,
+          notes: b.notes || b.clinicalNote || ''
+        };
+      });
 
       setExtractedItems(mappedItems);
-      setAiSummary(d.aiSummary);
+
+      const summaryObj = d.aiSummary || {
+        overview: d.summary?.summaryText || d.summaryText || 'Lab report processed successfully.',
+        observations: d.summary?.keyObservations || d.keyObservations || [],
+        educationalNote: 'Consult your physician regarding lab report findings.'
+      };
+      setAiSummary(summaryObj);
       setIsExtracted(true);
     } catch (err: any) {
       console.error("Analysis error:", err);
@@ -438,7 +461,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                 className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/25 inline-flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Select Files from Computer
+                Select from Device
               </button>
             )}
           </div>

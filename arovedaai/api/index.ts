@@ -120,34 +120,56 @@ apiRouter.post("/ocr-analyze", async (req, res) => {
 Analyze the provided medical lab report (image/PDF or text) and extract structured biomarker findings.
 
 CRITICAL INSTRUCTIONS:
-1. Extract ALL biological markers, lab values, measurements, and reference ranges found in the report.
-2. For each biomarker, determine:
-   - name: standard clinical name (e.g., "Fasting Blood Glucose", "Hemoglobin A1c", "TSH", "Total Cholesterol")
+1. Extract report metadata:
+   - title: concise title of the lab report (e.g., "Comprehensive Metabolic Panel", "Lipid Profile & Thyroid Test")
+   - testDate: date of collection or test in YYYY-MM-DD format if present in the document, or empty string if not found
+   - labName: facility/lab name if present (e.g. "Quest Diagnostics", "Labcorp"), or "Laboratory Center"
+2. Extract ALL biological markers, lab values, measurements, and reference ranges found in the report.
+3. For each biomarker, provide:
+   - testName: standard clinical name (e.g., "Fasting Blood Glucose", "Hemoglobin A1c", "TSH", "Total Cholesterol")
    - value: numeric value as a number (e.g. 110, 5.8)
    - unit: unit string (e.g. "mg/dL", "%", "uIU/mL")
    - referenceRange: standard range string (e.g. "70 - 99", "< 5.7")
    - category: one of ["Metabolic", "Lipids", "Hematology", "Thyroid", "Renal", "Liver", "Vitamins", "Hormones", "General"]
-   - status: one of ["normal", "borderline", "high", "low", "critical"]
-3. Provide an overall executive summary of the lab report:
-   - summaryText: clear, patient-friendly summary (2-3 paragraphs) explaining key findings, what is normal, and what requires attention.
-   - keyObservations: array of strings with 3-5 key bullet takeaways.
-   - recommendedQuestionsForDoctor: array of 3-5 specific questions the patient should ask their physician based on these results.
-   - riskLevel: one of ["low", "moderate", "high"] based on out-of-range markers.
-4. Privacy: Do NOT include patient name, doctor name, address, or PII in your output.
-5. Disclaimer: Always frame findings as informational for discussion with a doctor.
+   - flag: one of ["normal", "high", "low"]
+   - notes: short clinical context or explanation for this value
+4. Provide an executive summary of the lab report:
+   - overview: clear, patient-friendly summary paragraph explaining overall findings
+   - observations: array of 3-5 key bullet takeaways or lifestyle recommendations
+   - educationalNote: medical disclaimer reminding the patient to discuss results with their physician
+5. Privacy: Do NOT include patient name, doctor name, address, or PII in your output.
 
-Return ONLY a valid JSON object with the following schema:
+Return ONLY a valid JSON object matching this schema:
 {
+  "title": "string",
+  "testDate": "YYYY-MM-DD",
+  "labName": "string",
+  "extractedData": [
+    {
+      "testName": "string",
+      "value": 0,
+      "unit": "string",
+      "referenceRange": "string",
+      "category": "string",
+      "flag": "normal" | "high" | "low",
+      "notes": "string"
+    }
+  ],
   "biomarkers": [
     {
       "name": "string",
-      "value": number,
+      "value": 0,
       "unit": "string",
       "referenceRange": "string",
       "category": "string",
       "status": "normal" | "borderline" | "high" | "low" | "critical"
     }
   ],
+  "aiSummary": {
+    "overview": "string",
+    "observations": ["string"],
+    "educationalNote": "string"
+  },
   "summary": {
     "summaryText": "string",
     "keyObservations": ["string"],
