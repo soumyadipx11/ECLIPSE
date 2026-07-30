@@ -18,6 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { LabBiomarker, LabReport, ReportAiSummary } from '../types';
+import { safeFetchJson } from '../lib/api';
 
 interface ReportUploadProps {
   onSaveReport: (report: Omit<LabReport, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string>;
@@ -126,7 +127,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
     try {
       const mimeType = selectedFile ? selectedFile.type : 'text/plain';
 
-      const response = await fetch('/api/ocr-analyze', {
+      const resData = await safeFetchJson('/api/ocr-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -137,9 +138,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
         })
       });
 
-      const resData = await response.json();
-
-      if (!response.ok || !resData.success) {
+      if (!resData.success) {
         throw new Error(resData.details ? `${resData.error} (${resData.details})` : (resData.error || 'Failed to extract lab data.'));
       }
 

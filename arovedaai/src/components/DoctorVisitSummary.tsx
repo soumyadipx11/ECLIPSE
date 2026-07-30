@@ -13,6 +13,7 @@ import {
 import { LabReport, DoctorVisitSummaryData } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { safeFetchJson } from '../lib/api';
 
 interface DoctorVisitSummaryProps {
   reports: LabReport[];
@@ -36,21 +37,20 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
 
     setLoading(true);
     try {
-      const response = await fetch('/api/doctor-summary-ai', {
+      const resData = await safeFetchJson('/api/doctor-summary-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reportHistory: reports })
       });
 
-      const resData = await response.json();
-      if (!response.ok || !resData.success) {
+      if (!resData.success) {
         throw new Error(resData.error || 'Failed to generate summary.');
       }
 
       setSummaryData(resData.summary);
     } catch (err: any) {
       console.error("Doctor summary error:", err);
-      setErrorMsg("Failed to generate doctor visit summary. Please try again.");
+      setErrorMsg(err.message || "Failed to generate doctor visit summary. Please try again.");
     } finally {
       setLoading(false);
     }

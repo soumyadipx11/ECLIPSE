@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { LabReport, UserReminder } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { safeFetchJson } from '../lib/api';
 
 interface AiInsightsViewProps {
   reports: LabReport[];
@@ -66,7 +67,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
     setError(null);
 
     try {
-      const response = await fetch('/api/trend-insights', {
+      const resData = await safeFetchJson('/api/trend-insights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -75,8 +76,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
         })
       });
 
-      const resData = await response.json();
-      if (!response.ok || !resData.success) {
+      if (!resData.success) {
         throw new Error(resData.error || 'Failed to generate trend insights.');
       }
 
