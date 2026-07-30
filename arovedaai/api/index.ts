@@ -1,4 +1,4 @@
-import app from '../server';
+import app from '../src/api/app';
 
 export default app;
 
