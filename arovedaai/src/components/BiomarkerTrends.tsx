@@ -61,22 +61,70 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
 
   const trendData = getBiomarkerTrend(selectedBiomarker);
 
+  // Determine single primary reference limit line (never render both upper and lower together)
+  const getSingleReferenceLimit = () => {
+    if (!trendData || trendData.historicalPoints.length === 0) return null;
+
+    const firstPoint = trendData.historicalPoints[0];
+    const maxRef = firstPoint?.maxRef;
+    const minRef = firstPoint?.minRef;
+
+    const hasHighFlag = trendData.historicalPoints.some(pt => pt.flag === 'high');
+    const hasLowFlag = trendData.historicalPoints.some(pt => pt.flag === 'low');
+
+    const nameLower = selectedBiomarker.toLowerCase();
+    const isUpperConcern = nameLower.includes('cholesterol') || nameLower.includes('ldl') || nameLower.includes('sugar') || nameLower.includes('hba1c') || nameLower.includes('triglycerides') || nameLower.includes('creatinine');
+    const isLowerConcern = nameLower.includes('vitamin') || nameLower.includes('hdl') || nameLower.includes('hemoglobin') || nameLower.includes('b12');
+
+    // Priority 1: Flagged abnormal points
+    if (hasHighFlag && maxRef !== undefined) {
+      return { type: 'upper' as const, value: maxRef, label: `Upper Limit (${maxRef} ${trendData.unit})` };
+    }
+    if (hasLowFlag && minRef !== undefined && minRef > 0) {
+      return { type: 'lower' as const, value: minRef, label: `Lower Limit (${minRef} ${trendData.unit})` };
+    }
+
+    // Priority 2: Primary biomarker concern
+    if (isUpperConcern && maxRef !== undefined) {
+      return { type: 'upper' as const, value: maxRef, label: `Upper Limit (${maxRef} ${trendData.unit})` };
+    }
+    if (isLowerConcern && minRef !== undefined && minRef > 0) {
+      return { type: 'lower' as const, value: minRef, label: `Lower Limit (${minRef} ${trendData.unit})` };
+    }
+
+    // Priority 3: Default single limit
+    if (maxRef !== undefined) {
+      return { type: 'upper' as const, value: maxRef, label: `Upper Limit (${maxRef} ${trendData.unit})` };
+    }
+    if (minRef !== undefined && minRef > 0) {
+      return { type: 'lower' as const, value: minRef, label: `Lower Limit (${minRef} ${trendData.unit})` };
+    }
+
+    return null;
+  };
+
+  const activeRefLimit = getSingleReferenceLimit();
+
   const getYDomain = () => {
     if (!trendData || trendData.historicalPoints.length === 0) return ['auto', 'auto'];
     
     const values = trendData.historicalPoints.map(pt => pt.value);
-    const minRefs = trendData.historicalPoints.map(pt => pt.minRef).filter((v): v is number => v !== undefined);
-    const maxRefs = trendData.historicalPoints.map(pt => pt.maxRef).filter((v): v is number => v !== undefined);
+    const refValue = activeRefLimit ? [activeRefLimit.value] : [];
     
-    const allValues = [...values, ...minRefs, ...maxRefs];
+    const allValues = [...values, ...refValue];
     const minValue = Math.min(...allValues);
     const maxValue = Math.max(...allValues);
     
     const range = maxValue - minValue;
-    const padding = range === 0 ? Math.max(1, maxValue * 0.1) : range * 0.2; // 20% padding
+    // Generous 25% padding above and below so points and reference line never touch the axes
+    const padding = range === 0 ? Math.max(2, Math.abs(maxValue) * 0.25) : range * 0.28;
     
-    const finalMin = minValue - padding < 0 && minValue >= 0 ? 0 : minValue - padding;
-    const finalMax = maxValue + padding;
+    let finalMin = minValue - padding;
+    let finalMax = maxValue + padding;
+    
+    if (minValue >= 0 && finalMin < 0) {
+      finalMin = 0;
+    }
     
     return [parseFloat(finalMin.toFixed(1)), parseFloat(finalMax.toFixed(1))];
   };
@@ -219,10 +267,22 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
 
             <div className="h-72 w-full pt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData.historicalPoints} margin={{ top: 15, right: 30, left: 10, bottom: 15 }}>
+                <LineChart data={trendData.historicalPoints} margin={{ top: 25, right: 35, left: 15, bottom: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} />
-                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} />
-                  <YAxis stroke="#94a3b8" fontSize={11} domain={getYDomain()} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#94a3b8" 
+                    fontSize={11} 
+                    padding={{ left: 20, right: 20 }}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    stroke="#94a3b8" 
+                    fontSize={11} 
+                    domain={getYDomain()} 
+                    padding={{ top: 15, bottom: 15 }}
+                    tickLine={false}
+                  />
                   <Tooltip
                     contentStyle={{ 
                       backgroundColor: '#0f172a', 
@@ -234,12 +294,38 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                     }}
                     labelFormatter={(l) => `Test Date: ${l}`}
                   />
-                  {/* Reference threshold lines if available */}
-                  {trendData.historicalPoints[0]?.maxRef !== undefined && (
-                    <ReferenceLine y={trendData.historicalPoints[0].maxRef} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Upper Limit', fill: '#ef4444', fontSize: 10, position: 'top' }} />
+                  {/* Single primary reference line (Upper or Lower Limit, never both together) */}
+                  {activeRefLimit && activeRefLimit.type === 'upper' && (
+                    <ReferenceLine 
+                      y={activeRefLimit.value} 
+                      stroke="#ef4444" 
+                      strokeDasharray="4 4" 
+                      strokeWidth={1.5}
+                      label={{ 
+                        value: activeRefLimit.label, 
+                        fill: '#ef4444', 
+                        fontSize: 10, 
+                        fontWeight: 700, 
+                        position: 'top', 
+                        dy: -6 
+                      }} 
+                    />
                   )}
-                  {trendData.historicalPoints[0]?.minRef !== undefined && trendData.historicalPoints[0]?.minRef! > 0 && (
-                    <ReferenceLine y={trendData.historicalPoints[0].minRef} stroke="#3b82f6" strokeDasharray="4 4" label={{ value: 'Lower Limit', fill: '#3b82f6', fontSize: 10, position: 'bottom' }} />
+                  {activeRefLimit && activeRefLimit.type === 'lower' && (
+                    <ReferenceLine 
+                      y={activeRefLimit.value} 
+                      stroke="#3b82f6" 
+                      strokeDasharray="4 4" 
+                      strokeWidth={1.5}
+                      label={{ 
+                        value: activeRefLimit.label, 
+                        fill: '#3b82f6', 
+                        fontSize: 10, 
+                        fontWeight: 700, 
+                        position: 'bottom', 
+                        dy: 6 
+                      }} 
+                    />
                   )}
                   <Line
                     type="monotone"
