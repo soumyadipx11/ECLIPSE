@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Stethoscope, 
   Download, 
@@ -170,8 +170,28 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
 
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [summaryData, setSummaryData] = useState<DoctorVisitSummaryData | null>(null);
+  const [summaryData, setSummaryData] = useState<DoctorVisitSummaryData | null>(() => {
+    try {
+      const saved = localStorage.getItem('aroveda_doctor_summary');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Persist doctor visit summary to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      if (summaryData) {
+        localStorage.setItem('aroveda_doctor_summary', JSON.stringify(summaryData));
+      } else {
+        localStorage.removeItem('aroveda_doctor_summary');
+      }
+    } catch (e) {
+      console.error('Failed to save doctor summary to localStorage', e);
+    }
+  }, [summaryData]);
 
   // Generate Doctor Visit Preparation Data
   const handleGenerateDoctorSummary = async () => {
@@ -554,7 +574,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
             ) : (
               <Sparkles className="w-4 h-4" />
             )}
-            <span>Generate AI Summary</span>
+            <span>{summaryData ? 'Regenerate AI Summary' : 'Generate AI Summary'}</span>
           </button>
 
           <button

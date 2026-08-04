@@ -32,26 +32,61 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
     lifestyleRecommendations?: string[];
     suggestedReminders?: { biomarkerName: string; intervalMonths: number; notes: string }[];
     disclaimer?: string;
-  } | null>(null);
-
-  const [customReminders, setCustomReminders] = useState<UserReminder[]>([
-    {
-      id: 'rem-1',
-      biomarkerName: 'Vitamin D (25-OH)',
-      intervalMonths: 3,
-      lastTestDate: '2026-06-15',
-      nextDueDate: '2026-09-15',
-      notes: 'Evaluate recheck after supplement routine.'
-    },
-    {
-      id: 'rem-2',
-      biomarkerName: 'Lipid Profile & Glucose',
-      intervalMonths: 6,
-      lastTestDate: '2026-06-15',
-      nextDueDate: '2026-12-15',
-      notes: 'Routine follow-up interval.'
+  } | null>(() => {
+    try {
+      const saved = localStorage.getItem('aroveda_ai_insights');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
     }
-  ]);
+  });
+
+  const [customReminders, setCustomReminders] = useState<UserReminder[]>(() => {
+    try {
+      const saved = localStorage.getItem('aroveda_custom_reminders');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [
+      {
+        id: 'rem-1',
+        biomarkerName: 'Vitamin D (25-OH)',
+        intervalMonths: 3,
+        lastTestDate: '2026-06-15',
+        nextDueDate: '2026-09-15',
+        notes: 'Evaluate recheck after supplement routine.'
+      },
+      {
+        id: 'rem-2',
+        biomarkerName: 'Lipid Profile & Glucose',
+        intervalMonths: 6,
+        lastTestDate: '2026-06-15',
+        nextDueDate: '2026-12-15',
+        notes: 'Routine follow-up interval.'
+      }
+    ];
+  });
+
+  // Persist insights data to localStorage whenever it changes
+  React.useEffect(() => {
+    try {
+      if (insightsData) {
+        localStorage.setItem('aroveda_ai_insights', JSON.stringify(insightsData));
+      } else {
+        localStorage.removeItem('aroveda_ai_insights');
+      }
+    } catch (e) {
+      console.error('Failed to save insights to localStorage', e);
+    }
+  }, [insightsData]);
+
+  // Persist custom reminders to localStorage whenever they change
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('aroveda_custom_reminders', JSON.stringify(customReminders));
+    } catch (e) {
+      console.error('Failed to save custom reminders to localStorage', e);
+    }
+  }, [customReminders]);
 
   const [newReminderName, setNewReminderName] = useState('');
   const [newReminderInterval, setNewReminderInterval] = useState(3);

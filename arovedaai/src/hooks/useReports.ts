@@ -204,6 +204,11 @@ export function useReports() {
       // Optimistically clear UI state
       setReports([]);
       setSmartAlerts([]);
+      try {
+        localStorage.removeItem('aroveda_ai_insights');
+        localStorage.removeItem('aroveda_doctor_summary');
+        localStorage.removeItem('aroveda_custom_reminders');
+      } catch (e) {}
 
       // 1. Delete all reports for user
       const qR = query(collection(db, 'reports'), where('userId', '==', user.uid));
