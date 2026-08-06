@@ -12,154 +12,8 @@ import {
 } from 'lucide-react';
 import { LabReport, DoctorVisitSummaryData } from '../types';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { safeFetchJson } from '../lib/api';
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
-
-// Helper canvas context for normalizing CSS color strings (oklch, oklab, color-mix) to exact RGB/Hex
-let colorCanvasCtx: CanvasRenderingContext2D | null = null;
-function getCanvasCtx() {
-  if (typeof document === 'undefined') return null;
-  if (!colorCanvasCtx) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1;
-    canvas.height = 1;
-    colorCanvasCtx = canvas.getContext('2d');
-  }
-  return colorCanvasCtx;
-}
-
-function normalizeCssColor(colorStr: string): string {
-  if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') {
-    return 'transparent';
-  }
-  const ctx = getCanvasCtx();
-  if (!ctx) return colorStr;
-  try {
-    ctx.fillStyle = '#000000';
-    ctx.fillStyle = colorStr;
-    return ctx.fillStyle;
-  } catch (e) {
-    return colorStr;
-  }
-}
-
-/**
- * Replace unsupported modern color specifications (oklch, oklab, color-mix, light-dark, color)
- * in CSS strings with standard safe rgba(...) color strings.
- * This is a highly robust workaround for html2canvas crashing on Tailwind CSS v4's modern colors.
- * It uses recursive bracket-matching parsing to perfectly handle nested variables, functions, and calculations.
- */
-function replaceUnsupportedColors(cssText: string): string {
-  if (!cssText) return '';
-  let result = cssText;
-  
-  const prefixes = ['oklab(', 'oklch(', 'color-mix(', 'light-dark(', 'color('];
-  
-  for (const fn of prefixes) {
-    let index = result.indexOf(fn);
-    let loopCount = 0;
-    while (index !== -1 && loopCount < 5000) {
-      loopCount++;
-      let bracketCount = 1;
-      let closingIndex = -1;
-      
-      for (let i = index + fn.length; i < result.length; i++) {
-        if (result[i] === '(') {
-          bracketCount++;
-        } else if (result[i] === ')') {
-          bracketCount--;
-          if (bracketCount === 0) {
-            closingIndex = i;
-            break;
-          }
-        }
-      }
-      
-      if (closingIndex !== -1) {
-        const innerContent = result.substring(index + fn.length, closingIndex);
-        let safeColor = 'rgba(100, 116, 139, 1)'; // default slate fallback
-        
-        try {
-          if (fn === 'color-mix(') {
-            if (innerContent.includes('transparent') && (innerContent.includes('rose') || innerContent.includes('red'))) {
-              safeColor = 'rgba(255, 241, 242, 0.5)';
-            } else if (innerContent.includes('rose-50') || innerContent.includes('50%')) {
-              safeColor = 'rgba(255, 241, 242, 0.6)';
-            } else if (innerContent.includes('rose-100') || innerContent.includes('100')) {
-              safeColor = 'rgba(254, 226, 226, 1)';
-            } else if (innerContent.includes('rose-200') || innerContent.includes('200')) {
-              safeColor = 'rgba(254, 205, 211, 1)';
-            } else if (innerContent.includes('rose-800') || innerContent.includes('800') || innerContent.includes('rose-900')) {
-              safeColor = 'rgba(159, 18, 57, 1)';
-            } else if (innerContent.includes('rose') || innerContent.includes('red')) {
-              safeColor = 'rgba(225, 29, 72, 1)';
-            } else if (innerContent.includes('slate') || innerContent.includes('gray')) {
-              safeColor = 'rgba(15, 23, 42, 1)';
-            } else {
-              safeColor = 'rgba(241, 245, 249, 1)';
-            }
-          } else if (fn === 'oklch(' || fn === 'oklab(') {
-            const parts = innerContent.trim().split(/[\s/]+/);
-            let l = parseFloat(parts[0]);
-            if (!isNaN(l)) {
-              if (parts[0].includes('%')) {
-                l = l / 100;
-              }
-              const cOrA = parseFloat(parts[1]);
-              const hOrB = parseFloat(parts[2]);
-              let alpha = 1;
-              if (parts[3]) {
-                alpha = parseFloat(parts[3]);
-                if (parts[3].includes('%')) alpha = alpha / 100;
-              }
-              
-              if (fn === 'oklch(') {
-                const c = isNaN(cOrA) ? 0 : cOrA;
-                const h = isNaN(hOrB) ? 0 : hOrB;
-                if (c < 0.04) {
-                  const v = Math.round(l * 255);
-                  safeColor = `rgba(${v}, ${v}, ${v}, ${alpha})`;
-                } else {
-                  let r = 128, g = 128, b = 128;
-                  if (h >= 340 || h < 50) {
-                    r = Math.round(l * 225); g = Math.round(l * 29); b = Math.round(l * 72);
-                  } else if (h >= 50 && h < 110) {
-                    r = Math.round(l * 234); g = Math.round(l * 179); b = Math.round(l * 8);
-                  } else if (h >= 110 && h < 190) {
-                    r = Math.round(l * 34); g = Math.round(l * 197); b = Math.round(l * 94);
-                  } else if (h >= 190 && h < 270) {
-                    r = Math.round(l * 59); g = Math.round(l * 130); b = Math.round(l * 246);
-                  } else {
-                    r = Math.round(l * 168); g = Math.round(l * 85); b = Math.round(l * 247);
-                  }
-                  safeColor = `rgba(${Math.min(255, Math.max(0, r))}, ${Math.min(255, Math.max(0, g))}, ${Math.min(255, Math.max(0, b))}, ${alpha})`;
-                }
-              } else {
-                const aVal = isNaN(cOrA) ? 0 : cOrA;
-                const bVal = isNaN(hOrB) ? 0 : hOrB;
-                const base = l * 255;
-                const r = Math.round(base + aVal * 150);
-                const g = Math.round(base - aVal * 50 - bVal * 50);
-                const b = Math.round(base + bVal * 150);
-                safeColor = `rgba(${Math.min(255, Math.max(0, r))}, ${Math.min(255, Math.max(0, g))}, ${Math.min(255, Math.max(0, b))}, ${alpha})`;
-              }
-            }
-          }
-        } catch (e) {
-          safeColor = 'rgba(100, 116, 139, 1)';
-        }
-        
-        result = result.substring(0, index) + safeColor + result.substring(closingIndex + 1);
-        index = result.indexOf(fn, index + safeColor.length);
-      } else {
-        break;
-      }
-    }
-  }
-  
-  return result;
-}
 
 interface DoctorVisitSummaryProps {
   reports: LabReport[];
@@ -262,275 +116,297 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
     }
   };
 
-  // Download PDF using html2canvas & jsPDF
-  const handleDownloadPdf = async () => {
-    if (!printableRef.current) return;
+  // Download real vector text-based PDF using jsPDF
+  const handleDownloadPdf = () => {
+    if (!summaryData) return;
     setErrorMsg(null);
     setDownloading(true);
 
-    let cloneContainer: HTMLDivElement | null = null;
-    const styleElements = Array.from(document.querySelectorAll('style')) as HTMLStyleElement[];
-    const linkElements = Array.from(document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
-
-    const originalStyleTexts = styleElements.map(el => el.textContent || '');
-    const disabledLinks: HTMLLinkElement[] = [];
-    const linkReplacements: HTMLStyleElement[] = [];
-
     try {
-      // 1. Convert unsupported colors in inline <style> elements to safe RGBA color strings
-      styleElements.forEach(el => {
-        if (el.textContent) {
-          el.textContent = replaceUnsupportedColors(el.textContent);
-        }
-      });
-
-      // 2. Fetch and convert unsupported colors in loaded stylesheet <link> tags, replacing them temporarily with safe style blocks
-      for (const link of linkElements) {
-        try {
-          const response = await fetch(link.href);
-          if (response.ok) {
-            let cssText = await response.text();
-            cssText = replaceUnsupportedColors(cssText);
-            
-            const tempStyle = document.createElement('style');
-            tempStyle.textContent = cssText;
-            document.head.appendChild(tempStyle);
-            linkReplacements.push(tempStyle);
-            
-            link.disabled = true;
-            disabledLinks.push(link);
-          }
-        } catch (err) {
-          console.warn("Failed to fetch link stylesheet for oklch cleaning:", err);
-        }
-      }
-
-      const originalEl = printableRef.current;
-
-      // Create an offscreen wrapper with a fixed desktop-standard width (800px)
-      // so mobile viewport scaling does not compress or distort the PDF layout
-      cloneContainer = document.createElement('div');
-      cloneContainer.style.position = 'absolute';
-      cloneContainer.style.left = '-9999px';
-      cloneContainer.style.top = '0px';
-      cloneContainer.style.width = '800px';
-      cloneContainer.style.backgroundColor = '#ffffff';
-      cloneContainer.style.zIndex = '-9999';
-
-      const clone = originalEl.cloneNode(true) as HTMLDivElement;
-      clone.style.width = '800px';
-      clone.style.maxWidth = 'none';
-      clone.style.margin = '0';
-      clone.style.boxSizing = 'border-box';
-      clone.style.padding = '32px';
-
-      // Ensure any table inside clone takes full width without scrollbars
-      const cloneTables = clone.querySelectorAll('table');
-      cloneTables.forEach((tbl) => {
-        (tbl as HTMLElement).style.minWidth = '100%';
-        (tbl as HTMLElement).style.width = '100%';
-      });
-
-      cloneContainer.appendChild(clone);
-      document.body.appendChild(cloneContainer);
-
-      // Short delay to ensure browser layout engine settles
-      await new Promise((resolve) => setTimeout(resolve, 150));
-
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 800,
-        windowWidth: 1024,
-        onclone: (clonedDoc) => {
-          // 1. Sanitize all style elements in clonedDoc
-          const clonedStyles = Array.from(clonedDoc.querySelectorAll('style'));
-          clonedStyles.forEach(s => {
-            if (s.textContent) {
-              s.textContent = replaceUnsupportedColors(s.textContent);
-            }
-          });
-
-          // 2. Sanitize all element inline style attributes in clonedDoc
-          const allClonedElements = Array.from(clonedDoc.querySelectorAll('*')) as HTMLElement[];
-          allClonedElements.forEach(el => {
-            if (el.style && el.style.cssText) {
-              if (
-                el.style.cssText.includes('okl') ||
-                el.style.cssText.includes('color-mix') ||
-                el.style.cssText.includes('light-dark') ||
-                el.style.cssText.includes('color(')
-              ) {
-                el.style.cssText = replaceUnsupportedColors(el.style.cssText);
-              }
-            }
-          });
-
-          // 3. Convert target elements' computed styles to explicit safe RGB inline styles
-          if (printableRef.current) {
-            const origNodes = [printableRef.current, ...Array.from(printableRef.current.querySelectorAll('*'))] as HTMLElement[];
-            const clonedRoot = clonedDoc.querySelector('[data-pdf-printable-root="true"]') as HTMLElement || clonedDoc.querySelector('div');
-            
-            if (clonedRoot) {
-              const clonedNodes = [clonedRoot, ...Array.from(clonedRoot.querySelectorAll('*'))] as HTMLElement[];
-              
-              origNodes.forEach((origEl, i) => {
-                const cloneEl = clonedNodes[i];
-                if (origEl && cloneEl && cloneEl.style) {
-                  try {
-                    const comp = window.getComputedStyle(origEl);
-                    if (comp.color) {
-                      const safeColor = normalizeCssColor(comp.color);
-                      if (safeColor && safeColor !== 'transparent') {
-                        cloneEl.style.color = safeColor;
-                      }
-                    }
-                    if (comp.backgroundColor && comp.backgroundColor !== 'rgba(0, 0, 0, 0)' && comp.backgroundColor !== 'transparent') {
-                      const safeBg = normalizeCssColor(comp.backgroundColor);
-                      if (safeBg) {
-                        cloneEl.style.backgroundColor = safeBg;
-                      }
-                    }
-                    if (comp.borderColor && comp.borderColor !== 'rgba(0, 0, 0, 0)' && comp.borderColor !== 'transparent') {
-                      const safeBorder = normalizeCssColor(comp.borderColor);
-                      if (safeBorder) {
-                        cloneEl.style.borderColor = safeBorder;
-                      }
-                    }
-                  } catch (e) {
-                    // ignore
-                  }
-                }
-              });
-            }
-          }
-
-          // 4. Force clean inline-block display & vertical alignment for icons, text, and badges
-          const clonedRootEl = (clonedDoc.querySelector('[data-pdf-printable-root="true"]') as HTMLElement) || clonedDoc.body;
-          if (clonedRootEl) {
-            clonedRootEl.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
-
-            // Override Tailwind preflight display:block on svg and img elements in PDF clone
-            const mediaEls = Array.from(clonedRootEl.querySelectorAll('svg, img')) as HTMLElement[];
-            mediaEls.forEach(el => {
-              el.style.display = 'inline-block';
-              el.style.verticalAlign = 'middle';
-              el.style.position = 'static';
-              el.style.top = '0px';
-              el.style.transform = 'none';
-            });
-
-            // Ensure flex headers center icons and text alignment cleanly
-            const flexHeaders = Array.from(clonedRootEl.querySelectorAll('.flex, [class*="flex"]')) as HTMLElement[];
-            flexHeaders.forEach(f => {
-              f.style.display = 'flex';
-              f.style.alignItems = 'center';
-            });
-
-            // Table headers and cells vertical centering
-            const cells = Array.from(clonedRootEl.querySelectorAll('th, td')) as HTMLElement[];
-            cells.forEach(cell => {
-              cell.style.verticalAlign = 'middle';
-              cell.style.lineHeight = '1.25';
-            });
-
-            // Headings and paragraphs line-height
-            const textEls = Array.from(clonedRootEl.querySelectorAll('h1, h2, h3, p, span')) as HTMLElement[];
-            textEls.forEach(el => {
-              if (!el.getAttribute('data-flag-badge')) {
-                el.style.lineHeight = '1.25';
-              }
-            });
-
-            // Flag badges alignment
-            const flagBadges = Array.from(clonedRootEl.querySelectorAll('[data-flag-badge="true"]')) as HTMLElement[];
-            flagBadges.forEach(badge => {
-              badge.style.display = 'inline-block';
-              badge.style.verticalAlign = 'middle';
-              badge.style.lineHeight = '1.2';
-              badge.style.padding = '2px 6px';
-              badge.style.margin = '0';
-              badge.style.position = 'static';
-              if (badge.parentElement) {
-                badge.parentElement.style.verticalAlign = 'middle';
-              }
-            });
-          }
-        }
-      });
-
-      // Remove offscreen container
-      if (document.body.contains(cloneContainer)) {
-        document.body.removeChild(cloneContainer);
-        cloneContainer = null;
-      }
-
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
+      const printableWidth = pageWidth - margin * 2; // 180mm
+      let yPos = margin;
 
-      // A4 dimensions: 210mm x 297mm
-      const margin = 10; // 10mm side and top/bottom margins
-      const pdfWidth = 210 - margin * 2; // 190mm printable width
-      const pdfPageHeight = 297 - margin * 2; // 277mm printable height per page
+      // Helper for page break management
+      const checkPageBreak = (neededHeight: number) => {
+        if (yPos + neededHeight > pageHeight - margin - 10) {
+          pdf.addPage();
+          yPos = margin + 5;
+          // Running top header line
+          pdf.setDrawColor(226, 232, 240);
+          pdf.setLineWidth(0.3);
+          pdf.line(margin, yPos - 3, pageWidth - margin, yPos - 3);
+        }
+      };
 
-      const scaledImgHeight = (canvas.height * pdfWidth) / canvas.width;
+      // --- 1. Document Header ---
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(14);
+      pdf.setTextColor(190, 18, 60); // Rose 700
+      pdf.text('ArovedaAI • Physician Discussion Preparation', margin, yPos);
 
-      let heightLeft = scaledImgHeight;
-      let position = margin;
+      // Right-aligned Date & Reports count
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(100, 116, 139); // Slate 500
+      const todayStr = new Date().toISOString().split('T')[0];
+      pdf.text(`Date: ${todayStr} | Reports Analyzed: ${reports.length}`, pageWidth - margin, yPos, { align: 'right' });
 
-      // First page rendering with 10mm margins
-      pdf.addImage(imgData, 'PNG', margin, position, pdfWidth, scaledImgHeight);
-      heightLeft -= pdfPageHeight;
+      yPos += 5;
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('Personal Laboratory Record Overview & Historical Trajectory', margin, yPos);
 
-      // Handle multi-page documents if content exceeds single page height
-      while (heightLeft > 0) {
-        pdf.addPage();
-        position = margin - (scaledImgHeight - heightLeft);
-        pdf.addImage(imgData, 'PNG', margin, position, pdfWidth, scaledImgHeight);
-        heightLeft -= pdfPageHeight;
+      yPos += 5;
+      pdf.setDrawColor(15, 23, 42); // Slate 900
+      pdf.setLineWidth(0.8);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+
+      // --- 2. Executive Patient Summary ---
+      if (summaryData.generalNote) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9);
+        pdf.setTextColor(30, 41, 59); // Slate 800
+        pdf.text('EXECUTIVE PATIENT SUMMARY', margin, yPos);
+        yPos += 4;
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(51, 65, 85);
+
+        const noteLines = pdf.splitTextToSize(summaryData.generalNote, printableWidth - 8);
+        const boxHeight = noteLines.length * 4.2 + 6;
+
+        checkPageBreak(boxHeight + 5);
+
+        pdf.setFillColor(248, 250, 252); // Slate 50
+        pdf.setDrawColor(226, 232, 240); // Slate 200
+        pdf.setLineWidth(0.3);
+        pdf.roundedRect(margin, yPos - 2, printableWidth, boxHeight, 2, 2, 'FD');
+
+        pdf.text(noteLines, margin + 4, yPos + 3);
+        yPos += boxHeight + 8;
       }
 
-      const fileName = `ArovedaAI_Doctor_Visit_Summary_${new Date().toISOString().split('T')[0]}.pdf`;
+      // --- 3. Recent Out-of-Range Biomarkers Table ---
+      if (summaryData.latestAbnormalities && summaryData.latestAbnormalities.length > 0) {
+        checkPageBreak(25);
 
-      // Attempt primary download method
-      try {
-        pdf.save(fileName);
-      } catch (saveErr) {
-        console.warn("Primary pdf.save failed, attempting fallback blob link:", saveErr);
-        const blob = pdf.output('blob');
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(190, 18, 60); // Rose 700
+        pdf.text('RECENT OUT-OF-RANGE BIOMARKERS', margin, yPos);
+        yPos += 5;
+
+        // Table Column Widths (total 180mm)
+        const colWidths = [50, 30, 40, 25, 35];
+        const colX = [
+          margin,
+          margin + colWidths[0],
+          margin + colWidths[0] + colWidths[1],
+          margin + colWidths[0] + colWidths[1] + colWidths[2],
+          margin + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3]
+        ];
+
+        // Header row background
+        pdf.setFillColor(255, 228, 230); // Rose 100
+        pdf.setDrawColor(254, 205, 211);
+        pdf.rect(margin, yPos - 1, printableWidth, 7, 'FD');
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(136, 19, 55); // Rose 900
+        pdf.text('Test Name', colX[0] + 2, yPos + 3.5);
+        pdf.text('Value', colX[1] + 2, yPos + 3.5);
+        pdf.text('Reference Range', colX[2] + 2, yPos + 3.5);
+        pdf.text('Flag', colX[3] + 2, yPos + 3.5);
+        pdf.text('Test Date', colX[4] + 2, yPos + 3.5);
+
+        yPos += 7;
+
+        summaryData.latestAbnormalities.forEach((item, i) => {
+          checkPageBreak(8);
+
+          // Row background striping
+          if (i % 2 === 1) {
+            pdf.setFillColor(255, 241, 242);
+            pdf.rect(margin, yPos - 1, printableWidth, 7, 'F');
+          }
+
+          pdf.setDrawColor(241, 245, 249);
+          pdf.line(margin, yPos + 6, margin + printableWidth, yPos + 6);
+
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(8);
+          pdf.setTextColor(15, 23, 42);
+          const testNameText = pdf.splitTextToSize(item.testName, colWidths[0] - 3)[0] || item.testName;
+          pdf.text(testNameText, colX[0] + 2, yPos + 3.5);
+
+          pdf.setTextColor(190, 18, 60);
+          pdf.text(`${item.value} ${item.unit}`, colX[1] + 2, yPos + 3.5);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(71, 85, 105);
+          pdf.text(item.referenceRange || 'N/A', colX[2] + 2, yPos + 3.5);
+
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(159, 18, 57);
+          pdf.text(String(item.flag).toUpperCase(), colX[3] + 2, yPos + 3.5);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(71, 85, 105);
+          pdf.text(item.testDate || 'N/A', colX[4] + 2, yPos + 3.5);
+
+          yPos += 7;
+        });
+
+        yPos += 6;
       }
+
+      // --- 4. Multi-Report Historical Comparisons Table ---
+      if (summaryData.reportComparisons && summaryData.reportComparisons.length > 0) {
+        checkPageBreak(25);
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(30, 41, 59);
+        pdf.text('MULTI-REPORT HISTORICAL COMPARISONS', margin, yPos);
+        yPos += 5;
+
+        const compWidths = [65, 40, 40, 35];
+        const compX = [
+          margin,
+          margin + compWidths[0],
+          margin + compWidths[0] + compWidths[1],
+          margin + compWidths[0] + compWidths[1] + compWidths[2]
+        ];
+
+        pdf.setFillColor(241, 245, 249); // Slate 100
+        pdf.setDrawColor(226, 232, 240);
+        pdf.rect(margin, yPos - 1, printableWidth, 7, 'FD');
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(51, 65, 85);
+        pdf.text('Biomarker Name', compX[0] + 2, yPos + 3.5);
+        pdf.text('Previous Value', compX[1] + 2, yPos + 3.5);
+        pdf.text('Current Value', compX[2] + 2, yPos + 3.5);
+        pdf.text('Unit', compX[3] + 2, yPos + 3.5);
+
+        yPos += 7;
+
+        summaryData.reportComparisons.forEach((comp, i) => {
+          checkPageBreak(8);
+
+          if (i % 2 === 1) {
+            pdf.setFillColor(248, 250, 252);
+            pdf.rect(margin, yPos - 1, printableWidth, 7, 'F');
+          }
+
+          pdf.setDrawColor(241, 245, 249);
+          pdf.line(margin, yPos + 6, margin + printableWidth, yPos + 6);
+
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(8);
+          pdf.setTextColor(15, 23, 42);
+          const nameText = pdf.splitTextToSize(comp.biomarkerName, compWidths[0] - 3)[0] || comp.biomarkerName;
+          pdf.text(nameText, compX[0] + 2, yPos + 3.5);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(71, 85, 105);
+          pdf.text(String(comp.previous), compX[1] + 2, yPos + 3.5);
+
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(15, 23, 42);
+          pdf.text(String(comp.current), compX[2] + 2, yPos + 3.5);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(100, 116, 139);
+          pdf.text(comp.unit || '', compX[3] + 2, yPos + 3.5);
+
+          yPos += 7;
+        });
+
+        yPos += 6;
+      }
+
+      // --- 5. Key Trends & Trajectory ---
+      if (summaryData.keyTrends && summaryData.keyTrends.length > 0) {
+        checkPageBreak(20);
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(30, 41, 59);
+        pdf.text('KEY BIOMARKER TRENDS & OBSERVED TRAJECTORY', margin, yPos);
+        yPos += 5;
+
+        summaryData.keyTrends.forEach((trend) => {
+          const trendText = `${trend.biomarkerName}: ${trend.description}`;
+          const lines = pdf.splitTextToSize(`• ${trendText}`, printableWidth - 5);
+          checkPageBreak(lines.length * 4 + 2);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(8.5);
+          pdf.setTextColor(51, 65, 85);
+          pdf.text(lines, margin + 2, yPos);
+          yPos += lines.length * 4 + 2;
+        });
+
+        yPos += 4;
+      }
+
+      // --- 6. Suggested Questions for Physician ---
+      if (summaryData.suggestedQuestions && summaryData.suggestedQuestions.length > 0) {
+        checkPageBreak(20);
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(190, 18, 60); // Rose 700
+        pdf.text('SUGGESTED QUESTIONS TO DISCUSS WITH YOUR PHYSICIAN', margin, yPos);
+        yPos += 5;
+
+        summaryData.suggestedQuestions.forEach((q, idx) => {
+          const lines = pdf.splitTextToSize(`${idx + 1}. ${q}`, printableWidth - 5);
+          checkPageBreak(lines.length * 4 + 2);
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(8.5);
+          pdf.setTextColor(30, 41, 59);
+          pdf.text(lines, margin + 2, yPos);
+          yPos += lines.length * 4 + 2;
+        });
+
+        yPos += 4;
+      }
+
+      // --- 7. Page Footer on All Pages ---
+      const totalPages = pdf.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        pdf.setPage(p);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(148, 163, 184); // Slate 400
+
+        pdf.setDrawColor(226, 232, 240);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+
+        pdf.text('ArovedaAI Patient Preparation Document • Educational Only', margin, pageHeight - 7);
+        pdf.text(`Page ${p} of ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: 'right' });
+      }
+
+      // Save PDF
+      const fileName = `ArovedaAI_Doctor_Visit_Summary_${todayStr}.pdf`;
+      pdf.save(fileName);
+
     } catch (err: any) {
       console.error("PDF generation error:", err);
       setErrorMsg("Failed to export PDF file: " + (err?.message || "Please try again."));
     } finally {
-      // 3. Restore all original styles and clean up temporary tags
-      styleElements.forEach((el, index) => {
-        el.textContent = originalStyleTexts[index];
-      });
-
-      disabledLinks.forEach(link => {
-        link.disabled = false;
-      });
-
-      linkReplacements.forEach(tempStyle => {
-        if (tempStyle.parentNode) {
-          tempStyle.parentNode.removeChild(tempStyle);
-        }
-      });
-
-      if (cloneContainer && document.body.contains(cloneContainer)) {
-        document.body.removeChild(cloneContainer);
-      }
       setDownloading(false);
     }
   };
