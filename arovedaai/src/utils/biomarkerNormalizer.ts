@@ -414,11 +414,24 @@ export function normalizeBiomarkerName(rawName: string): string {
     (cleaned.includes('sgot') && cleaned.includes('sgpt'));
 
   if (isRatioOrComposite) {
+    const commonAcronyms = new Set([
+      'HDL', 'LDL', 'VLDL', 'BUN', 'AST', 'ALT', 'SGOT', 'SGPT', 'TSH', 'PSA',
+      'GGT', 'ALP', 'MCV', 'MCH', 'MCHC', 'RDW', 'MPV', 'ESR', 'CRP', 'PTH',
+      'ACTH', 'LH', 'FSH', 'DHEA', 'CPK', 'CK', 'LDH', 'EGFR', 'HBA1C', 'NLR',
+      'RBC', 'WBC', 'TIBC', 'UIBC'
+    ]);
+
     return rawName
       .trim()
       .replace(/\s*\/\s*/g, ' / ')
       .replace(/\s+/g, ' ')
-      .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+      .replace(/\w\S*/g, (w) => {
+        const upper = w.toUpperCase();
+        if (commonAcronyms.has(upper) || /^[A-Z]{2,5}$/.test(w)) {
+          return upper;
+        }
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      });
   }
 
   // 4. Fallback token-based rules for single component medical tests
