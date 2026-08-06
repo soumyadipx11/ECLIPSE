@@ -321,6 +321,26 @@ function normalizeServerBiomarkerName(rawName: string): string {
     }
   }
 
+  // Protect ratios and composite tests from being collapsed into single markers
+  const isRatioOrComposite = 
+    rawName.includes('/') || 
+    cleaned.includes('ratio') || 
+    cleaned.includes('index') || 
+    cleaned.includes('score') || 
+    cleaned.includes('calculated') || 
+    (cleaned.includes('ldl') && cleaned.includes('hdl')) ||
+    (cleaned.includes('bun') && cleaned.includes('creatinine')) ||
+    (cleaned.includes('ast') && cleaned.includes('alt')) ||
+    (cleaned.includes('sgot') && cleaned.includes('sgpt'));
+
+  if (isRatioOrComposite) {
+    return rawName
+      .trim()
+      .replace(/\s*\/\s*/g, ' / ')
+      .replace(/\s+/g, ' ')
+      .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  }
+
   if (cleaned.includes('vldl') || cleaned.includes('very low density')) return 'VLDL Cholesterol';
   if (cleaned.includes('non hdl') || cleaned.includes('non-hdl')) return 'Non-HDL Cholesterol';
   if (!cleaned.includes('vldl') && cleaned.includes('ldl')) return 'LDL Cholesterol';
@@ -378,29 +398,23 @@ apiRouter.post("/ocr-analyze", async (req, res) => {
     const ai = getGeminiClient();
 
     const systemPrompt = `You are a medical lab report data extractor and clinical insights AI for HealthLens AI.
-Analyze the provided medical lab report (image/PDF or text) and extract structured biomarker findings.
+Analyze the provided medical lab report (image/PDF or text) and extract structured biomarker findings dynamically.
 
 CRITICAL INSTRUCTIONS:
 1. Extract report metadata:
    - title: concise title of the lab report (e.g., "Comprehensive Metabolic Panel", "Lipid Profile & Thyroid Test")
    - testDate: date of collection or test in YYYY-MM-DD format if present in the document, or empty string if not found
    - labName: facility/lab name if present (e.g. "Quest Diagnostics", "Labcorp"), or "Laboratory Center"
-2. Extract ALL biological markers, lab values, measurements, and reference ranges found in the report.
-3. For each biomarker, provide:
-   - testName: standard canonical clinical name. Always normalize test names consistently across ALL test categories:
-     * Lipids: Strictly distinguish VLDL Cholesterol (Very Low Density Lipoprotein) from LDL Cholesterol (Low Density Lipoprotein), HDL Cholesterol, Total Cholesterol, and Non-HDL Cholesterol.
-     * Diabetes: 'Fasting Blood Sugar', 'Postprandial Blood Sugar', 'Random Blood Sugar', 'HbA1c', 'Fasting Insulin'.
-     * Liver (LFT): 'ALT (SGPT)', 'AST (SGOT)', 'Alkaline Phosphatase (ALP)', 'Gamma-GT (GGT)', 'Total Bilirubin', 'Direct Bilirubin', 'Serum Albumin', 'Total Protein'.
-     * Kidney (KFT): 'Serum Creatinine', 'BUN (Blood Urea Nitrogen)', 'Blood Urea', 'Uric Acid', 'eGFR'.
-     * Thyroid: 'TSH', 'Free T3', 'Free T4', 'Total T3', 'Total T4'.
-     * Hematology (CBC): 'Hemoglobin', 'Hematocrit (PCV)', 'WBC Count', 'RBC Count', 'Platelet Count', 'MCV', 'MCH', 'MCHC', 'RDW', 'ESR', 'Neutrophils', 'Lymphocytes'.
-     * Vitamins & Minerals: 'Vitamin D (25-OH)', 'Vitamin B12', 'Serum Iron', 'Serum Ferritin', 'Calcium', 'Potassium', 'Sodium'.
-     Never use confusing abbreviations or inverted phrase structures (e.g., use 'Total Cholesterol' instead of 'Cholesterol, Total').
-   - value: numeric value as a number (e.g. 112.6, 27.2, 190)
-   - unit: unit string (e.g. "mg/dL", "%", "uIU/mL")
-   - referenceRange: standard range string (e.g. "70 - 99", "< 5.7")
-   - category: one of ["Metabolic", "Lipids", "Hematology", "Thyroid", "Renal", "Liver", "Vitamins", "Hormones", "General"]
-   - flag: one of ["normal", "high", "low"]
+2. Extract ALL biological markers, lab values, ratios, calculated parameters, measurements, and reference ranges found in the report.
+   - DO NOT skip or omit any row/test listed on the report.
+   - DO NOT merge or collapse ratio or composite tests (e.g. "LDL / HDL Ratio", "Total Cholesterol / HDL Ratio", "BUN / Creatinine Ratio", "AST / ALT Ratio", "A/G Ratio", "Sodium / Potassium Ratio") into single component markers like "LDL" or "Creatinine". Extract each ratio or calculated index as its own distinct test entry with its value and unit.
+3. For each biomarker/ratio, provide:
+   - testName: standard canonical clinical name as printed or standardized. Keep compound/ratio names intact (e.g., "LDL / HDL Ratio", "Total Cholesterol / HDL Ratio", "BUN / Creatinine Ratio").
+   - value: numeric value as a number (e.g. 112.6, 2.7, 190)
+   - unit: unit string (e.g. "mg/dL", "%", "uIU/mL", "ratio", "mg/g")
+   - referenceRange: standard range string from the report (e.g. "70 - 99", "< 3.5", "1.0 - 2.5")
+   - category: dynamic category matching the panel or test type (e.g., "Lipids", "Metabolic", "Hematology", "Thyroid", "Renal", "Liver", "Vitamins", "Hormones", "Cardiac", "Immunology", "Urine", "Coagulation", "Oncology", "General")
+   - flag: one of ["normal", "high", "low"] based on the reference range provided in the report or standard medical ranges.
    - notes: short clinical context or explanation for this value
 4. Provide an executive summary of the lab report:
    - overview: clear, patient-friendly summary paragraph explaining overall findings

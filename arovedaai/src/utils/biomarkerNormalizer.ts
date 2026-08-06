@@ -6,6 +6,32 @@
 
 // Comprehensive Dictionary mapping common variations & inverted names to canonical clinical names
 const BIOMARKER_ALIASES: Record<string, string> = {
+  // --- RATIOS & CALCULATED INDICES ---
+  'ldl hdl ratio': 'LDL / HDL Ratio',
+  'ldl/hdl ratio': 'LDL / HDL Ratio',
+  'ldl hdl': 'LDL / HDL Ratio',
+  'ldl/hdl': 'LDL / HDL Ratio',
+  'total cholesterol hdl ratio': 'Total Cholesterol / HDL Ratio',
+  'total cholesterol/hdl ratio': 'Total Cholesterol / HDL Ratio',
+  'cholesterol hdl ratio': 'Total Cholesterol / HDL Ratio',
+  'cholesterol/hdl ratio': 'Total Cholesterol / HDL Ratio',
+  'bun creatinine ratio': 'BUN / Creatinine Ratio',
+  'bun/creatinine ratio': 'BUN / Creatinine Ratio',
+  'bun creatinine': 'BUN / Creatinine Ratio',
+  'ast alt ratio': 'AST / ALT Ratio',
+  'ast/alt ratio': 'AST / ALT Ratio',
+  'sgot sgpt ratio': 'AST / ALT Ratio',
+  'sgot/sgpt ratio': 'AST / ALT Ratio',
+  'albumin globulin ratio': 'Albumin / Globulin Ratio',
+  'albumin/globulin ratio': 'Albumin / Globulin Ratio',
+  'a g ratio': 'Albumin / Globulin Ratio',
+  'a/g ratio': 'Albumin / Globulin Ratio',
+  'neutrophil lymphocyte ratio': 'Neutrophil / Lymphocyte Ratio',
+  'neutrophil/lymphocyte ratio': 'Neutrophil / Lymphocyte Ratio',
+  'nlr': 'Neutrophil / Lymphocyte Ratio',
+  'sodium potassium ratio': 'Sodium / Potassium Ratio',
+  'sodium/potassium ratio': 'Sodium / Potassium Ratio',
+
   // --- LIPID PROFILE ---
   'ldl': 'LDL Cholesterol',
   'ldl c': 'LDL Cholesterol',
@@ -375,7 +401,27 @@ export function normalizeBiomarkerName(rawName: string): string {
     if (BIOMARKER_ALIASES[combined2]) return BIOMARKER_ALIASES[combined2];
   }
 
-  // 3. Fallback token-based rules for medical tests
+  // 3. Protect Ratios and Calculated/Composite Indices from being collapsed into a single component
+  const isRatioOrComposite = 
+    rawName.includes('/') || 
+    cleaned.includes('ratio') || 
+    cleaned.includes('index') || 
+    cleaned.includes('score') || 
+    cleaned.includes('calculated') || 
+    (cleaned.includes('ldl') && cleaned.includes('hdl')) ||
+    (cleaned.includes('bun') && cleaned.includes('creatinine')) ||
+    (cleaned.includes('ast') && cleaned.includes('alt')) ||
+    (cleaned.includes('sgot') && cleaned.includes('sgpt'));
+
+  if (isRatioOrComposite) {
+    return rawName
+      .trim()
+      .replace(/\s*\/\s*/g, ' / ')
+      .replace(/\s+/g, ' ')
+      .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  }
+
+  // 4. Fallback token-based rules for single component medical tests
   if (cleaned.includes('vldl') || cleaned.includes('very low density')) return 'VLDL Cholesterol';
   if (cleaned.includes('non hdl') || cleaned.includes('non-hdl')) return 'Non-HDL Cholesterol';
   if (!cleaned.includes('vldl') && cleaned.includes('ldl')) return 'LDL Cholesterol';
