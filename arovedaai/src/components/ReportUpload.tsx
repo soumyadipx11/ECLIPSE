@@ -299,7 +299,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
   return (
     <div className="space-y-6 pb-12 max-w-5xl mx-auto">
       {/* Header Banner */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-6 h-0.5 bg-rose-600 rounded-full"></span>
@@ -380,7 +380,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           : 'border-emerald-500/40';
 
         return (
-          <div className={`bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border ${outerBorderClass} p-6 shadow-xl space-y-5 animate-in fade-in duration-300`}>
+          <div className={`bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border ${outerBorderClass} p-6 shadow-xl space-y-5 animate-in fade-in duration-300`}>
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner ${
@@ -476,7 +476,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
 
       {/* Step 1: Upload or Paste Input Form */}
       {!isExtracted && (
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-6">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-6">
           {/* Drag & Drop File Zone */}
           <div
             onDrop={handleDrop}
@@ -538,22 +538,22 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
               placeholder="e.g. Fasting Glucose: 98 mg/dL (70-99), Total Cholesterol: 215 mg/dL (<200)..."
               value={rawText}
               onChange={(e) => setRawText(e.target.value)}
-              className="w-full bg-white/50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 backdrop-blur-md"
+              className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-2xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 backdrop-blur-md"
             />
           </div>
 
           {/* Privacy Consent Box */}
-          <div className="p-4 rounded-2xl bg-slate-950/40 text-slate-200 text-xs space-y-2 border border-white/10 backdrop-blur-md">
+          <div className="p-4 rounded-2xl bg-white/30 dark:bg-[#121418]/30 text-slate-700 dark:text-slate-300 text-xs space-y-2 border border-white/30 dark:border-white/10 backdrop-blur-md">
             <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={userConsent}
                 onChange={(e) => setUserConsent(e.target.checked)}
-                className="mt-0.5 rounded border-slate-700 text-rose-600 focus:ring-rose-500"
+                className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500"
               />
               <div>
-                <span className="font-semibold text-white block">Explicit AI Privacy Consent</span>
-                <span className="text-slate-400 text-[11px]">
+                <span className="font-semibold text-slate-900 dark:text-white block">Explicit AI Privacy Consent</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px]">
                   I consent to sending extracted non-identifiable test values to Gemini AI for automated structure extraction and summary. PII is scrubbed prior to API transmission.
                 </span>
               </div>
@@ -583,7 +583,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
 
       {/* Step 2: Verification & Manual Correction Table */}
       {isExtracted && (
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-6">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
@@ -603,9 +603,9 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           </div>
 
           {/* PII Scrubbed Verification Badge */}
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
+          <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between backdrop-blur-sm">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-rose-500 shrink-0" />
               <span>PII Scrubbed: Patient names, IDs, and addresses removed before AI analysis.</span>
             </div>
           </div>
@@ -624,14 +624,14 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           )}
 
           {/* Editable Metadata Fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white/10 dark:bg-slate-950/15 p-4 rounded-xl border border-white/10 dark:border-white/5 backdrop-blur-sm text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
             <div>
               <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Report Title</label>
               <input
                 type="text"
                 value={reportTitle}
                 onChange={(e) => setReportTitle(e.target.value)}
-                className="w-full bg-white/10 dark:bg-slate-950/20 border border-white/20 dark:border-white/10 rounded-lg p-2 font-medium text-slate-900 dark:text-white backdrop-blur-sm"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500"
               />
             </div>
 
@@ -649,10 +649,10 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                   setTestDate(e.target.value);
                   if (e.target.value) setIsDateMissing(false);
                 }}
-                className={`w-full bg-white/10 dark:bg-slate-950/20 border rounded-lg p-2 font-medium text-slate-900 dark:text-white backdrop-blur-sm ${
+                className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 ${
                   !testDate || isDateMissing 
                     ? 'border-amber-500 ring-2 ring-amber-500/40 font-bold' 
-                    : 'border-white/20 dark:border-white/10'
+                    : 'border-slate-200 dark:border-slate-800'
                 }`}
               />
             </div>
@@ -663,7 +663,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                 type="text"
                 value={labName}
                 onChange={(e) => setLabName(e.target.value)}
-                className="w-full bg-white/10 dark:bg-slate-950/20 border border-white/20 dark:border-white/10 rounded-lg p-2 font-medium text-slate-900 dark:text-white backdrop-blur-sm"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500"
               />
             </div>
           </div>
@@ -695,9 +695,9 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
               </button>
             </div>
 
-            <div className="overflow-x-auto border border-white/10 dark:border-white/5 rounded-xl">
+            <div className="overflow-x-auto border border-slate-200 dark:border-white/10 rounded-xl">
               <table className="w-full text-xs text-left">
-                <thead className="bg-white/10 dark:bg-slate-950/20 text-slate-600 dark:text-slate-300 font-bold border-b border-white/10 dark:border-white/5">
+                <thead className="bg-white/40 dark:bg-black/30 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200/60 dark:border-white/10 backdrop-blur-md">
                   <tr>
                     <th className="p-2.5">Test Name</th>
                     <th className="p-2.5">Category</th>
@@ -797,7 +797,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-xs transition-all shadow-md shadow-emerald-600/25 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {saving ? (
                 <>

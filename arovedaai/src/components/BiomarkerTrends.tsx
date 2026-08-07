@@ -16,6 +16,27 @@ import { LabReport, BiomarkerTrendSummary } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
 import { normalizeBiomarkerName, areBiomarkersEqual } from '../utils/biomarkerNormalizer';
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  unit: string;
+}
+
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, unit }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/90 dark:bg-[#121418]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-3 rounded-2xl shadow-xl text-xs space-y-1">
+        <p className="font-semibold text-slate-500 dark:text-slate-400">Date: {label}</p>
+        <p className="font-bold text-rose-600 dark:text-rose-400 text-sm">
+          {payload[0].value} <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">{unit}</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 interface BiomarkerTrendsProps {
   reports: LabReport[];
   getBiomarkerTrend: (name: string) => BiomarkerTrendSummary | null;
@@ -132,7 +153,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
   return (
     <div className="space-y-6 pb-12 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-6 h-0.5 bg-rose-600 rounded-full"></span>
@@ -150,7 +171,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
       </div>
 
       {/* Preset Selector Grid */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-5 shadow-sm space-y-3">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-5 shadow-sm space-y-3">
         <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
           Select Biomarker to Analyze
         </label>
@@ -185,7 +206,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
 
       {/* Trend Interactive Display Card */}
       {!trendData || trendData.historicalPoints.length === 0 ? (
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-12 text-center space-y-3">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950 text-rose-500 flex items-center justify-center mx-auto border border-rose-100 dark:border-rose-900/40">
             <TrendingUp className="w-6 h-6" />
           </div>
@@ -199,7 +220,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
       ) : (
         <div className="space-y-6">
           {/* Overview Metrics Banner */}
-          <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <span className="text-[11px] text-slate-400 font-medium block">Latest Test Value</span>
               <span className="text-2xl font-bold text-slate-900 dark:text-white mt-1 block">
@@ -249,7 +270,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
           </div>
 
           {/* Interactive Recharts Line Graph Card */}
-          <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+          <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -283,17 +304,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                     padding={{ top: 15, bottom: 15 }}
                     tickLine={false}
                   />
-                  <Tooltip
-                    contentStyle={{ 
-                      backgroundColor: '#0f172a', 
-                      borderColor: '#1e293b', 
-                      borderRadius: '16px',
-                      color: '#fff',
-                      fontSize: '12px',
-                      backdropFilter: 'blur(8px)'
-                    }}
-                    labelFormatter={(l) => `Test Date: ${l}`}
-                  />
+                   <Tooltip content={<CustomTooltip unit={trendData.unit} />} />
                   {/* Single primary reference line (Upper or Lower Limit, never both together) */}
                   {activeRefLimit && activeRefLimit.type === 'upper' && (
                     <ReferenceLine 
@@ -314,12 +325,12 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                   {activeRefLimit && activeRefLimit.type === 'lower' && (
                     <ReferenceLine 
                       y={activeRefLimit.value} 
-                      stroke="#3b82f6" 
+                      stroke="#f59e0b" 
                       strokeDasharray="4 4" 
                       strokeWidth={1.5}
                       label={{ 
                         value: activeRefLimit.label, 
-                        fill: '#3b82f6', 
+                        fill: '#f59e0b', 
                         fontSize: 10, 
                         fontWeight: 700, 
                         position: 'bottom', 
@@ -341,14 +352,14 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
           </div>
 
           {/* Historical Data Table */}
-          <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-3">
+          <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
               All Recorded Measurements for {selectedBiomarker}
             </h3>
 
-            <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+            <div className="overflow-x-auto border border-slate-200 dark:border-white/10 rounded-2xl">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800">
+                <thead className="bg-white/40 dark:bg-black/30 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200/60 dark:border-white/10 backdrop-blur-md">
                   <tr>
                     <th className="p-3">Test Date</th>
                     <th className="p-3">Report Title</th>

@@ -22,8 +22,8 @@ export const SmartAlertsModal: React.FC<SmartAlertsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-2xl rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#121418] border border-slate-200 dark:border-white/10 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-2xl bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-900/40">
@@ -63,10 +63,10 @@ export const SmartAlertsModal: React.FC<SmartAlertsModalProps> = ({
             {alerts.map((alert) => (
               <div
                 key={alert.id}
-                className={`p-3.5 rounded-2xl border text-xs transition-all space-y-1 backdrop-blur-md relative group ${
+                className={`p-3.5 rounded-2xl border text-xs transition-all space-y-1 relative group ${
                   alert.type === 'abnormal'
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200 hover:border-amber-500'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-200 hover:border-rose-500'
+                    ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40 text-amber-900 dark:text-amber-200 hover:border-amber-500'
+                    : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/40 text-rose-900 dark:text-rose-200 hover:border-rose-500'
                 }`}
               >
                 <div className="flex items-center justify-between font-bold pr-6">
@@ -120,7 +120,7 @@ export const SmartAlertsModal: React.FC<SmartAlertsModalProps> = ({
           )}
           <button
             onClick={onClose}
-            className={`${alerts.length > 0 && onClearAlerts ? 'w-1/2' : 'w-full'} bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/50 backdrop-blur-md text-slate-700 dark:text-slate-300 font-bold py-2.5 rounded-2xl text-xs hover:bg-white/90 dark:hover:bg-slate-700/90 transition-colors cursor-pointer`}
+            className={`${alerts.length > 0 && onClearAlerts ? 'w-1/2' : 'w-full'} bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-2.5 rounded-2xl text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer`}
           >
             Close Alerts
           </button>

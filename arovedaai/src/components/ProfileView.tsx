@@ -142,9 +142,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
   return (
     <div className="space-y-6 pb-12 max-w-4xl mx-auto">
       {/* Header Card */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#ff2b66] flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-[#ec003f]/25">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#f43f5e] flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-[#ec003f]/25">
             {displayName.charAt(0).toUpperCase() || 'U'}
           </div>
           <div>
@@ -183,7 +183,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
       {/* Profile Form */}
       <form onSubmit={handleSaveProfile} className="space-y-6">
         {/* Personal Details Card */}
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <User className="w-4 h-4 text-[#ec003f]" /> Personal Details
           </h2>
@@ -198,7 +198,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="e.g. John Doe"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
 
@@ -213,7 +213,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 placeholder="e.g. 35"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
 
@@ -224,7 +224,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -240,7 +240,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
               <select
                 value={bloodGroup}
                 onChange={(e) => setBloodGroup(e.target.value)}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               >
                 <option value="Unknown">Unknown / Unspecified</option>
                 <option value="A+">A+</option>
@@ -263,7 +263,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="e.g. +1 (555) 019-2834"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
 
@@ -276,14 +276,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={emergencyContact}
                 onChange={(e) => setEmergencyContact(e.target.value)}
                 placeholder="e.g. Jane Doe (+1 555-987-6543)"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
           </div>
         </div>
 
         {/* Medical & Health Goals Context */}
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <Heart className="w-4 h-4 text-[#ec003f]" /> Health History & Goals
           </h2>
@@ -298,7 +298,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={preExistingConditions}
                 onChange={(e) => setPreExistingConditions(e.target.value)}
                 placeholder="e.g. Essential Hypertension, Thyroid Nodule, Mild Vitamin D Deficiency..."
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
 
@@ -311,7 +311,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={healthGoals}
                 onChange={(e) => setHealthGoals(e.target.value)}
                 placeholder="e.g. Maintain LDL Cholesterol below 100 mg/dL, optimize Fasting Glucose, improve cardiovascular endurance..."
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
           </div>
@@ -338,7 +338,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
       </form>
 
       {/* Security & Password Card */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
         <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
           <KeyRound className="w-4 h-4 text-[#ec003f]" /> Security & Password
         </h2>
@@ -368,7 +368,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter at least 6 characters"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
 
@@ -381,7 +381,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter new password"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
+                className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
             </div>
           </div>

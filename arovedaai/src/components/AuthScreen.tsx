@@ -79,31 +79,31 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#16181c] text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-gradient-to-tr from-slate-100 via-rose-50/30 to-rose-100/20 dark:from-[#121418] dark:via-[#16181c] dark:to-[#121418] text-slate-900 dark:text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
       {/* Background Decorative Gradients */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#ec003f]/15 rounded-full blur-[140px] pointer-events-none animate-heartbeat-glow" />
-      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-[#ff2b66]/10 rounded-full blur-[120px] pointer-events-none animate-heartbeat-glow-delayed" />
+      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-[#f43f5e]/10 rounded-full blur-[120px] pointer-events-none animate-heartbeat-glow-delayed" />
 
       {/* Main Container */}
-      <div className="w-full max-w-md bg-[#1e2025]/90 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative z-10">
+      <div className="w-full max-w-md bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative z-10">
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#ff2b66] text-white shadow-lg shadow-[#ec003f]/25 mb-3">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#f43f5e] text-white shadow-lg shadow-[#ec003f]/25 mb-3">
             <Activity className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">Aroveda<span className="italic font-extrabold text-[#ec003f]">AI</span></h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Aroveda<span className="italic font-extrabold text-[#ec003f]">AI</span></h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Secure Personal Health Record & AI Lab Analysis
           </p>
         </div>
 
         {/* Mode Selector */}
         {mode !== 'reset' && (
-          <div className="grid grid-cols-2 bg-slate-800/80 p-1 rounded-xl mb-4 text-xs font-medium border border-slate-700/50">
+          <div className="grid grid-cols-2 bg-white/40 dark:bg-slate-800/40 p-1 rounded-xl mb-4 text-xs font-medium border border-slate-200/60 dark:border-slate-700/50">
             <button
               onClick={() => { setMode('signin'); setError(null); }}
               className={`py-2 rounded-lg transition-all cursor-pointer ${
-                mode === 'signin' ? 'bg-[#ec003f] text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
+                mode === 'signin' ? 'bg-[#ec003f] text-white font-semibold shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Sign In
@@ -111,7 +111,7 @@ export const AuthScreen: React.FC = () => {
             <button
               onClick={() => { setMode('signup'); setError(null); }}
               className={`py-2 rounded-lg transition-all cursor-pointer ${
-                mode === 'signup' ? 'bg-[#ec003f] text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-white'
+                mode === 'signup' ? 'bg-[#ec003f] text-white font-semibold shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Create Account
@@ -121,15 +121,15 @@ export const AuthScreen: React.FC = () => {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
             <span className="leading-relaxed">{error}</span>
           </div>
         )}
 
         {/* Success Alert */}
         {successMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-[#ff2b66] shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
@@ -139,7 +139,7 @@ export const AuthScreen: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -148,14 +148,14 @@ export const AuthScreen: React.FC = () => {
                     placeholder="e.g. Dr. Jane Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all"
+                    className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all backdrop-blur-md"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -164,7 +164,7 @@ export const AuthScreen: React.FC = () => {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all"
+                  className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl py-2.5 pl-9 pr-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all backdrop-blur-md"
                 />
               </div>
             </div>
@@ -172,7 +172,7 @@ export const AuthScreen: React.FC = () => {
             {mode !== 'reset' && (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-slate-300">Password</label>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Password</label>
                   {mode === 'signin' && (
                     <button
                       type="button"
@@ -191,12 +191,12 @@ export const AuthScreen: React.FC = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-9 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all"
+                    className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl py-2.5 pl-9 pr-9 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all backdrop-blur-md"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -206,15 +206,15 @@ export const AuthScreen: React.FC = () => {
 
             {/* Privacy & AI Consent Box for Signup */}
             {mode === 'signup' && (
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-[11px] text-slate-400 space-y-2">
+              <div className="p-3 bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl text-[11px] text-slate-600 dark:text-slate-400 space-y-2 backdrop-blur-md">
                 <label className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={privacyConsent}
                     onChange={(e) => setPrivacyConsent(e.target.checked)}
-                    className="mt-0.5 rounded border-slate-700 text-[#ec003f] focus:ring-[#ec003f] focus:ring-offset-slate-900"
+                    className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-[#ec003f] focus:ring-[#ec003f] focus:ring-offset-slate-100 dark:focus:ring-offset-slate-900"
                   />
-                  <span className="text-slate-300 leading-tight">
+                  <span className="text-slate-700 dark:text-slate-300 leading-tight">
                     I consent to isolated storing of my health records with automatic PII removal before AI analysis.
                   </span>
                 </label>
@@ -224,7 +224,7 @@ export const AuthScreen: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold py-3 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#ec003f] hover:bg-[#f43f5e] text-white font-bold py-3 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -249,13 +249,12 @@ export const AuthScreen: React.FC = () => {
 
         {/* Divider */}
         {mode !== 'reset' && (
-          <div className="relative my-6 text-center">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
-            </div>
-            <span className="relative px-3 bg-slate-900 text-[11px] text-slate-500 uppercase font-semibold">
+          <div className="relative my-6 flex items-center gap-3 text-center">
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-800/50" />
+            <span className="text-[11px] text-slate-400 dark:text-slate-500 uppercase font-semibold tracking-wider whitespace-nowrap">
               or continue with
             </span>
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-800/50" />
           </div>
         )}
 
@@ -264,7 +263,7 @@ export const AuthScreen: React.FC = () => {
           <button
             onClick={handleGoogleAuth}
             disabled={loading}
-            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full bg-white/60 hover:bg-white/80 dark:bg-slate-800/60 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 text-slate-700 dark:text-slate-200 font-medium py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -289,8 +288,8 @@ export const AuthScreen: React.FC = () => {
         )}
 
         {/* Security & Medical Footer Disclaimer */}
-        <div className="mt-8 pt-4 border-t border-slate-800/80 text-center text-[10px] text-slate-500 space-y-1">
-          <div className="flex items-center justify-center gap-1.5 text-[#ff2b66] font-medium">
+        <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800/80 text-center text-[10px] text-slate-500 space-y-1">
+          <div className="flex items-center justify-center gap-1.5 text-[#f43f5e] font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Isolated Cloud Database & Encrypted Auth</span>
           </div>

@@ -10,7 +10,8 @@ import {
   Trash2, 
   ShieldCheck,
   Zap,
-  BookOpen
+  BookOpen,
+  Check
 } from 'lucide-react';
 import { LabReport, UserReminder } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -213,7 +214,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
   return (
     <div className="space-y-6 pb-12 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-6 h-0.5 bg-rose-600 rounded-full"></span>
@@ -309,7 +310,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
       {insightsData ? (
         <div className="space-y-6">
           {/* Overall Trajectory Card */}
-          <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-3">
+          <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-2">
               <Sparkles className="w-4 h-4" /> Overall Health Trajectory
             </h2>
@@ -320,13 +321,13 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
 
           {/* Key Observations Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-3">
+            <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-rose-500" /> Key Clinical Pattern Insights
               </h3>
               <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-300">
                 {(insightsData.keyInsights || []).map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2 p-2.5 rounded-2xl bg-white/10 dark:bg-slate-950/20 border border-white/20 dark:border-white/10 backdrop-blur-md">
+                  <li key={idx} className="flex items-start gap-2 p-2.5 rounded-2xl bg-white/20 dark:bg-black/30 border border-white/20 dark:border-white/10 backdrop-blur-md">
                     <CheckCircle2 className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                     <span>{item}</span>
                   </li>
@@ -335,7 +336,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
             </div>
 
             {/* General Wellness Recommendations */}
-            <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-3">
+            <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                 <HeartHandshake className="w-4 h-4 text-rose-500" /> General Wellness Guidance
               </h3>
@@ -346,7 +347,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
                   'Engage in regular physical activity.',
                   'Discuss abnormal lab values.'
                 ]).map((rec, idx) => (
-                  <li key={idx} className="flex items-start gap-2 p-2.5 rounded-2xl bg-white/10 dark:bg-slate-950/20 border border-white/20 dark:border-white/10 backdrop-blur-md">
+                  <li key={idx} className="flex items-start gap-2 p-2.5 rounded-2xl bg-white/20 dark:bg-black/30 border border-white/20 dark:border-white/10 backdrop-blur-md">
                     <Sparkles className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                     <span>{rec}</span>
                   </li>
@@ -356,7 +357,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
           </div>
         </div>
       ) : (
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-12 text-center space-y-4">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-12 text-center space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center mx-auto">
             <Sparkles className="w-6 h-6" />
           </div>
@@ -389,63 +390,125 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
       )}
 
       {/* Routine Follow-Up Reminders Manager */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Bell className="w-5 h-5 text-rose-500" /> Routine Follow-Up Testing Reminders
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Set user-defined testing intervals recommended by your healthcare provider
             </p>
           </div>
         </div>
 
         {/* Add Reminder Form */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/10 dark:bg-slate-950/15 p-3 rounded-2xl border border-white/10 dark:border-white/5 backdrop-blur-sm text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-3 rounded-2xl border border-white/30 dark:border-white/10 text-xs shadow-sm">
           <input
             type="text"
             placeholder="Biomarker or Test Name (e.g. Vitamin D)"
             value={newReminderName}
             onChange={(e) => setNewReminderName(e.target.value)}
-            className="bg-white/10 dark:bg-slate-950/20 border border-white/20 dark:border-white/10 rounded-xl p-2 font-medium text-slate-900 dark:text-white backdrop-blur-sm"
+            className="bg-white/40 dark:bg-[#121418]/40 border border-white/20 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 backdrop-blur-sm"
           />
 
           <select
             value={newReminderInterval}
             onChange={(e) => setNewReminderInterval(Number(e.target.value))}
-            className="bg-white/10 dark:bg-slate-950/20 border border-white/20 dark:border-white/10 rounded-xl p-2 font-medium text-slate-900 dark:text-white backdrop-blur-sm"
+            className="bg-white/40 dark:bg-[#121418]/40 border border-white/20 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 backdrop-blur-sm"
           >
-            <option value={3}>Recheck in 3 Months</option>
-            <option value={6}>Recheck in 6 Months</option>
-            <option value={12}>Annual Checkup (12 Months)</option>
+            <option value={3} className="bg-white dark:bg-[#16181c] text-slate-900 dark:text-white">Recheck in 3 Months</option>
+            <option value={6} className="bg-white dark:bg-[#16181c] text-slate-900 dark:text-white">Recheck in 6 Months</option>
+            <option value={12} className="bg-white dark:bg-[#16181c] text-slate-900 dark:text-white">Annual Checkup (12 Months)</option>
           </select>
 
           <button
             onClick={handleAddCustomReminder}
-            className="bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1 shadow-sm shadow-rose-600/20 cursor-pointer"
+            className="bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Reminder
           </button>
         </div>
 
-        {/* Reminders List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {customReminders.map((rem) => (
-            <div key={rem.id} className="p-3.5 rounded-2xl border border-white/10 dark:border-white/5 bg-white/20 dark:bg-slate-950/20 backdrop-blur-md flex items-center justify-between text-xs shadow-sm">
-              <div>
-                <span className="font-bold text-slate-900 dark:text-white block">{rem.biomarkerName}</span>
-                <span className="text-[11px] text-slate-400">Next due: <span className="font-semibold text-rose-600 dark:text-rose-400">{rem.nextDueDate}</span> ({rem.intervalMonths} mo interval)</span>
-              </div>
-
-              <button
-                onClick={() => handleDeleteReminder(rem.id)}
-                className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+        {/* AI Suggested Reminders */}
+        {insightsData?.suggestedReminders && insightsData.suggestedReminders.length > 0 && (
+          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/5">
+            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-rose-500" /> AI Recommended Reminders
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {insightsData.suggestedReminders.map((sug, idx) => {
+                const isAdded = customReminders.some(r => r.biomarkerName.toLowerCase().includes(sug.biomarkerName.toLowerCase()));
+                return (
+                  <div key={idx} className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#121418]/70 border border-slate-200/50 dark:border-white/5 flex items-center justify-between gap-3 text-xs backdrop-blur-md shadow-sm">
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-white block">{sug.biomarkerName}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Interval: {sug.intervalMonths} months</span>
+                      {sug.notes && <span className="text-[10px] text-slate-400 dark:text-slate-500 italic block mt-0.5">{sug.notes}</span>}
+                    </div>
+                    <button
+                      onClick={() => {
+                        const now = new Date();
+                        const dueDate = new Date();
+                        dueDate.setMonth(dueDate.getMonth() + Number(sug.intervalMonths));
+                        const reminder: UserReminder = {
+                          id: `rem-${Date.now()}-${idx}`,
+                          biomarkerName: sug.biomarkerName,
+                          intervalMonths: Number(sug.intervalMonths),
+                          lastTestDate: now.toISOString().split('T')[0],
+                          nextDueDate: dueDate.toISOString().split('T')[0],
+                          notes: sug.notes || 'AI Recommended'
+                        };
+                        setCustomReminders([...customReminders, reminder]);
+                      }}
+                      disabled={isAdded}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 ${
+                        isAdded
+                          ? 'bg-slate-100 dark:bg-slate-800/30 text-slate-400 dark:text-slate-600 border border-slate-200/10'
+                          : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 cursor-pointer'
+                      }`}
+                    >
+                      {isAdded ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Added</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add Reminder</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* Reminders List */}
+        <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/5">
+          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+            Active Testing Reminders
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {customReminders.map((rem) => (
+              <div key={rem.id} className="p-3.5 rounded-2xl border border-slate-200/60 dark:border-white/5 bg-white/70 dark:bg-[#121418]/70 backdrop-blur-md flex items-center justify-between text-xs shadow-sm">
+                <div>
+                  <span className="font-bold text-slate-900 dark:text-white block">{rem.biomarkerName}</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Next due: <span className="font-semibold text-rose-600 dark:text-rose-400">{rem.nextDueDate}</span> ({rem.intervalMonths} mo interval)</span>
+                </div>
+
+                <button
+                  onClick={() => handleDeleteReminder(rem.id)}
+                  className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -49,7 +49,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
   return (
     <div className="space-y-6 pb-12 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Lock className="w-5 h-5 text-[#ec003f] dark:text-rose-400" />
@@ -69,7 +69,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
       {/* Grid: Consent & Data Deletion */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Explicit Consent Settings */}
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Key className="w-4 h-4 text-[#ec003f]" />
             AI Processing Consent & Privacy
@@ -121,7 +121,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
         </div>
 
         {/* Permanent Data Deletion */}
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
             <Trash2 className="w-4 h-4" />
             Permanent Account Data Wipe
@@ -214,7 +214,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
       )}
 
       {/* Append-Only Audit Log Stream */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -235,9 +235,9 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
             No audit logs recorded yet. Upload a report or run AI analysis to generate audit events.
           </div>
         ) : (
-          <div className="overflow-x-auto border border-white/10 dark:border-white/5 rounded-xl">
+          <div className="overflow-x-auto border border-slate-200 dark:border-white/10 rounded-2xl">
             <table className="w-full text-xs text-left">
-              <thead className="bg-white/10 dark:bg-slate-950/20 text-slate-600 dark:text-slate-300 font-bold border-b border-white/10 dark:border-white/5">
+              <thead className="bg-white/40 dark:bg-black/30 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200/60 dark:border-white/10 backdrop-blur-md">
                 <tr>
                   <th className="p-3">Timestamp</th>
                   <th className="p-3">Action Type</th>

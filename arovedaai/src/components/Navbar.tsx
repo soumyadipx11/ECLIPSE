@@ -45,12 +45,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/20 dark:border-white/10 bg-white/70 dark:bg-[#16181c]/80 backdrop-blur-xl transition-colors duration-200">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#16181c]/90 backdrop-blur-xl transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-2">
           {/* Logo & Branding */}
           <div className="flex items-center gap-2.5 cursor-pointer shrink-0" onClick={() => setActiveTab('dashboard')}>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#ff2b66] flex items-center justify-center text-white shadow-md shadow-[#ec003f]/20">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#f43f5e] flex items-center justify-center text-white shadow-md shadow-[#ec003f]/20">
               <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
@@ -66,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md p-1 rounded-2xl border border-white/20 dark:border-white/10 shadow-sm shrink min-w-0 max-w-full overflow-x-auto no-scrollbar [scrollbar-width:none]">
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-1 rounded-2xl border border-white/30 dark:border-white/10 shadow-sm shrink min-w-0 max-w-full overflow-x-auto no-scrollbar [scrollbar-width:none]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* User Profile / Logout */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-300 dark:border-slate-700">
               <button 
                 onClick={() => setActiveTab('profile')}
                 className="hidden xl:flex flex-col text-right hover:opacity-80 transition-opacity cursor-pointer"
@@ -139,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Mobile Navigation Row */}
-        <div className="lg:hidden flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-100 dark:border-slate-800 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="lg:hidden flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-200 dark:border-slate-700 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -150,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border ${
                   isActive
                     ? 'bg-[#ec003f] text-white border-[#ec003f] shadow-md shadow-[#ec003f]/20'
-                    : 'bg-white/20 dark:bg-slate-950/25 text-slate-700 dark:text-slate-300 border-white/10 dark:border-white/5 backdrop-blur-sm'
+                    : 'bg-white/30 dark:bg-[#121418]/30 text-slate-700 dark:text-slate-300 border-white/30 dark:border-white/10 backdrop-blur-md'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />

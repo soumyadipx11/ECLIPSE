@@ -23,6 +23,29 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceL
 
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 
+interface MiniCustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+  unit: string;
+}
+
+const MiniCustomTooltip: React.FC<MiniCustomTooltipProps> = ({ active, payload, label, unit }) => {
+  if (active && payload && payload.length) {
+    const dataPoint = payload[0].payload;
+    const dateVal = dataPoint?.date || label;
+    return (
+      <div className="bg-white/90 dark:bg-[#121418]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-2 rounded-xl shadow-md text-[10px] space-y-0.5">
+        <p className="font-semibold text-slate-500 dark:text-slate-400">Date: {dateVal}</p>
+        <p className="font-bold text-rose-600 dark:text-rose-400">
+          {payload[0].value} <span className="text-[8px] font-normal text-slate-500">{unit}</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 interface DashboardProps {
   reports: LabReport[];
   loading: boolean;
@@ -102,7 +125,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Top Banner & Quick Actions */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl p-6 shadow-sm relative overflow-hidden border border-white/20 dark:border-white/10">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl p-6 shadow-sm relative overflow-hidden border border-white/30 dark:border-white/10">
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
@@ -157,7 +180,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Metric Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md p-5 rounded-3xl border border-white/20 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-5 rounded-3xl border border-white/30 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Total Lab Reports</p>
             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{totalReports}</p>
@@ -171,7 +194,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md p-5 rounded-3xl border border-white/20 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-5 rounded-3xl border border-white/30 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Biomarkers Tracked</p>
             <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{uniqueBiomarkers.size}</p>
@@ -182,7 +205,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md p-5 rounded-3xl border border-white/20 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-5 rounded-3xl border border-white/30 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Abnormal Flagged</p>
             <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{totalAbnormalCount}</p>
@@ -193,7 +216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md p-5 rounded-3xl border border-white/20 dark:border-white/10 shadow-sm flex items-center justify-between">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-5 rounded-3xl border border-white/30 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Health Trajectory</p>
             <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
@@ -211,7 +234,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Main Grid: Latest Report Card & Quick Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Latest Report Overview (2 cols) */}
-        <div className="lg:col-span-2 bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+        <div className="lg:col-span-2 bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <span className="text-[10px] font-bold tracking-wider text-rose-600 dark:text-rose-400 uppercase">
@@ -366,7 +389,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Quick Biomarker Mini Charts Section */}
       {reports.length > 0 && (
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -385,9 +408,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {displayBiomarkers.length === 0 ? (
-            <div className="p-6 rounded-2xl border border-dashed border-white/25 dark:border-white/10 bg-white/10 dark:bg-slate-950/15 text-center">
+            <div className="p-6 rounded-2xl border border-dashed border-slate-200/60 dark:border-white/10 bg-white/30 dark:bg-slate-950/20 text-center">
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No biomarker trend points extracted yet</p>
-              <p className="text-[11px] text-slate-400 mt-1">Upload lab reports to see automatic trend tracking here</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Upload lab reports to see automatic trend tracking here</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -397,8 +420,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     key={name}
                     className={`p-4 rounded-2xl border backdrop-blur-md space-y-2 shadow-sm ${
                       isAbnormal
-                        ? 'border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/10'
-                        : 'border-white/20 dark:border-white/10 bg-white/20 dark:bg-slate-950/20'
+                        ? 'border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/30'
+                        : 'border-slate-200/60 dark:border-white/10 bg-white/30 dark:bg-slate-950/20'
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs gap-1">
@@ -435,6 +458,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="h-16 w-full pt-1">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={trend.historicalPoints}>
+                          <XAxis dataKey="date" hide />
                           <Line
                             type="monotone"
                             dataKey="value"
@@ -442,10 +466,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             strokeWidth={2}
                             dot={{ r: 3, fill: '#e11d48' }}
                           />
-                          <Tooltip
-                            contentStyle={{ fontSize: '10px', borderRadius: '8px', padding: '4px 8px' }}
-                            labelFormatter={(l) => `Date: ${l}`}
-                          />
+                          <Tooltip content={<MiniCustomTooltip unit={trend.unit} />} />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>

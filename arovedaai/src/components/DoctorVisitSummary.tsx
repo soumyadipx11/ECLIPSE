@@ -440,7 +440,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
           <button onClick={() => setErrorMsg(null)} className="font-bold underline text-[11px] ml-2">Dismiss</button>
         </div>
       )}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-6 h-0.5 bg-rose-600 rounded-full"></span>
@@ -536,7 +536,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
               </div>
             </div>
           ) : (
-            <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center space-y-4 max-w-2xl mx-auto">
+            <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-3xl p-8 text-center space-y-4 max-w-2xl mx-auto shadow-sm">
               <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
                 <Sparkles className="w-6 h-6 animate-pulse" />
               </div>
@@ -594,7 +594,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
 
               <div className="border border-rose-200 bg-rose-50/50 rounded-xl overflow-x-auto" style={{ backgroundColor: 'rgba(255, 241, 242, 0.5)', borderColor: '#fecdd3' }}>
                 <table className="w-full text-xs text-left min-w-[480px] sm:min-w-0">
-                  <thead className="bg-rose-100 text-rose-900 font-bold" style={{ backgroundColor: '#ffe4e6', color: '#881337' }}>
+                  <thead className="bg-rose-100 text-rose-900 font-bold border-b border-rose-200" style={{ backgroundColor: '#ffe4e6', color: '#881337' }}>
                     <tr>
                       <th className="p-2.5 align-middle">Test Name</th>
                       <th className="p-2.5 align-middle">Value</th>
@@ -637,7 +637,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
 
               <div className="border border-slate-200 rounded-xl overflow-x-auto">
                 <table className="w-full text-xs text-left min-w-[400px] sm:min-w-0">
-                  <thead className="bg-slate-100 text-slate-700 font-bold">
+                  <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                     <tr>
                       <th className="p-2.5">Biomarker Name</th>
                       <th className="p-2.5">Previous Value</th>

@@ -92,7 +92,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
   return (
     <div className="space-y-6 pb-12 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-6 h-0.5 bg-rose-600 rounded-full"></span>
@@ -117,7 +117,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-4 shadow-sm space-y-3">
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-4 shadow-sm space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           {/* Search Box */}
           <div className="relative">
@@ -127,7 +127,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
               placeholder="Search test, lab, biomarker..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 backdrop-blur-md"
+              className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-2xl py-2 pl-9 pr-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 backdrop-blur-md"
             />
           </div>
 
@@ -136,7 +136,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full bg-white/50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-2 text-xs text-slate-900 dark:text-white font-medium backdrop-blur-md"
+              className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-2xl p-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-rose-500 backdrop-blur-md"
             >
               <option value="ALL">All Years ({years.length})</option>
               {years.map(y => (
@@ -150,7 +150,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
             <select
               value={selectedLab}
               onChange={(e) => setSelectedLab(e.target.value)}
-              className="w-full bg-white/50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-2 text-xs text-slate-900 dark:text-white font-medium backdrop-blur-md"
+              className="w-full bg-white/40 dark:bg-[#121418]/40 border border-white/30 dark:border-white/10 rounded-2xl p-2 text-xs text-slate-900 dark:text-white font-medium backdrop-blur-md"
             >
               <option value="ALL">All Laboratories ({labs.length})</option>
               {labs.map(l => (
@@ -164,7 +164,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
             <select
               value={selectedFlag}
               onChange={(e) => setSelectedFlag(e.target.value as any)}
-              className="w-full bg-white/50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-2 text-xs text-slate-900 dark:text-white font-medium backdrop-blur-md"
+              className="w-full bg-white/40 dark:bg-[#121418]/40 border border-white/30 dark:border-white/10 rounded-2xl p-2 text-xs text-slate-900 dark:text-white font-medium backdrop-blur-md"
             >
               <option value="ALL">All Reports</option>
               <option value="ABNORMAL">Reports with Abnormal Flagged Items</option>
@@ -175,7 +175,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
 
       {/* Reports Timeline List */}
       {filteredReports.length === 0 ? (
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-12 text-center space-y-3">
+        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
             <FileText className="w-6 h-6" />
           </div>
@@ -197,7 +197,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
             return (
               <div
                 key={report.id}
-                className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-5 shadow-sm hover:border-rose-300 dark:hover:border-rose-900/50 transition-all relative sm:pl-14"
+                className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-5 shadow-sm hover:border-rose-300 dark:hover:border-rose-900/50 transition-all relative sm:pl-14"
               >
                 {/* Timeline Dot */}
                 <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 border-2 border-white dark:border-slate-900 absolute left-2 top-5 hidden sm:flex items-center justify-center font-bold text-xs shadow-sm">
@@ -271,7 +271,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
       {/* Report Details Modal */}
       {activeReportModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white/90 dark:bg-slate-900/90 border border-white/80 dark:border-slate-800/80 backdrop-blur-2xl rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
+          <div className="bg-white/95 dark:bg-[#16181c] border border-white/80 dark:border-white/10 backdrop-blur-2xl rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
             <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">
@@ -304,9 +304,9 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
 
             {/* AI Summary Breakdown */}
             {activeReportModal.aiSummary && (
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/60 space-y-3 text-xs">
+              <div className="bg-rose-500/5 dark:bg-rose-950/20 rounded-2xl p-4 border border-rose-500/20 space-y-3 text-xs">
                 <div className="flex items-center gap-2 font-bold text-rose-600 dark:text-rose-400">
-                  <Sparkles className="w-4 h-4" /> AI Patient Summary
+                  <Sparkles className="w-4 h-4 text-rose-500" /> AI Patient Summary
                 </div>
                 <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
                   {activeReportModal.aiSummary.overview}
@@ -333,9 +333,9 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
                 Laboratory Values Table
               </h3>
 
-              <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+              <div className="overflow-x-auto border border-slate-200 dark:border-white/10 rounded-2xl">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-800">
+                  <thead className="bg-white/40 dark:bg-black/30 text-slate-700 dark:text-slate-200 font-bold border-b border-slate-200/60 dark:border-white/10 backdrop-blur-md">
                     <tr>
                       <th className="p-3">Test Name</th>
                       <th className="p-3">Category</th>
@@ -344,9 +344,9 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
                       <th className="p-3">Flag</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                     {(activeReportModal.extractedData || []).map((b) => (
-                      <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                      <tr key={b.id} className="hover:bg-rose-50/30 dark:hover:bg-white/5">
                         <td className="p-3 font-semibold text-slate-900 dark:text-white">{normalizeBiomarkerName(b.testName)}</td>
                         <td className="p-3 text-slate-500">{b.category}</td>
                         <td className="p-3 font-bold text-slate-900 dark:text-white">
@@ -355,15 +355,15 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
                         <td className="p-3 text-slate-500">{b.referenceRange}</td>
                         <td className="p-3">
                           {b.flag === 'high' ? (
-                            <span className="bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded text-[10px]">
+                            <span className="bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold px-2 py-0.5 rounded text-[10px] border border-rose-200 dark:border-rose-900/40">
                               HIGH
                             </span>
                           ) : b.flag === 'low' ? (
-                            <span className="bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded text-[10px]">
+                            <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold px-2 py-0.5 rounded text-[10px] border border-amber-200 dark:border-amber-900/40">
                               LOW
                             </span>
                           ) : (
-                            <span className="bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded text-[10px]">
+                            <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded text-[10px] border border-emerald-200 dark:border-emerald-900/40">
                               NORMAL
                             </span>
                           )}
@@ -376,7 +376,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
             </div>
 
             {/* PII Verification Statement */}
-            <div className="p-3 bg-slate-950 text-slate-400 rounded-xl text-[11px] flex items-center justify-between border border-slate-800">
+            <div className="p-3 bg-slate-100 dark:bg-[#16181c] text-slate-700 dark:text-slate-400 rounded-2xl text-[11px] flex items-center justify-between border border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-rose-400" />
                 <span>Protected Health Record • Patient PII scrubbed from AI logs</span>
