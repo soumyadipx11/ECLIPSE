@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Upload, 
   FileText, 
@@ -21,6 +21,7 @@ import { LabBiomarker, LabReport, ReportAiSummary } from '../types';
 import { safeFetchJson } from '../lib/api';
 import { cleanUndefined } from '../utils/sanitize';
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
+import { useAuth } from '../context/AuthContext';
 
 interface ReportUploadProps {
   onSaveReport: (report: Omit<LabReport, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string>;
@@ -33,12 +34,19 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
   onLoadDemo,
   onSuccess
 }) => {
+  const { userProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileBase64, setFileBase64] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>('');
   const [userConsent, setUserConsent] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (userProfile && userProfile.privacyConsent !== undefined) {
+      setUserConsent(userProfile.privacyConsent);
+    }
+  }, [userProfile]);
   
   const [analyzing, setAnalyzing] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
@@ -543,20 +551,21 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           </div>
 
           {/* Privacy Consent Box */}
-          <div className="p-4 rounded-2xl bg-white/30 dark:bg-[#121418]/30 text-slate-700 dark:text-slate-300 text-xs space-y-2 border border-white/30 dark:border-white/10 backdrop-blur-md">
-            <label className="flex items-start gap-2 cursor-pointer">
+          <div className="p-4 rounded-2xl bg-white/30 dark:bg-[#121418]/30 text-slate-700 dark:text-slate-300 text-xs border border-white/30 dark:border-white/10 backdrop-blur-md flex items-start justify-between gap-4">
+            <div>
+              <span className="font-semibold text-slate-900 dark:text-white block">Explicit AI Privacy Consent</span>
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] block mt-1">
+                I consent to sending extracted non-identifiable test values to Gemini AI for automated structure extraction and summary. PII is scrubbed prior to API transmission.
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
               <input
                 type="checkbox"
                 checked={userConsent}
                 onChange={(e) => setUserConsent(e.target.checked)}
-                className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-rose-600 focus:ring-rose-500"
+                className="sr-only peer"
               />
-              <div>
-                <span className="font-semibold text-slate-900 dark:text-white block">Explicit AI Privacy Consent</span>
-                <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-                  I consent to sending extracted non-identifiable test values to Gemini AI for automated structure extraction and summary. PII is scrubbed prior to API transmission.
-                </span>
-              </div>
+              <div className="w-10 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
             </label>
           </div>
 

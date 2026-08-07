@@ -79,22 +79,23 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
             Your personal health records are completely isolated in your account. No patient data is ever used for model training.
           </p>
 
-          <div className="p-4 bg-white/10 dark:bg-[#121418]/15 rounded-2xl border border-white/10 dark:border-white/5 backdrop-blur-sm space-y-3 text-xs">
-            <label className="flex items-start gap-3 cursor-pointer">
+          <div className="p-4 bg-white/10 dark:bg-[#121418]/15 rounded-2xl border border-white/10 dark:border-white/5 backdrop-blur-sm text-xs flex items-start justify-between gap-4">
+            <div>
+              <span className="font-bold text-slate-900 dark:text-white block">
+                Explicit AI Report Analysis Consent
+              </span>
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] block mt-1">
+                Allows server-side extraction and trend analysis on scrubbed lab report data.
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
               <input
                 type="checkbox"
                 checked={userProfile?.privacyConsent ?? true}
                 onChange={handleToggleConsent}
-                className="mt-0.5 rounded border-slate-700 text-[#ec003f] focus:ring-[#ec003f]"
+                className="sr-only peer"
               />
-              <div>
-                <span className="font-bold text-slate-900 dark:text-white block">
-                  Explicit AI Report Analysis Consent
-                </span>
-                <span className="text-slate-500 dark:text-slate-400 text-[11px] block mt-0.5">
-                  Allows server-side extraction and trend analysis on scrubbed lab report data.
-                </span>
-              </div>
+              <div className="w-10 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
             </label>
           </div>
 
