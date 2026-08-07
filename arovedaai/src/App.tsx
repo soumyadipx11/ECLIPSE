@@ -83,7 +83,7 @@ function AppContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-3">
+      <div className="min-h-screen bg-[#16181c] flex flex-col items-center justify-center text-white space-y-3">
         <div className="w-8 h-8 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-xs text-slate-400 font-medium">Initializing Encrypted ArovedaAI Platform...</p>
       </div>
@@ -97,11 +97,11 @@ function AppContent() {
   return (
     <div className="relative min-h-screen overflow-x-hidden text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
       {/* Fixed background and decorative glowing circles that do not scroll */}
-      <div className="fixed inset-0 bg-gradient-to-tr from-slate-100 via-rose-50/20 to-blue-50/40 dark:from-[#080d1a] dark:via-[#0c1224] dark:to-[#150a14] pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-gradient-to-tr from-slate-100 via-rose-50/20 to-rose-50/10 dark:from-[#16181c] dark:via-[#16181c] dark:to-[#16181c] pointer-events-none z-0" />
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#ec003f]/30 to-[#ff2b66]/10 dark:from-[#ec003f]/35 dark:to-[#ff2b66]/15 blur-[120px]" />
-        <div className="absolute bottom-[10%] left-[-15%] w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-rose-500/10 to-indigo-500/10 dark:from-rose-900/15 dark:to-indigo-950/15 blur-[130px]" />
-        <div className="absolute top-[40%] right-[5%] w-[450px] h-[450px] rounded-full bg-gradient-to-bl from-amber-500/10 to-rose-600/20 dark:from-amber-950/10 dark:to-[#ec003f]/25 blur-[110px]" />
+        <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#ec003f]/30 to-[#ff2b66]/10 dark:from-[#ec003f]/35 dark:to-[#ff2b66]/15 blur-[120px] animate-heartbeat-glow" />
+        <div className="absolute bottom-[10%] left-[-15%] w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-rose-500/10 to-rose-600/10 dark:from-rose-900/15 dark:to-rose-950/15 blur-[130px] animate-heartbeat-glow-delayed" />
+        <div className="absolute top-[40%] right-[5%] w-[450px] h-[450px] rounded-full bg-gradient-to-bl from-amber-500/10 to-rose-600/20 dark:from-amber-950/10 dark:to-[#ec003f]/25 blur-[110px] animate-heartbeat-glow" />
       </div>
 
       <div className="relative z-10">

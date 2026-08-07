@@ -5,6 +5,10 @@
     display: inline-block;
     vertical-align: middle;
   }
+  html.dark, body.dark {
+    background-color: #16181c;
+    color: #f1f5f9;
+  }
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -17,5 +21,36 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+@keyframes heartbeat-glow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  12% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  24% {
+    transform: scale(1.04);
+    opacity: 0.75;
+  }
+  36% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+}
+
+.animate-heartbeat-glow {
+  animation: heartbeat-glow 3s ease-in-out infinite;
+}
+
+.animate-heartbeat-glow-delayed {
+  animation: heartbeat-glow 3s ease-in-out 1.5s infinite;
 }
 

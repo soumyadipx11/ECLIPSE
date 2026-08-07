@@ -79,13 +79,13 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#16181c] text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
       {/* Background Decorative Gradients */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#ec003f]/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-[#ff2b66]/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#ec003f]/15 rounded-full blur-[140px] pointer-events-none animate-heartbeat-glow" />
+      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-[#ff2b66]/10 rounded-full blur-[120px] pointer-events-none animate-heartbeat-glow-delayed" />
 
       {/* Main Container */}
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative z-10">
+      <div className="w-full max-w-md bg-[#1e2025]/90 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative z-10">
         {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#ff2b66] text-white shadow-lg shadow-[#ec003f]/25 mb-3">

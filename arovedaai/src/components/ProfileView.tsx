@@ -144,7 +144,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
       {/* Header Card */}
       <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-emerald-600/20">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#ec003f] to-[#ff2b66] flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-[#ec003f]/25">
             {displayName.charAt(0).toUpperCase() || 'U'}
           </div>
           <div>
@@ -152,30 +152,30 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
               {displayName || 'Personal Profile'}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-emerald-500" />
+              <Mail className="w-3.5 h-3.5 text-[#ec003f]" />
               {user?.email}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-50/80 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/40 p-3 rounded-2xl text-center">
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block uppercase tracking-wider">Reports Logged</span>
+          <div className="bg-rose-50/80 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/40 p-3 rounded-2xl text-center">
+            <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold block uppercase tracking-wider">Reports Logged</span>
             <span className="text-lg font-bold text-slate-900 dark:text-white">{totalReportsCount}</span>
           </div>
 
           <div className="bg-emerald-50/80 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/40 p-3 rounded-2xl text-center">
             <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block uppercase tracking-wider">Privacy Status</span>
             <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1 mt-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Isolated
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Isolated
             </span>
           </div>
         </div>
       </div>
 
       {savedSuccess && (
-        <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 backdrop-blur-md">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 backdrop-blur-md">
+          <CheckCircle2 className="w-4 h-4 text-rose-500 shrink-0" />
           <span>Personal health profile updated successfully!</span>
         </div>
       )}
@@ -185,7 +185,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
         {/* Personal Details Card */}
         <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-            <User className="w-4 h-4 text-emerald-500" /> Personal Details
+            <User className="w-4 h-4 text-[#ec003f]" /> Personal Details
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -198,7 +198,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="e.g. John Doe"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               />
             </div>
 
@@ -213,7 +213,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 placeholder="e.g. 35"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               />
             </div>
 
@@ -224,7 +224,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -240,7 +240,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
               <select
                 value={bloodGroup}
                 onChange={(e) => setBloodGroup(e.target.value)}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               >
                 <option value="Unknown">Unknown / Unspecified</option>
                 <option value="A+">A+</option>
@@ -263,7 +263,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="e.g. +1 (555) 019-2834"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               />
             </div>
 
@@ -276,7 +276,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={emergencyContact}
                 onChange={(e) => setEmergencyContact(e.target.value)}
                 placeholder="e.g. Jane Doe (+1 555-987-6543)"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               />
             </div>
           </div>
@@ -285,7 +285,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
         {/* Medical & Health Goals Context */}
         <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-            <Heart className="w-4 h-4 text-emerald-500" /> Health History & Goals
+            <Heart className="w-4 h-4 text-[#ec003f]" /> Health History & Goals
           </h2>
 
           <div className="space-y-4 text-xs">
@@ -298,7 +298,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={preExistingConditions}
                 onChange={(e) => setPreExistingConditions(e.target.value)}
                 placeholder="e.g. Essential Hypertension, Thyroid Nodule, Mild Vitamin D Deficiency..."
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               />
             </div>
 
@@ -311,7 +311,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 value={healthGoals}
                 onChange={(e) => setHealthGoals(e.target.value)}
                 placeholder="e.g. Maintain LDL Cholesterol below 100 mg/dL, optimize Fasting Glucose, improve cardiovascular endurance..."
-                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f]"
               />
             </div>
           </div>
@@ -321,7 +321,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-2xl text-xs transition-all shadow-md shadow-emerald-600/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold py-3.5 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           {saving ? (
             <>
@@ -344,8 +344,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
         </h2>
 
         {passwordSuccess && (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-rose-500 shrink-0" />
             <span>Password updated successfully!</span>
           </div>
         )}

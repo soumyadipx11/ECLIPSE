@@ -288,9 +288,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Right Sidebar Column: AI Guardrails & Quick Navigation */}
         <div className="space-y-6">
           {/* AI Medical Safety Guardrails Card */}
-          <div className="bg-slate-950/40 text-slate-200 rounded-3xl p-5 border border-white/10 shadow-md backdrop-blur-md space-y-3 text-xs">
-            <div className="flex items-center gap-2 text-emerald-400 font-bold">
-              <ShieldAlert className="w-5 h-5 text-emerald-400 shrink-0" />
+          <div className="bg-rose-500/10 dark:bg-rose-950/20 text-slate-200 rounded-3xl p-5 border border-rose-500/20 dark:border-rose-500/15 shadow-md backdrop-blur-md space-y-3 text-xs">
+            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold">
+              <ShieldAlert className="w-5 h-5 text-rose-500 dark:text-rose-400 shrink-0" />
               <span>Medical Safety & Guardrails</span>
             </div>
             <p className="text-slate-300 leading-relaxed">
@@ -307,9 +307,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Quick Doctor Summary Prep Card */}
-          <div className="bg-emerald-500/10 dark:bg-emerald-950/15 border border-emerald-500/20 dark:border-emerald-500/10 rounded-3xl p-5 backdrop-blur-md text-xs space-y-3 shadow-sm">
-            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-bold">
-              <Stethoscope className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="bg-rose-500/10 dark:bg-rose-950/20 border border-rose-500/20 dark:border-rose-500/15 rounded-3xl p-5 backdrop-blur-md text-xs space-y-3 shadow-sm">
+            <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold">
+              <Stethoscope className="w-5 h-5 text-rose-600 dark:text-rose-400" />
               <span>Doctor Appointment Preparation</span>
             </div>
             <p className="text-slate-600 dark:text-slate-300">
@@ -317,7 +317,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </p>
             <button
               onClick={() => onNavigate('doctor-summary')}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 flex items-center justify-center gap-2 cursor-pointer"
             >
               Generate Doctor Summary PDF
             </button>
@@ -339,7 +339,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <button
               onClick={() => onNavigate('trends')}
-              className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+              className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
             >
               Interactive Trend Analyzer →
             </button>
@@ -385,9 +385,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <Line
                           type="monotone"
                           dataKey="value"
-                          stroke="#3b82f6"
+                          stroke="#e11d48"
                           strokeWidth={2}
-                          dot={{ r: 3, fill: '#3b82f6' }}
+                          dot={{ r: 3, fill: '#e11d48' }}
                         />
                         <Tooltip
                           contentStyle={{ fontSize: '10px', borderRadius: '8px', padding: '4px 8px' }}

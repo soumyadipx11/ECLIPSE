@@ -52,7 +52,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
       <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Lock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <Lock className="w-5 h-5 text-[#ec003f] dark:text-rose-400" />
             Privacy, Security & Audit Logs
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -71,7 +71,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
         {/* Explicit Consent Settings */}
         <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-white/20 dark:border-white/10 p-6 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Key className="w-4 h-4 text-emerald-500" />
+            <Key className="w-4 h-4 text-[#ec003f]" />
             AI Processing Consent & Privacy
           </h2>
 
@@ -85,7 +85,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
                 type="checkbox"
                 checked={userProfile?.privacyConsent ?? true}
                 onChange={handleToggleConsent}
-                className="mt-0.5 rounded border-slate-700 text-emerald-600 focus:ring-emerald-500"
+                className="mt-0.5 rounded border-slate-700 text-[#ec003f] focus:ring-[#ec003f]"
               />
               <div>
                 <span className="font-bold text-slate-900 dark:text-white block">
@@ -100,7 +100,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
 
           <button
             onClick={() => setShowPiiDemo(!showPiiDemo)}
-            className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs text-[#ec003f] dark:text-rose-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
             {showPiiDemo ? 'Hide PII Scrubbing Example' : 'View PII Scrubbing Demonstration'}
@@ -113,8 +113,8 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
                 <span className="text-slate-400">"Patient: John Doe, DOB: 1985-04-12, MRN: 948102, Lab: Quest. Test: Fasting Blood Sugar: 98 mg/dL"</span>
               </div>
               <div className="pt-2 border-t border-slate-800">
-                <span className="text-emerald-400 font-bold block">Sent to AI Model (After PII Removal):</span>
-                <span className="text-emerald-300">"[PII REMOVED] Lab: Quest. Test: Fasting Blood Sugar: 98 mg/dL (70-99)"</span>
+                <span className="text-rose-400 font-bold block">Sent to AI Model (After PII Removal):</span>
+                <span className="text-rose-300">"[PII REMOVED] Lab: Quest. Test: Fasting Blood Sugar: 98 mg/dL (70-99)"</span>
               </div>
             </div>
           )}
@@ -141,8 +141,8 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
           </div>
 
           {wipeSuccess && (
-            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+            <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-[#ec003f]" />
               <span>All personal health reports, extracted biomarker metrics, and audit logs have been wiped successfully.</span>
             </div>
           )}
@@ -218,7 +218,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <History className="w-5 h-5 text-emerald-500" />
+              <History className="w-5 h-5 text-[#ec003f]" />
               Append-Only Security & Privacy Audit Logs
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -250,9 +250,9 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
                     <td className="p-3 text-slate-500 font-mono text-[11px]">{log.timestamp}</td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        log.action === 'UPLOAD_REPORT' ? 'bg-emerald-100 text-emerald-700' :
+                        log.action === 'UPLOAD_REPORT' ? 'bg-rose-100 text-rose-700' :
                         log.action === 'DELETE_REPORT' ? 'bg-amber-100 text-amber-700' :
-                        log.action === 'AI_ANALYSIS' ? 'bg-emerald-100 text-emerald-700' :
+                        log.action === 'AI_ANALYSIS' ? 'bg-rose-100 text-rose-700' :
                         'bg-slate-100 text-slate-700'
                       }`}>
                         {log.action}

@@ -175,7 +175,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                 <FlaskConical className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
                 {name}
                 {hasData && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-rose-500'}`} />
                 )}
               </button>
             );

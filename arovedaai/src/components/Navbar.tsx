@@ -45,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/20 dark:border-white/10 bg-white/70 dark:bg-[#0b1329]/80 backdrop-blur-xl transition-colors duration-200">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/20 dark:border-white/10 bg-white/70 dark:bg-[#16181c]/80 backdrop-blur-xl transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-2">
           {/* Logo & Branding */}
