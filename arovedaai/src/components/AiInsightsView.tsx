@@ -32,6 +32,8 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
     lifestyleRecommendations?: string[];
     suggestedReminders?: { biomarkerName: string; intervalMonths: number; notes: string }[];
     disclaimer?: string;
+    generatedReportIds?: string[];
+    generatedReportCount?: number;
   } | null>(() => {
     try {
       const saved = localStorage.getItem('aroveda_ai_insights');
@@ -40,6 +42,21 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
       return null;
     }
   });
+
+  const hasNewData = React.useMemo(() => {
+    if (!insightsData || !reports || reports.length === 0) return false;
+
+    if (Array.isArray(insightsData.generatedReportIds)) {
+      const savedIds = new Set(insightsData.generatedReportIds);
+      return reports.some(r => !savedIds.has(r.id)) || reports.length !== insightsData.generatedReportIds.length;
+    }
+
+    if (typeof insightsData.generatedReportCount === 'number') {
+      return reports.length !== insightsData.generatedReportCount;
+    }
+
+    return reports.length > 0;
+  }, [insightsData, reports]);
 
   const [customReminders, setCustomReminders] = useState<UserReminder[]>(() => {
     try {
@@ -156,7 +173,9 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
         overallTrajectory: rawData.overallTrendSummary || rawData.overallTrajectory || "Overall health trajectory generated successfully.",
         keyInsights: keyInsightsList,
         lifestyleRecommendations: lifestyleList,
-        suggestedReminders: rawData.suggestedReminders || []
+        suggestedReminders: rawData.suggestedReminders || [],
+        generatedReportIds: reports.map(r => r.id),
+        generatedReportCount: reports.length
       };
 
       setInsightsData(formattedInsights);
@@ -234,6 +253,42 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
       {error && (
         <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs backdrop-blur-md">
           {error}
+        </div>
+      )}
+
+      {/* New Data Available Prompt Banner */}
+      {insightsData && hasNewData && (
+        <div className="p-4 rounded-3xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+              <Zap className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <span className="font-extrabold text-xs text-rose-800 dark:text-rose-200 block sm:inline">
+                New Lab Data Available!
+              </span>
+              <span className="text-xs text-rose-700/80 dark:text-rose-300/80 block sm:inline sm:ml-1.5">
+                New reports have been uploaded since these AI insights were last generated.
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleGenerateInsights}
+            disabled={loading}
+            className="bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold px-4 py-2 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Regenerating...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                <span>Regenerate AI Insights</span>
+              </>
+            )}
+          </button>
         </div>
       )}
 

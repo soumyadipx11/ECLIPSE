@@ -34,6 +34,21 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const hasNewData = React.useMemo(() => {
+    if (!summaryData || !reports || reports.length === 0) return false;
+
+    if (Array.isArray(summaryData.generatedReportIds)) {
+      const savedIds = new Set(summaryData.generatedReportIds);
+      return reports.some(r => !savedIds.has(r.id)) || reports.length !== summaryData.generatedReportIds.length;
+    }
+
+    if (typeof summaryData.generatedReportCount === 'number') {
+      return reports.length !== summaryData.generatedReportCount;
+    }
+
+    return reports.length > 0;
+  }, [summaryData, reports]);
+
   // Persist doctor visit summary to localStorage whenever it changes
   useEffect(() => {
     try {
@@ -104,7 +119,9 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
                   "Are there any specific follow-up tests or retesting schedules you recommend?",
                   "Do any of these biomarker trends warrant dietary or medication adjustments?"
                 ]),
-        keyTrends: Array.isArray(rawData.keyTrends) ? rawData.keyTrends : []
+        keyTrends: Array.isArray(rawData.keyTrends) ? rawData.keyTrends : [],
+        generatedReportIds: reports.map(r => r.id),
+        generatedReportCount: reports.length
       };
 
       setSummaryData(formattedSummary);
@@ -468,6 +485,42 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
           </button>
         </div>
       </div>
+
+      {/* New Data Available Prompt Banner */}
+      {summaryData && hasNewData && (
+        <div className="p-4 rounded-3xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+              <Sparkles className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <span className="font-extrabold text-xs text-rose-800 dark:text-rose-200 block sm:inline">
+                New Lab Data Available!
+              </span>
+              <span className="text-xs text-rose-700/80 dark:text-rose-300/80 block sm:inline sm:ml-1.5">
+                New health records have been added since this summary was last generated.
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleGenerateDoctorSummary}
+            disabled={loading}
+            className="bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold px-4 py-2 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Regenerating...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                <span>Regenerate Doctor Summary</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Conditionally render preparation view or the printable PDF document */}
       {!summaryData ? (

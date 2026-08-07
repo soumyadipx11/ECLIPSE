@@ -129,4 +129,6 @@ export interface DoctorVisitSummaryData {
     unit: string;
   }[];
   generalNote: string;
+  generatedReportIds?: string[];
+  generatedReportCount?: number;
 }
