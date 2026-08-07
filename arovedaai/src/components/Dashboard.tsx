@@ -52,13 +52,52 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const latestReport = reports[0]; // Most recent report
 
-  // Quick preset key biomarkers for summary charts
-  const keyPresets = [
-    'Fasting Blood Sugar',
-    'LDL Cholesterol',
-    'Vitamin D (25-OH)',
-    'HbA1c'
-  ];
+  // Gather available biomarkers across reports and prioritize abnormal ones
+  const availableBiomarkerMap = new Map<string, { originalName: string; isAbnormal: boolean }>();
+
+  reports.forEach(r => {
+    (r.extractedData || []).forEach(b => {
+      const normalized = normalizeBiomarkerName(b.testName);
+      const isAbnormal = !!b.isAbnormal || b.flag === 'H' || b.flag === 'L' || b.flag === 'HIGH' || b.flag === 'LOW';
+      const existing = availableBiomarkerMap.get(normalized);
+      if (!existing) {
+        availableBiomarkerMap.set(normalized, {
+          originalName: b.testName,
+          isAbnormal
+        });
+      } else {
+        if (isAbnormal) {
+          existing.isAbnormal = true;
+        }
+      }
+    });
+  });
+
+  const availableBiomarkersWithTrend = Array.from(availableBiomarkerMap.entries())
+    .map(([_, info]) => {
+      const trend = getBiomarkerTrend(info.originalName);
+      return {
+        name: info.originalName,
+        isAbnormal: info.isAbnormal,
+        trend
+      };
+    })
+    .filter((item): item is { name: string; isAbnormal: boolean; trend: NonNullable<ReturnType<typeof getBiomarkerTrend>> } => item.trend !== null && item.trend.historicalPoints.length > 0);
+
+  // Sort: 
+  // 1. Abnormality flagged first
+  // 2. Highest absolute percentage change
+  // 3. Alphabetical tie-breaker
+  availableBiomarkersWithTrend.sort((a, b) => {
+    if (a.isAbnormal && !b.isAbnormal) return -1;
+    if (!a.isAbnormal && b.isAbnormal) return 1;
+    const changeA = Math.abs(a.trend.changePercent ?? 0);
+    const changeB = Math.abs(b.trend.changePercent ?? 0);
+    if (changeB !== changeA) return changeB - changeA;
+    return a.name.localeCompare(b.name);
+  });
+
+  const displayBiomarkers = availableBiomarkersWithTrend.slice(0, 4);
 
   return (
     <div className="space-y-6 pb-12">
@@ -334,7 +373,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 Key Biomarkers Quick Overview
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Tracking historical test values across uploaded reports
+                Tracking top 4 priority test values across uploaded reports
               </p>
             </div>
             <button
@@ -345,65 +384,80 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {keyPresets.map((presetName) => {
-              const trend = getBiomarkerTrend(presetName);
-              if (!trend || trend.historicalPoints.length === 0) {
+          {displayBiomarkers.length === 0 ? (
+            <div className="p-6 rounded-2xl border border-dashed border-white/25 dark:border-white/10 bg-white/10 dark:bg-slate-950/15 text-center">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No biomarker trend points extracted yet</p>
+              <p className="text-[11px] text-slate-400 mt-1">Upload lab reports to see automatic trend tracking here</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {displayBiomarkers.map(({ name, isAbnormal, trend }) => {
                 return (
-                  <div key={presetName} className="p-4 rounded-2xl border border-dashed border-white/25 dark:border-white/10 bg-white/10 dark:bg-slate-950/15 backdrop-blur-sm text-center">
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{presetName}</p>
-                    <p className="text-[11px] text-slate-400 mt-2">Not found in recent lab tests</p>
+                  <div
+                    key={name}
+                    className={`p-4 rounded-2xl border backdrop-blur-md space-y-2 shadow-sm ${
+                      isAbnormal
+                        ? 'border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/10'
+                        : 'border-white/20 dark:border-white/10 bg-white/20 dark:bg-slate-950/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs gap-1">
+                      <span className="font-semibold text-slate-900 dark:text-white truncate" title={name}>
+                        {name}
+                      </span>
+                      {isAbnormal ? (
+                        <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                          <AlertTriangle className="w-3 h-3" /> Flagged
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 shrink-0">{trend.unit}</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-baseline justify-between">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-bold text-slate-900 dark:text-white">
+                          {trend.currentVal}
+                        </span>
+                        {isAbnormal && <span className="text-[10px] text-slate-400">{trend.unit}</span>}
+                      </div>
+                      {trend.changePercent !== undefined && (
+                        <span className={`text-[11px] font-bold flex items-center ${
+                          trend.status === 'improving' ? 'text-emerald-600' : trend.status === 'declining' ? 'text-amber-600' : 'text-slate-500'
+                        }`}>
+                          {trend.status === 'improving' ? <ArrowDownRight className="w-3.5 h-3.5" /> : trend.status === 'declining' ? <ArrowUpRight className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
+                          {Math.abs(trend.changePercent)}%
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Mini Line Chart */}
+                    <div className="h-16 w-full pt-1">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trend.historicalPoints}>
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#e11d48"
+                            strokeWidth={2}
+                            dot={{ r: 3, fill: '#e11d48' }}
+                          />
+                          <Tooltip
+                            contentStyle={{ fontSize: '10px', borderRadius: '8px', padding: '4px 8px' }}
+                            labelFormatter={(l) => `Date: ${l}`}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="text-[10px] text-slate-400 text-right">
+                      Ref: {trend.referenceRange}
+                    </div>
                   </div>
                 );
-              }
-
-              return (
-                <div key={presetName} className="p-4 rounded-2xl border border-white/20 dark:border-white/10 bg-white/20 dark:bg-slate-950/20 backdrop-blur-md space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-900 dark:text-white">{presetName}</span>
-                    <span className="text-[10px] text-slate-400">{trend.unit}</span>
-                  </div>
-
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xl font-bold text-slate-900 dark:text-white">
-                      {trend.currentVal}
-                    </span>
-                    {trend.changePercent !== undefined && (
-                      <span className={`text-[11px] font-bold flex items-center ${
-                        trend.status === 'improving' ? 'text-emerald-600' : trend.status === 'declining' ? 'text-amber-600' : 'text-slate-500'
-                      }`}>
-                        {trend.status === 'improving' ? <ArrowDownRight className="w-3.5 h-3.5" /> : trend.status === 'declining' ? <ArrowUpRight className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
-                        {Math.abs(trend.changePercent)}%
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Mini Line Chart */}
-                  <div className="h-16 w-full pt-1">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={trend.historicalPoints}>
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#e11d48"
-                          strokeWidth={2}
-                          dot={{ r: 3, fill: '#e11d48' }}
-                        />
-                        <Tooltip
-                          contentStyle={{ fontSize: '10px', borderRadius: '8px', padding: '4px 8px' }}
-                          labelFormatter={(l) => `Date: ${l}`}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  <div className="text-[10px] text-slate-400 text-right">
-                    Ref: {trend.referenceRange}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
