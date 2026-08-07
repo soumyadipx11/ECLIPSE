@@ -190,7 +190,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                     ? 'bg-rose-600 text-white font-bold shadow-md shadow-rose-600/25'
                     : hasData
                     ? 'bg-white/50 dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-700/80 border border-slate-200/80 dark:border-slate-700/60 backdrop-blur-md'
-                    : 'bg-white/20 dark:bg-slate-950/40 text-slate-400 border border-slate-200/40 dark:border-slate-800/40 backdrop-blur-sm'
+                    : 'bg-white/20 dark:bg-[#121418]/40 text-slate-400 border border-slate-200/40 dark:border-slate-800/40 backdrop-blur-sm'
                 }`}
               >
                 <FlaskConical className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />

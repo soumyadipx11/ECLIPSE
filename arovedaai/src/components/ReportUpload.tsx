@@ -432,7 +432,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                 {savedReportInsights.extractedItems.filter(i => i.isAbnormal).length > 0 ? (
                   <ul className="space-y-1.5">
                     {savedReportInsights.extractedItems.filter(i => i.isAbnormal).map(item => (
-                      <li key={item.id} className="flex items-center justify-between bg-white/10 dark:bg-slate-950/15 p-2 rounded-xl text-slate-800 dark:text-slate-200 border border-amber-500/25 backdrop-blur-sm">
+                      <li key={item.id} className="flex items-center justify-between bg-white/10 dark:bg-[#121418]/15 p-2 rounded-xl text-slate-800 dark:text-slate-200 border border-amber-500/25 backdrop-blur-sm">
                         <span className="font-semibold">{normalizeBiomarkerName(item.testName)}</span>
                         <span className="font-bold text-amber-600 dark:text-amber-400">{item.value} {item.unit} ({item.flag.toUpperCase()})</span>
                       </li>
@@ -482,7 +482,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-rose-200/40 dark:border-rose-900/40 hover:border-rose-500 dark:hover:border-rose-400 rounded-3xl p-10 text-center cursor-pointer bg-white/10 dark:bg-slate-950/15 backdrop-blur-sm transition-all space-y-4 max-w-full overflow-hidden"
+            className="border-2 border-dashed border-rose-200/40 dark:border-rose-900/40 hover:border-rose-500 dark:hover:border-rose-400 rounded-3xl p-10 text-center cursor-pointer bg-white/10 dark:bg-[#121418]/15 backdrop-blur-sm transition-all space-y-4 max-w-full overflow-hidden"
           >
             <input
               type="file"
@@ -624,14 +624,14 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           )}
 
           {/* Editable Metadata Fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-4 rounded-2xl border border-white/30 dark:border-white/10 text-xs">
             <div>
               <label className="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Report Title</label>
               <input
                 type="text"
                 value={reportTitle}
                 onChange={(e) => setReportTitle(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500"
+                className="w-full bg-slate-50 dark:bg-[#121418] border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500"
               />
             </div>
 
@@ -649,7 +649,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                   setTestDate(e.target.value);
                   if (e.target.value) setIsDateMissing(false);
                 }}
-                className={`w-full bg-slate-50 dark:bg-slate-950 border rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 ${
+                className={`w-full bg-slate-50 dark:bg-[#121418] border rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 ${
                   !testDate || isDateMissing 
                     ? 'border-amber-500 ring-2 ring-amber-500/40 font-bold' 
                     : 'border-slate-200 dark:border-slate-800'
@@ -663,14 +663,14 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                 type="text"
                 value={labName}
                 onChange={(e) => setLabName(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500"
+                className="w-full bg-slate-50 dark:bg-[#121418] border border-slate-200 dark:border-slate-800 rounded-lg p-2 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-rose-500"
               />
             </div>
           </div>
 
           {/* AI Executive Summary Card */}
           {aiSummary && (
-            <div className="bg-white/10 dark:bg-slate-950/15 p-4 rounded-xl border border-white/10 dark:border-white/5 backdrop-blur-sm text-xs space-y-2">
+            <div className="bg-white/10 dark:bg-[#121418]/15 p-4 rounded-xl border border-white/10 dark:border-white/5 backdrop-blur-sm text-xs space-y-2">
               <div className="font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" /> AI Summary Preview
               </div>

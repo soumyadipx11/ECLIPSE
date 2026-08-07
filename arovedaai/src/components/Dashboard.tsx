@@ -278,7 +278,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="space-y-4">
               {/* AI Executive Summary Box */}
               {latestReport.aiSummary && (
-                <div className="bg-white/10 dark:bg-slate-950/15 border border-white/10 dark:border-white/5 backdrop-blur-sm rounded-2xl p-4 text-xs space-y-2">
+                <div className="bg-white/10 dark:bg-[#121418]/15 border border-white/10 dark:border-white/5 backdrop-blur-sm rounded-2xl p-4 text-xs space-y-2">
                   <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold">
                     <Sparkles className="w-4 h-4" />
                     <span>AI Health Synthesis Summary</span>
@@ -302,7 +302,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       className={`p-3 rounded-2xl border text-xs flex items-center justify-between transition-all backdrop-blur-sm ${
                         item.isAbnormal
                           ? 'bg-rose-500/5 dark:bg-rose-500/10 border-rose-300/40 dark:border-rose-800/30'
-                          : 'bg-white/20 dark:bg-slate-950/20 border-white/10 dark:border-white/5'
+                          : 'bg-white/20 dark:bg-[#121418]/20 border-white/10 dark:border-white/5'
                       }`}
                     >
                       <div>
@@ -363,7 +363,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <li>No drug dosages or prescription recommendations</li>
               <li>PII is scrubbed prior to model execution</li>
             </ul>
-            <div className="p-2.5 rounded-xl bg-slate-950/40 border border-white/10 text-[11px] text-slate-400 italic">
+            <div className="p-2.5 rounded-xl bg-[#121418]/40 border border-white/10 text-[11px] text-slate-400 italic">
               "This platform is educational only and does not replace professional medical diagnosis."
             </div>
           </div>
@@ -408,7 +408,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {displayBiomarkers.length === 0 ? (
-            <div className="p-6 rounded-2xl border border-dashed border-slate-200/60 dark:border-white/10 bg-white/30 dark:bg-slate-950/20 text-center">
+            <div className="p-6 rounded-2xl border border-dashed border-slate-200/60 dark:border-white/10 bg-white/30 dark:bg-[#121418]/20 text-center">
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No biomarker trend points extracted yet</p>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Upload lab reports to see automatic trend tracking here</p>
             </div>
@@ -421,7 +421,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className={`p-4 rounded-2xl border backdrop-blur-md space-y-2 shadow-sm ${
                       isAbnormal
                         ? 'border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/30'
-                        : 'border-slate-200/60 dark:border-white/10 bg-white/30 dark:bg-slate-950/20'
+                        : 'border-slate-200/60 dark:border-white/10 bg-white/30 dark:bg-[#121418]/20'
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs gap-1">
