@@ -332,91 +332,147 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
       )}
 
       {/* Immediate AI Insights & Recommendations Card (Displayed Then and There) */}
-      {savedReportInsights && (
-        <div className="bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border border-emerald-500/40 p-6 shadow-xl space-y-5 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-inner">
-                <CheckCircle2 className="w-6 h-6" />
+      {savedReportInsights && (() => {
+        const abnormalItems = savedReportInsights.extractedItems.filter(
+          i => i.isAbnormal || ['high', 'low', 'h', 'l', 'critical'].includes(String(i.flag || '').toLowerCase())
+        );
+        const hasHigh = savedReportInsights.extractedItems.some(
+          i => (i.isAbnormal || ['high', 'h', 'critical'].includes(String(i.flag || '').toLowerCase())) &&
+          String(i.flag || '').toLowerCase() !== 'low' && String(i.flag || '').toLowerCase() !== 'l'
+        );
+
+        const isAbnormalReport = abnormalItems.length > 0;
+
+        const recBgClass = hasHigh
+          ? 'bg-rose-500/10 border-rose-500/20'
+          : isAbnormalReport
+          ? 'bg-amber-500/10 border-amber-500/20'
+          : 'bg-emerald-500/10 border-emerald-500/20';
+
+        const recTitleClass = hasHigh
+          ? 'text-rose-900 dark:text-rose-200'
+          : isAbnormalReport
+          ? 'text-amber-900 dark:text-amber-200'
+          : 'text-emerald-900 dark:text-emerald-200';
+
+        const recTextClass = hasHigh
+          ? 'text-rose-900 dark:text-rose-200'
+          : isAbnormalReport
+          ? 'text-amber-900 dark:text-amber-200'
+          : 'text-emerald-900 dark:text-emerald-200';
+
+        const recBodyTextClass = hasHigh
+          ? 'text-rose-800 dark:text-rose-300'
+          : isAbnormalReport
+          ? 'text-amber-800 dark:text-amber-300'
+          : 'text-emerald-800 dark:text-emerald-300';
+
+        const recIconClass = hasHigh
+          ? 'text-rose-500'
+          : isAbnormalReport
+          ? 'text-amber-500'
+          : 'text-emerald-500';
+
+        const outerBorderClass = hasHigh
+          ? 'border-rose-500/40'
+          : isAbnormalReport
+          ? 'border-amber-500/40'
+          : 'border-emerald-500/40';
+
+        return (
+          <div className={`bg-white/30 dark:bg-slate-950/25 backdrop-blur-md rounded-3xl border ${outerBorderClass} p-6 shadow-xl space-y-5 animate-in fade-in duration-300`}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner ${
+                  hasHigh ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' :
+                  isAbnormalReport ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' :
+                  'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                }`}>
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                    hasHigh ? 'text-rose-600 dark:text-rose-400' :
+                    isAbnormalReport ? 'text-amber-600 dark:text-amber-400' :
+                    'text-emerald-600 dark:text-emerald-400'
+                  }`}>Lab Report Saved & Immediate Insights Ready</span>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                    {savedReportInsights.title} {savedReportInsights.testDate && `(${savedReportInsights.testDate})`}
+                  </h2>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Lab Report Saved & Immediate Insights Ready</span>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                  {savedReportInsights.title} {savedReportInsights.testDate && `(${savedReportInsights.testDate})`}
-                </h2>
-              </div>
+
+              <button
+                onClick={() => setSavedReportInsights(null)}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white underline"
+              >
+                Close Insights
+              </button>
             </div>
 
-            <button
-              onClick={() => setSavedReportInsights(null)}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white underline"
-            >
-              Close Insights
-            </button>
-          </div>
-
-          {/* AI Executive Summary Overview */}
-          {savedReportInsights.aiSummary?.overview && (
-            <div className="bg-rose-500/5 dark:bg-rose-950/20 p-4 rounded-2xl border border-rose-500/20 backdrop-blur-sm text-xs space-y-1">
-              <div className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-rose-500" /> Executive Health Overview
-              </div>
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                {savedReportInsights.aiSummary.overview}
-              </p>
-            </div>
-          )}
-
-          {/* Insights Grid: Out-of-Range vs Recommendations */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            {/* Out-of-Range Biomarkers */}
-            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl space-y-2">
-              <span className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 text-amber-500" /> Key Observations & Flagged Biomarkers ({savedReportInsights.extractedItems.filter(i => i.isAbnormal).length})
-              </span>
-              {savedReportInsights.extractedItems.filter(i => i.isAbnormal).length > 0 ? (
-                <ul className="space-y-1.5">
-                  {savedReportInsights.extractedItems.filter(i => i.isAbnormal).map(item => (
-                    <li key={item.id} className="flex items-center justify-between bg-white/10 dark:bg-slate-950/15 p-2 rounded-xl text-slate-800 dark:text-slate-200 border border-amber-500/25 backdrop-blur-sm">
-                      <span className="font-semibold">{normalizeBiomarkerName(item.testName)}</span>
-                      <span className="font-bold text-amber-600 dark:text-amber-400">{item.value} {item.unit} ({item.flag.toUpperCase()})</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-amber-800 dark:text-amber-300">All analyzed test values in this report are within standard reference ranges.</p>
-              )}
-            </div>
-
-            {/* Recommendations & Lifestyle Tips */}
-            <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl space-y-2">
-              <span className="font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                <Lightbulb className="w-4 h-4 text-emerald-500" /> Health Recommendations & Next Steps
-              </span>
-              {savedReportInsights.aiSummary?.observations && savedReportInsights.aiSummary.observations.length > 0 ? (
-                <ul className="space-y-1.5 text-emerald-900 dark:text-emerald-200">
-                  {savedReportInsights.aiSummary.observations.map((obs, idx) => (
-                    <li key={idx} className="flex items-start gap-1.5">
-                      <span className="text-emerald-500 font-bold">•</span>
-                      <span>{obs}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-emerald-800 dark:text-emerald-300">
-                  Maintain balanced nutrition and hydrate well. Schedule regular checkups with your doctor.
+            {/* AI Executive Summary Overview */}
+            {savedReportInsights.aiSummary?.overview && (
+              <div className="bg-rose-500/5 dark:bg-rose-950/20 p-4 rounded-2xl border border-rose-500/20 backdrop-blur-sm text-xs space-y-1">
+                <div className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-rose-500" /> Executive Health Overview
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {savedReportInsights.aiSummary.overview}
                 </p>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
 
-          {savedReportInsights.aiSummary?.educationalNote && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic border-t border-slate-100 dark:border-slate-800 pt-3">
-              💡 {savedReportInsights.aiSummary.educationalNote}
-            </p>
-          )}
-        </div>
-      )}
+            {/* Insights Grid: Out-of-Range vs Recommendations */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              {/* Out-of-Range Biomarkers */}
+              <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl space-y-2">
+                <span className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" /> Key Observations & Flagged Biomarkers ({savedReportInsights.extractedItems.filter(i => i.isAbnormal).length})
+                </span>
+                {savedReportInsights.extractedItems.filter(i => i.isAbnormal).length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {savedReportInsights.extractedItems.filter(i => i.isAbnormal).map(item => (
+                      <li key={item.id} className="flex items-center justify-between bg-white/10 dark:bg-slate-950/15 p-2 rounded-xl text-slate-800 dark:text-slate-200 border border-amber-500/25 backdrop-blur-sm">
+                        <span className="font-semibold">{normalizeBiomarkerName(item.testName)}</span>
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{item.value} {item.unit} ({item.flag.toUpperCase()})</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-amber-800 dark:text-amber-300">All analyzed test values in this report are within standard reference ranges.</p>
+                )}
+              </div>
+
+              {/* Recommendations & Lifestyle Tips */}
+              <div className={`${recBgClass} border p-4 rounded-2xl space-y-2 transition-colors`}>
+                <span className={`font-bold ${recTitleClass} flex items-center gap-1.5`}>
+                  <Lightbulb className={`w-4 h-4 ${recIconClass}`} /> Health Recommendations & Next Steps
+                </span>
+                {savedReportInsights.aiSummary?.observations && savedReportInsights.aiSummary.observations.length > 0 ? (
+                  <ul className={`space-y-1.5 ${recTextClass}`}>
+                    {savedReportInsights.aiSummary.observations.map((obs, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <span className={`${recIconClass} font-bold`}>•</span>
+                        <span>{obs}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={recBodyTextClass}>
+                    Maintain balanced nutrition and hydrate well. Schedule regular checkups with your doctor.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {savedReportInsights.aiSummary?.educationalNote && (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 italic border-t border-slate-100 dark:border-slate-800 pt-3">
+                💡 {savedReportInsights.aiSummary.educationalNote}
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Step 1: Upload or Paste Input Form */}
       {!isExtracted && (
