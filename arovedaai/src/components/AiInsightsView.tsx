@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   ShieldAlert, 
@@ -13,6 +13,8 @@ import {
   BookOpen,
   Check
 } from 'lucide-react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { LabReport, UserReminder } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { safeFetchJson } from '../lib/api';
@@ -22,7 +24,7 @@ interface AiInsightsViewProps {
 }
 
 export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
-  const { userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,8 +86,27 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
     ];
   });
 
-  // Persist insights data to localStorage whenever it changes
-  React.useEffect(() => {
+  // Real-time sync with Firestore for cross-device access
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.aiInsights !== undefined) {
+          setInsightsData(data.aiInsights);
+        }
+        if (data.customReminders !== undefined) {
+          setCustomReminders(data.customReminders);
+        }
+      }
+    }, (err) => {
+      console.error('Error subscribing to AI insights:', err);
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Persist insights data to localStorage and Firestore whenever it changes
+  useEffect(() => {
     try {
       if (insightsData) {
         localStorage.setItem('aroveda_ai_insights', JSON.stringify(insightsData));
@@ -95,16 +116,30 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
     } catch (e) {
       console.error('Failed to save insights to localStorage', e);
     }
-  }, [insightsData]);
 
-  // Persist custom reminders to localStorage whenever they change
-  React.useEffect(() => {
+    if (user) {
+      setDoc(doc(db, 'users', user.uid), {
+        aiInsights: insightsData,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((err) => console.error('Error persisting AI insights to Firestore:', err));
+    }
+  }, [insightsData, user]);
+
+  // Persist custom reminders to localStorage and Firestore whenever they change
+  useEffect(() => {
     try {
       localStorage.setItem('aroveda_custom_reminders', JSON.stringify(customReminders));
     } catch (e) {
       console.error('Failed to save custom reminders to localStorage', e);
     }
-  }, [customReminders]);
+
+    if (user) {
+      setDoc(doc(db, 'users', user.uid), {
+        customReminders,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((err) => console.error('Error persisting custom reminders to Firestore:', err));
+    }
+  }, [customReminders, user]);
 
   const [newReminderName, setNewReminderName] = useState('');
   const [newReminderInterval, setNewReminderInterval] = useState(3);

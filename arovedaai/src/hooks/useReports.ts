@@ -10,6 +10,7 @@ import {
   doc, 
   updateDoc, 
   deleteDoc, 
+  setDoc,
   getDocs,
   orderBy
 } from '../lib/firebase';
@@ -224,6 +225,13 @@ export function useReports() {
       const qA = query(collection(db, 'audit_logs'), where('userId', '==', user.uid));
       const aSnap = await getDocs(qA);
       await Promise.all(aSnap.docs.map((d) => deleteDoc(d.ref)));
+
+      // 4. Clear AI Insights & Doctor Visit Summary from user document
+      await setDoc(doc(db, 'users', user.uid), {
+        aiInsights: null,
+        doctorSummary: null,
+        customReminders: []
+      }, { merge: true }).catch(() => {});
 
       setAuditLogs([]);
       await addAuditLog('DELETE_ACCOUNT', 'Wiped all personal health reports and audit logs permanently.');

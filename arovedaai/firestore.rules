@@ -36,5 +36,15 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
+
+    // AI Insights - keyed by userId
+    match /ai_insights/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Doctor Visit Summaries - keyed by userId
+    match /doctor_summaries/{userId} {
+      allow read, write: if isOwner(userId);
+    }
   }
 }

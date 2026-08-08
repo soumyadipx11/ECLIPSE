@@ -10,6 +10,9 @@ import {
   CheckCircle2, 
   ShieldCheck 
 } from 'lucide-react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { useAuth } from '../context/AuthContext';
 import { LabReport, DoctorVisitSummaryData } from '../types';
 import jsPDF from 'jspdf';
 import { safeFetchJson } from '../lib/api';
@@ -20,6 +23,7 @@ interface DoctorVisitSummaryProps {
 }
 
 export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports }) => {
+  const { user } = useAuth();
   const printableRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(false);
@@ -49,7 +53,23 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
     return reports.length > 0;
   }, [summaryData, reports]);
 
-  // Persist doctor visit summary to localStorage whenever it changes
+  // Real-time sync with Firestore for cross-device access
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.doctorSummary !== undefined) {
+          setSummaryData(data.doctorSummary);
+        }
+      }
+    }, (err) => {
+      console.error('Error subscribing to Doctor Visit Summary:', err);
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Persist doctor visit summary to localStorage and Firestore whenever it changes
   useEffect(() => {
     try {
       if (summaryData) {
@@ -60,7 +80,14 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
     } catch (e) {
       console.error('Failed to save doctor summary to localStorage', e);
     }
-  }, [summaryData]);
+
+    if (user) {
+      setDoc(doc(db, 'users', user.uid), {
+        doctorSummary: summaryData,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((err) => console.error('Error persisting doctor summary to Firestore:', err));
+    }
+  }, [summaryData, user]);
 
   // Generate Doctor Visit Preparation Data
   const handleGenerateDoctorSummary = async () => {

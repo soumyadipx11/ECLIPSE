@@ -109,6 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    try {
+      localStorage.removeItem('aroveda_ai_insights');
+      localStorage.removeItem('aroveda_doctor_summary');
+      localStorage.removeItem('aroveda_custom_reminders');
+    } catch (e) {}
     await firebaseSignOut(auth);
   };
 
@@ -177,6 +182,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Failed to delete Auth account (may require recent login):", e);
       await firebaseSignOut(auth);
     }
+
+    try {
+      localStorage.removeItem('aroveda_ai_insights');
+      localStorage.removeItem('aroveda_doctor_summary');
+      localStorage.removeItem('aroveda_custom_reminders');
+    } catch (e) {}
 
     setUserProfile(null);
   };

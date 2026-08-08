@@ -55,6 +55,37 @@
         "createdAt": { "type": "string" }
       },
       "required": ["userId", "title", "message", "type"]
+    },
+    "ai_insights": {
+      "title": "AI Insights",
+      "description": "Multi-report AI health trajectory insights and reminders per user",
+      "properties": {
+        "userId": { "type": "string" },
+        "overallTrajectory": { "type": "string" },
+        "keyInsights": { "type": "array" },
+        "lifestyleRecommendations": { "type": "array" },
+        "suggestedReminders": { "type": "array" },
+        "customReminders": { "type": "array" },
+        "generatedReportIds": { "type": "array" },
+        "generatedReportCount": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId"]
+    },
+    "doctor_summaries": {
+      "title": "Doctor Visit Summaries",
+      "description": "AI generated doctor visit preparation summaries per user",
+      "properties": {
+        "userId": { "type": "string" },
+        "generalNote": { "type": "string" },
+        "abnormalBiomarkersSummary": { "type": "array" },
+        "keyQuestionsForDoctor": { "type": "array" },
+        "recommendedSpecialists": { "type": "array" },
+        "generatedReportIds": { "type": "array" },
+        "generatedReportCount": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId"]
     }
   }
 }
