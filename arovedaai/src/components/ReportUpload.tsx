@@ -36,6 +36,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
 }) => {
   const { userProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const insightsRef = useRef<HTMLDivElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileBase64, setFileBase64] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
       setUserConsent(userProfile.privacyConsent);
     }
   }, [userProfile]);
-  
+
   const [analyzing, setAnalyzing] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,15 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
     aiSummary?: ReportAiSummary;
     extractedItems: LabBiomarker[];
   } | null>(null);
+
+  useEffect(() => {
+    if (savedReportInsights) {
+      const timer = setTimeout(() => {
+        insightsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+      return () => clearTimeout(timer);
+    }
+  }, [savedReportInsights]);
 
   // Clear / Discard Draft
   const handleDiscardDraft = () => {
@@ -388,7 +398,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           : 'border-emerald-500/40';
 
         return (
-          <div className={`bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border ${outerBorderClass} p-6 shadow-xl space-y-5 animate-in fade-in duration-300`}>
+          <div ref={insightsRef} className={`bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border ${outerBorderClass} p-6 shadow-xl space-y-5 animate-in fade-in duration-300 scroll-mt-6`}>
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner ${
