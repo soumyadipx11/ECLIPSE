@@ -106,7 +106,7 @@ function AppContent() {
         <div className="absolute top-[40%] right-[5%] w-[500px] h-[500px] rounded-full bg-gradient-to-bl from-amber-500/15 to-rose-600/25 dark:from-amber-950/20 dark:to-[#ec003f]/30 blur-[110px] animate-heartbeat-glow" />
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -116,7 +116,7 @@ function AppContent() {
           setDarkMode={setDarkMode}
         />
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 lg:pt-24 pb-12">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 lg:pt-24 pb-12">
           <AnimatePresence>
             {notification && (
               <motion.div
@@ -196,7 +196,7 @@ function AppContent() {
         </main>
 
         {/* Global Footer */}
-        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-[#121418]/40 backdrop-blur-md py-6 transition-colors duration-200">
+        <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-[#121418]/40 backdrop-blur-md py-6 transition-colors duration-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#ec003f]" />
