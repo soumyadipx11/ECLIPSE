@@ -39,6 +39,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function verifyAuthRateLimit(email: string, action: 'login' | 'signup' | 'reset-password'): Promise<void> {
+  try {
+    const res = await fetch('/api/auth/check-limit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, action })
+    });
+
+    if (res.status === 429) {
+      const data = await res.json().catch(() => ({}));
+      const retryAfter = data.retryAfterSeconds || 10;
+      throw new Error(`Too many authentication attempts. Rate limit & exponential backoff active. Please wait ${retryAfter} seconds before trying again.`);
+    }
+  } catch (err: any) {
+    if (err.message?.includes('exponential backoff') || err.message?.includes('Rate limit')) {
+      throw err;
+    }
+  }
+}
+
+async function reportAuthOutcome(email: string, action: 'login' | 'signup' | 'reset-password', success: boolean): Promise<void> {
+  try {
+    await fetch('/api/auth/report-attempt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, action, success })
+    });
+  } catch (e) {
+    // Silent catch
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -90,21 +122,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
-    await signInWithEmailAndPassword(auth, email, pass);
+    await verifyAuthRateLimit(email, 'login');
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      await reportAuthOutcome(email, 'login', true);
+    } catch (err) {
+      await reportAuthOutcome(email, 'login', false);
+      throw err;
+    }
   };
 
   const signupWithEmail = async (email: string, pass: string, name: string) => {
-    const res = await createUserWithEmailAndPassword(auth, email, pass);
-    if (res.user) {
-      const newProfile: UserProfile = {
-        uid: res.user.uid,
-        email: res.user.email || email,
-        displayName: name || email.split('@')[0],
-        privacyConsent: true,
-        consentDate: new Date().toISOString()
-      };
-      await setDoc(doc(db, 'users', res.user.uid), cleanUndefined(newProfile));
-      setUserProfile(newProfile);
+    await verifyAuthRateLimit(email, 'signup');
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email, pass);
+      if (res.user) {
+        const newProfile: UserProfile = {
+          uid: res.user.uid,
+          email: res.user.email || email,
+          displayName: name || email.split('@')[0],
+          privacyConsent: true,
+          consentDate: new Date().toISOString()
+        };
+        await setDoc(doc(db, 'users', res.user.uid), cleanUndefined(newProfile));
+        setUserProfile(newProfile);
+      }
+      await reportAuthOutcome(email, 'signup', true);
+    } catch (err) {
+      await reportAuthOutcome(email, 'signup', false);
+      throw err;
     }
   };
 
@@ -118,7 +164,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+    await verifyAuthRateLimit(email, 'reset-password');
+    try {
+      await sendPasswordResetEmail(auth, email);
+      await reportAuthOutcome(email, 'reset-password', true);
+    } catch (err) {
+      await reportAuthOutcome(email, 'reset-password', false);
+      throw err;
+    }
   };
 
   const updateConsent = async (consent: boolean) => {

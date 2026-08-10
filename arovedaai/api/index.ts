@@ -1,6 +1,15 @@
 import express from "express";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+import {
+  authRateLimitMiddleware,
+  publicRateLimitMiddleware,
+  authedRateLimitMiddleware,
+  checkAuthRateLimit,
+  recordAuthAttempt,
+  getClientIp,
+  rateLimitConfig
+} from "./rateLimiter";
 
 dotenv.config();
 
@@ -97,8 +106,110 @@ async function generateContentWithRetry(
 // Express Router for API Endpoints
 const apiRouter = express.Router();
 
-apiRouter.get("/health", (_req, res) => {
-  res.json({ status: "ok", app: "HealthLens AI Server", timestamp: new Date().toISOString() });
+// Public Endpoint with Moderate Rate Limiting
+apiRouter.get("/health", publicRateLimitMiddleware, (_req, res) => {
+  res.json({
+    status: "ok",
+    app: "HealthLens AI Server",
+    timestamp: new Date().toISOString(),
+    rateLimits: {
+      publicWindowMs: rateLimitConfig.publicWindowMs,
+      publicMaxRequests: rateLimitConfig.publicMaxRequests,
+      authedWindowMs: rateLimitConfig.authedWindowMs,
+      authedMaxRequests: rateLimitConfig.authedMaxRequests,
+      authMaxAttemptsIp: rateLimitConfig.authMaxAttemptsIp,
+      authMaxAttemptsAccount: rateLimitConfig.authMaxAttemptsAccount,
+    }
+  });
+});
+
+// --- AUTHENTICATION RATE LIMITING ENDPOINTS ---
+// Stricter limits with per-IP + per-account limits and exponential backoff
+
+// Endpoint to verify if login/signup/reset is currently allowed before proceeding
+apiRouter.post("/auth/check-limit", authRateLimitMiddleware, (req, res) => {
+  const ip = getClientIp(req);
+  const email = req.body?.email;
+  const status = checkAuthRateLimit(ip, typeof email === "string" ? email : undefined);
+  res.json({
+    allowed: !status.limited,
+    retryAfterSeconds: status.retryAfterSec,
+    reason: status.reason,
+    isIpLimited: status.isIpLimited,
+    isAccountLimited: status.isAccountLimited
+  });
+});
+
+// Endpoint to record attempt outcomes (success resets failures, failure increments and triggers exponential backoff)
+apiRouter.post("/auth/report-attempt", (req, res) => {
+  const ip = getClientIp(req);
+  const { email, success } = req.body;
+  const result = recordAuthAttempt(ip, typeof email === "string" ? email : undefined, Boolean(success));
+  res.json({
+    success: true,
+    ipFailures: result.ipFailures,
+    accountFailures: result.accountFailures
+  });
+});
+
+// Server Auth Login Route
+apiRouter.post("/auth/login", authRateLimitMiddleware, (req, res) => {
+  const ip = getClientIp(req);
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    recordAuthAttempt(ip, typeof email === "string" ? email : undefined, false);
+    return res.status(400).json({
+      success: false,
+      error: "Email and password are required."
+    });
+  }
+
+  res.json({
+    success: true,
+    message: "Auth route rate limit verified.",
+    email: String(email).toLowerCase().trim()
+  });
+});
+
+// Server Auth Signup Route
+apiRouter.post("/auth/signup", authRateLimitMiddleware, (req, res) => {
+  const ip = getClientIp(req);
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    recordAuthAttempt(ip, typeof email === "string" ? email : undefined, false);
+    return res.status(400).json({
+      success: false,
+      error: "Email and password are required."
+    });
+  }
+
+  res.json({
+    success: true,
+    message: "Signup route rate limit verified.",
+    email: String(email).toLowerCase().trim()
+  });
+});
+
+// Server Auth Reset Password Route
+apiRouter.post("/auth/reset-password", authRateLimitMiddleware, (req, res) => {
+  const ip = getClientIp(req);
+  const { email } = req.body;
+
+  if (!email) {
+    recordAuthAttempt(ip, typeof email === "string" ? email : undefined, false);
+    return res.status(400).json({
+      success: false,
+      error: "Email is required."
+    });
+  }
+
+  res.json({
+    success: true,
+    message: "Reset password route rate limit verified.",
+    email: String(email).toLowerCase().trim()
+  });
 });
 
 const BIOMARKER_ALIASES: Record<string, string> = {
@@ -395,8 +506,8 @@ function normalizeServerBiomarkerName(rawName: string): string {
   return rawName.trim().replace(/\s+/g, ' ').replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 }
 
-// Endpoint: OCR & AI Biomarker Extraction
-apiRouter.post("/ocr-analyze", async (req, res) => {
+// Endpoint: OCR & AI Biomarker Extraction (Authenticated User Action Rate Limit)
+apiRouter.post("/ocr-analyze", authedRateLimitMiddleware, async (req, res) => {
   try {
     const { fileBase64, mimeType, rawText, userConsentGiven } = req.body;
 
@@ -529,7 +640,7 @@ Return ONLY a valid JSON object matching this schema:
 });
 
 // Endpoint: Multi-Report Trend Insights & Recommendations
-apiRouter.post("/trend-insights", async (req, res) => {
+apiRouter.post("/trend-insights", authedRateLimitMiddleware, async (req, res) => {
   try {
     const { reportHistory, userConsentGiven } = req.body;
 
@@ -628,7 +739,7 @@ Return ONLY a JSON object matching this schema:
 });
 
 // Endpoint: Doctor Visit Summary Generator
-apiRouter.post("/doctor-summary-ai", async (req, res) => {
+apiRouter.post("/doctor-summary-ai", authedRateLimitMiddleware, async (req, res) => {
   try {
     const { reportHistory } = req.body;
     if (!reportHistory || reportHistory.length === 0) {
