@@ -58,6 +58,16 @@ export interface SmartAlert {
   reportId?: string;
 }
 
+export interface StandardReferenceRange {
+  minRef?: number;
+  maxRef?: number;
+  unit: string;
+  referenceRange: string;
+  category: string;
+  clinicalNote: string;
+  source: string;
+}
+
 export interface HealthTrendPoint {
   date: string;
   value: number;
@@ -66,6 +76,10 @@ export interface HealthTrendPoint {
   flag: BiomarkerFlag;
   minRef?: number;
   maxRef?: number;
+  referenceRange?: string;
+  standardMinRef?: number;
+  standardMaxRef?: number;
+  standardReferenceRange?: string;
 }
 
 export interface BiomarkerTrendSummary {
@@ -78,7 +92,14 @@ export interface BiomarkerTrendSummary {
   status: 'improving' | 'stable' | 'declining' | 'neutral';
   historicalPoints: HealthTrendPoint[];
   referenceRange: string;
+  minRef?: number;
+  maxRef?: number;
+  rangeSource: 'report' | 'gemini_ai';
+  hasMultipleReportRanges?: boolean;
+  chosenRangeExplanation?: string;
+  rangeHistory?: { date: string; reportTitle: string; range: string }[];
   recommendation?: string;
+  standardReference?: StandardReferenceRange;
 }
 
 export interface UserReminder {

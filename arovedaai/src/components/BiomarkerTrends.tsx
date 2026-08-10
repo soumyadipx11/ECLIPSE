@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   ArrowUpRight, 
@@ -10,11 +10,14 @@ import {
   Info,
   CheckCircle2,
   AlertTriangle,
-  FlaskConical
+  FlaskConical,
+  ShieldCheck,
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { LabReport, BiomarkerTrendSummary } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
-import { normalizeBiomarkerName, areBiomarkersEqual } from '../utils/biomarkerNormalizer';
+import { normalizeBiomarkerName, areBiomarkersEqual, parseReferenceRange, getStandardReferenceRange } from '../utils/biomarkerNormalizer';
 
 interface CustomTooltipProps {
   active?: boolean;
@@ -25,12 +28,30 @@ interface CustomTooltipProps {
 
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, unit }) => {
   if (active && payload && payload.length) {
+    const ptData = payload[0].payload;
     return (
-      <div className="bg-white/90 dark:bg-[#121418]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-3 rounded-2xl shadow-xl text-xs space-y-1">
+      <div className="bg-white/95 dark:bg-[#121418]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-3.5 rounded-2xl shadow-xl text-xs space-y-1.5 min-w-[190px]">
         <p className="font-semibold text-slate-500 dark:text-slate-400">Date: {label}</p>
-        <p className="font-bold text-rose-600 dark:text-rose-400 text-sm">
-          {payload[0].value} <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">{unit}</span>
+        <p className="font-bold text-rose-600 dark:text-rose-400 text-sm flex items-center justify-between gap-2">
+          <span>{payload[0].value} <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">{unit}</span></span>
+          {ptData.flag && ptData.flag !== 'normal' && (
+            <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
+              ptData.flag === 'high' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+            }`}>
+              {ptData.flag}
+            </span>
+          )}
         </p>
+        {ptData.standardReferenceRange && (
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium pt-1 border-t border-slate-100 dark:border-slate-800">
+            Standard Guideline Target: <span className="font-bold">{ptData.standardReferenceRange}</span>
+          </p>
+        )}
+        {ptData.referenceRange && (
+          <p className="text-[10px] text-slate-500 dark:text-slate-400">
+            Lab Report Target: <span className="font-semibold text-slate-700 dark:text-slate-300">{ptData.referenceRange}</span>
+          </p>
+        )}
       </div>
     );
   }
@@ -54,6 +75,7 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
     'LDL Cholesterol',
     'HDL Cholesterol',
     'Triglycerides',
+    'Non-HDL Cholesterol',
     'Vitamin D (25-OH)',
     'Vitamin B12',
     'TSH',
@@ -70,74 +92,80 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
     });
   });
 
-  // Combine presets with user's actual biomarkers, avoiding duplicates
-  const allAvailableBiomarkers = [...commonBiomarkers];
-  userBiomarkersSet.forEach(userBm => {
-    if (!allAvailableBiomarkers.some(cb => areBiomarkersEqual(cb, userBm))) {
-      allAvailableBiomarkers.push(userBm);
-    }
-  });
+  const userBiomarkersList = Array.from(userBiomarkersSet);
 
-  const [selectedBiomarker, setSelectedBiomarker] = useState<string>('LDL Cholesterol');
+  // Combine presets with user's actual biomarkers, prioritizing user's actual report biomarkers first
+  const allAvailableBiomarkers = [
+    ...userBiomarkersList,
+    ...commonBiomarkers.filter(cb => !userBiomarkersList.some(ub => areBiomarkersEqual(cb, ub)))
+  ];
+
+  const defaultBiomarker = allAvailableBiomarkers[0] || 'LDL Cholesterol';
+
+  const [selectedBiomarker, setSelectedBiomarker] = useState<string>(defaultBiomarker);
+
+  // Auto-select first available user biomarker if current selection has no data
+  useEffect(() => {
+    if (userBiomarkersList.length > 0) {
+      const currentTrend = getBiomarkerTrend(selectedBiomarker);
+      if (!currentTrend || currentTrend.historicalPoints.length === 0) {
+        setSelectedBiomarker(userBiomarkersList[0]);
+      }
+    }
+  }, [reports, userBiomarkersList.length]);
 
   const trendData = getBiomarkerTrend(selectedBiomarker);
 
-  // Determine single primary reference limit line (never render both upper and lower together)
-  const getSingleReferenceLimit = () => {
-    if (!trendData || trendData.historicalPoints.length === 0) return null;
-
-    const firstPoint = trendData.historicalPoints[0];
-    const maxRef = firstPoint?.maxRef;
-    const minRef = firstPoint?.minRef;
-
-    const hasHighFlag = trendData.historicalPoints.some(pt => pt.flag === 'high');
-    const hasLowFlag = trendData.historicalPoints.some(pt => pt.flag === 'low');
-
-    const nameLower = selectedBiomarker.toLowerCase();
-    const isUpperConcern = nameLower.includes('cholesterol') || nameLower.includes('ldl') || nameLower.includes('sugar') || nameLower.includes('hba1c') || nameLower.includes('triglycerides') || nameLower.includes('creatinine');
-    const isLowerConcern = nameLower.includes('vitamin') || nameLower.includes('hdl') || nameLower.includes('hemoglobin') || nameLower.includes('b12');
-
-    // Priority 1: Flagged abnormal points
-    if (hasHighFlag && maxRef !== undefined) {
-      return { type: 'upper' as const, value: maxRef, label: `Upper Limit (${maxRef} ${trendData.unit})` };
-    }
-    if (hasLowFlag && minRef !== undefined && minRef > 0) {
-      return { type: 'lower' as const, value: minRef, label: `Lower Limit (${minRef} ${trendData.unit})` };
+  // Compute reference line limits directly from trendData (wisely chosen from report or Gemini AI fallback)
+  const getReferenceLimits = () => {
+    if (!trendData || trendData.historicalPoints.length === 0) {
+      return { upperLimits: [], lowerLimits: [] };
     }
 
-    // Priority 2: Primary biomarker concern
-    if (isUpperConcern && maxRef !== undefined) {
-      return { type: 'upper' as const, value: maxRef, label: `Upper Limit (${maxRef} ${trendData.unit})` };
-    }
-    if (isLowerConcern && minRef !== undefined && minRef > 0) {
-      return { type: 'lower' as const, value: minRef, label: `Lower Limit (${minRef} ${trendData.unit})` };
+    let minRef = trendData.minRef;
+    let maxRef = trendData.maxRef;
+
+    if (minRef === undefined && maxRef === undefined && trendData.referenceRange) {
+      const parsed = parseReferenceRange(trendData.referenceRange);
+      const refStr = trendData.referenceRange.toLowerCase().trim();
+      const isLowerOnly = refStr.includes('>') || refStr.includes('greater than') || refStr.includes('above');
+      const isUpperOnly = refStr.includes('<') || refStr.includes('less than') || refStr.includes('desirable') || refStr.includes('optimal') || refStr.includes('target') || refStr.includes('below');
+      const hasRangeDash = /[0-9]+\s*[-–—]\s*[0-9]+/.test(refStr);
+
+      minRef = parsed.minRef;
+      maxRef = parsed.maxRef;
+
+      if (isLowerOnly && !hasRangeDash) maxRef = undefined;
+      if (isUpperOnly || minRef === 0 || (minRef !== undefined && maxRef !== undefined && minRef >= maxRef)) minRef = undefined;
     }
 
-    // Priority 3: Default single limit
-    if (maxRef !== undefined) {
-      return { type: 'upper' as const, value: maxRef, label: `Upper Limit (${maxRef} ${trendData.unit})` };
-    }
-    if (minRef !== undefined && minRef > 0) {
-      return { type: 'lower' as const, value: minRef, label: `Lower Limit (${minRef} ${trendData.unit})` };
-    }
+    const upperLimits = (maxRef !== undefined && !isNaN(Number(maxRef)) && Number(maxRef) > 0)
+      ? [{ value: Number(Number(maxRef).toFixed(2)), label: `Upper Limit (${maxRef} ${trendData.unit})` }]
+      : [];
 
-    return null;
+    const lowerLimits = (minRef !== undefined && !isNaN(Number(minRef)) && Number(minRef) > 0)
+      ? [{ value: Number(Number(minRef).toFixed(2)), label: `Lower Limit (${minRef} ${trendData.unit})` }]
+      : [];
+
+    return { upperLimits, lowerLimits };
   };
 
-  const activeRefLimit = getSingleReferenceLimit();
+  const { upperLimits, lowerLimits } = getReferenceLimits();
 
   const getYDomain = () => {
     if (!trendData || trendData.historicalPoints.length === 0) return ['auto', 'auto'];
     
     const values = trendData.historicalPoints.map(pt => pt.value);
-    const refValue = activeRefLimit ? [activeRefLimit.value] : [];
-    
-    const allValues = [...values, ...refValue];
+    const limitValues = [
+      ...upperLimits.map(l => l.value),
+      ...lowerLimits.map(l => l.value)
+    ];
+
+    const allValues = [...values, ...limitValues];
     const minValue = Math.min(...allValues);
     const maxValue = Math.max(...allValues);
     
     const range = maxValue - minValue;
-    // Generous 25% padding above and below so points and reference line never touch the axes
     const padding = range === 0 ? Math.max(2, Math.abs(maxValue) * 0.25) : range * 0.28;
     
     let finalMin = minValue - padding;
@@ -158,14 +186,14 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span className="w-6 h-0.5 bg-rose-600 rounded-full"></span>
             <span className="text-[10px] font-extrabold tracking-widest text-rose-600 dark:text-rose-500 uppercase">
-              HISTORICAL BIOMARKER TRENDS
+              CLINICAL BIOMARKER ANALYTICS
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
             Biomarker <span className="italic font-extrabold text-rose-600 dark:text-rose-500">Trends</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-            Select a biomarker below to map its values across your complete laboratory history. Monitor trajectories, deviations, and reference lines.
+            Track lab values over time against standardized clinical guidelines (ADA, NLA, AHA) or individual lab report limits.
           </p>
         </div>
       </div>
@@ -226,7 +254,9 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
               <span className="text-2xl font-bold text-slate-900 dark:text-white mt-1 block">
                 {trendData.currentVal} <span className="text-xs font-normal text-slate-500">{trendData.unit}</span>
               </span>
-              <span className="text-[11px] text-slate-400">Ref: {trendData.referenceRange}</span>
+              <span className="text-[11px] text-slate-400">
+                Target: {trendData.referenceRange}
+              </span>
             </div>
 
             <div>
@@ -271,17 +301,17 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
 
           {/* Interactive Recharts Line Graph Card */}
           <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   {selectedBiomarker} Historical Trajectory
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Dotted lines represent clinical standard reference bounds.
+                  Dotted horizontal lines mark reference target limits ({trendData.referenceRange || 'N/A'}).
                 </p>
               </div>
 
-              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-800/60 border border-white/80 dark:border-slate-700/50 backdrop-blur-md px-3 py-1 rounded-xl">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-800/60 border border-white/80 dark:border-slate-700/50 backdrop-blur-md px-3 py-1 rounded-xl self-start sm:self-auto">
                 Unit: {trendData.unit}
               </span>
             </div>
@@ -305,15 +335,17 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                     tickLine={false}
                   />
                    <Tooltip content={<CustomTooltip unit={trendData.unit} />} />
-                  {/* Single primary reference line (Upper or Lower Limit, never both together) */}
-                  {activeRefLimit && activeRefLimit.type === 'upper' && (
+                  
+                  {/* Upper Limit Reference Lines */}
+                  {upperLimits.map((limit, idx) => (
                     <ReferenceLine 
-                      y={activeRefLimit.value} 
+                      key={`upper-${idx}-${limit.value}`}
+                      y={limit.value} 
                       stroke="#ef4444" 
                       strokeDasharray="4 4" 
                       strokeWidth={1.5}
                       label={{ 
-                        value: activeRefLimit.label, 
+                        value: limit.label, 
                         fill: '#ef4444', 
                         fontSize: 10, 
                         fontWeight: 700, 
@@ -321,15 +353,18 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                         dy: -6 
                       }} 
                     />
-                  )}
-                  {activeRefLimit && activeRefLimit.type === 'lower' && (
+                  ))}
+
+                  {/* Lower Limit Reference Lines */}
+                  {lowerLimits.map((limit, idx) => (
                     <ReferenceLine 
-                      y={activeRefLimit.value} 
+                      key={`lower-${idx}-${limit.value}`}
+                      y={limit.value} 
                       stroke="#f59e0b" 
                       strokeDasharray="4 4" 
                       strokeWidth={1.5}
                       label={{ 
-                        value: activeRefLimit.label, 
+                        value: limit.label, 
                         fill: '#f59e0b', 
                         fontSize: 10, 
                         fontWeight: 700, 
@@ -337,7 +372,8 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                         dy: 6 
                       }} 
                     />
-                  )}
+                  ))}
+
                   <Line
                     type="monotone"
                     dataKey="value"
@@ -353,9 +389,11 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
 
           {/* Historical Data Table */}
           <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              All Recorded Measurements for {selectedBiomarker}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                All Recorded Measurements for {selectedBiomarker}
+              </h3>
+            </div>
 
             <div className="overflow-x-auto border border-slate-200 dark:border-white/10 rounded-2xl">
               <table className="w-full text-xs text-left">
@@ -376,7 +414,9 @@ export const BiomarkerTrends: React.FC<BiomarkerTrendsProps> = ({
                       <td className="p-3 font-bold text-slate-900 dark:text-white">
                         {pt.value} <span className="font-normal text-slate-400 text-[10px]">{pt.unit}</span>
                       </td>
-                      <td className="p-3 text-slate-500">{trendData.referenceRange}</td>
+                      <td className="p-3 font-medium text-slate-700 dark:text-slate-300">
+                        {pt.referenceRange || trendData.referenceRange}
+                      </td>
                       <td className="p-3">
                         {pt.flag === 'high' ? (
                           <span className="bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded text-[10px]">

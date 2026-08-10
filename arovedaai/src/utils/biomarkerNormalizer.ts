@@ -480,6 +480,246 @@ export function normalizeBiomarkerName(rawName: string): string {
     .replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 }
 
+export interface StandardReferenceRange {
+  minRef?: number;
+  maxRef?: number;
+  unit: string;
+  referenceRange: string;
+  category: string;
+  clinicalNote: string;
+  source: string;
+}
+
+export const STANDARD_CLINICAL_RANGES: Record<string, StandardReferenceRange> = {
+  'Fasting Blood Sugar': {
+    minRef: 70,
+    maxRef: 99,
+    unit: 'mg/dL',
+    referenceRange: '70 - 99 mg/dL',
+    category: 'Diabetes & Glucose',
+    clinicalNote: 'Normal fasting glucose. 100-125 mg/dL indicates prediabetes.',
+    source: 'American Diabetes Association (ADA)'
+  },
+  'Postprandial Blood Sugar': {
+    maxRef: 140,
+    unit: 'mg/dL',
+    referenceRange: '< 140 mg/dL',
+    category: 'Diabetes & Glucose',
+    clinicalNote: 'Tested 2 hours post-meal. < 140 mg/dL is desirable.',
+    source: 'American Diabetes Association (ADA)'
+  },
+  'HbA1c': {
+    minRef: 4.0,
+    maxRef: 5.6,
+    unit: '%',
+    referenceRange: '4.0 - 5.6 %',
+    category: 'Diabetes & Glucose',
+    clinicalNote: '5.7-6.4% indicates prediabetes; 6.5%+ indicates diabetes.',
+    source: 'American Diabetes Association (ADA)'
+  },
+  'Total Cholesterol': {
+    maxRef: 200,
+    unit: 'mg/dL',
+    referenceRange: '< 200 mg/dL',
+    category: 'Lipid Panel',
+    clinicalNote: 'Desirable: < 200 mg/dL. Borderline high: 200-239 mg/dL.',
+    source: 'National Lipid Association (NLA) / AHA'
+  },
+  'LDL Cholesterol': {
+    maxRef: 100,
+    unit: 'mg/dL',
+    referenceRange: '< 100 mg/dL',
+    category: 'Lipid Panel',
+    clinicalNote: 'Optimal: < 100 mg/dL for general population; < 70 mg/dL for elevated cardiac risk.',
+    source: 'American Heart Association (AHA/ACC)'
+  },
+  'HDL Cholesterol': {
+    minRef: 40,
+    unit: 'mg/dL',
+    referenceRange: '> 40 mg/dL',
+    category: 'Lipid Panel',
+    clinicalNote: 'Desirable: > 40 mg/dL for men, > 50 mg/dL for women.',
+    source: 'American Heart Association (AHA/ACC)'
+  },
+  'Triglycerides': {
+    maxRef: 150,
+    unit: 'mg/dL',
+    referenceRange: '< 150 mg/dL',
+    category: 'Lipid Panel',
+    clinicalNote: 'Normal: < 150 mg/dL. Borderline high: 150-199 mg/dL.',
+    source: 'National Lipid Association (NLA) / AHA'
+  },
+  'Non-HDL Cholesterol': {
+    maxRef: 130,
+    unit: 'mg/dL',
+    referenceRange: '< 130 mg/dL',
+    category: 'Lipid Panel',
+    clinicalNote: 'Optimal: < 130 mg/dL for average risk; < 100 mg/dL for high cardiovascular risk.',
+    source: 'National Lipid Association (NLA)'
+  },
+  'VLDL Cholesterol': {
+    maxRef: 30,
+    unit: 'mg/dL',
+    referenceRange: '< 30 mg/dL',
+    category: 'Lipid Panel',
+    clinicalNote: 'Calculated from triglycerides (Triglycerides / 5). Desirable < 30 mg/dL.',
+    source: 'Clinical Lipidology Guidelines'
+  },
+  'Serum Creatinine': {
+    minRef: 0.6,
+    maxRef: 1.2,
+    unit: 'mg/dL',
+    referenceRange: '0.6 - 1.2 mg/dL',
+    category: 'Kidney Function',
+    clinicalNote: 'Normal range varies slightly by sex (0.6-1.1 females, 0.7-1.3 males).',
+    source: 'National Kidney Foundation (NKF)'
+  },
+  'BUN (Blood Urea Nitrogen)': {
+    minRef: 7,
+    maxRef: 20,
+    unit: 'mg/dL',
+    referenceRange: '7 - 20 mg/dL',
+    category: 'Kidney Function',
+    clinicalNote: 'Evaluates kidney filtration efficiency.',
+    source: 'National Kidney Foundation (NKF)'
+  },
+  'Uric Acid': {
+    minRef: 3.5,
+    maxRef: 7.2,
+    unit: 'mg/dL',
+    referenceRange: '3.5 - 7.2 mg/dL',
+    category: 'Kidney & Metabolic',
+    clinicalNote: 'Elevated levels (> 7.0 mg/dL) increase risk of gout and kidney stones.',
+    source: 'American College of Rheumatology'
+  },
+  'ALT (SGPT)': {
+    minRef: 7,
+    maxRef: 56,
+    unit: 'U/L',
+    referenceRange: '7 - 56 U/L',
+    category: 'Liver Function',
+    clinicalNote: 'Alanine Aminotransferase; primary enzyme marker for liver health.',
+    source: 'American College of Gastroenterology (ACG)'
+  },
+  'AST (SGOT)': {
+    minRef: 8,
+    maxRef: 48,
+    unit: 'U/L',
+    referenceRange: '8 - 48 U/L',
+    category: 'Liver Function',
+    clinicalNote: 'Aspartate Aminotransferase; tissue metabolic enzyme.',
+    source: 'American College of Gastroenterology (ACG)'
+  },
+  'Alkaline Phosphatase (ALP)': {
+    minRef: 44,
+    maxRef: 147,
+    unit: 'U/L',
+    referenceRange: '44 - 147 U/L',
+    category: 'Liver & Bone',
+    clinicalNote: 'Enzyme related to liver bile ducts and bone remodeling.',
+    source: 'Clinical Pathology Guidelines'
+  },
+  'TSH': {
+    minRef: 0.4,
+    maxRef: 4.2,
+    unit: 'mIU/L',
+    referenceRange: '0.4 - 4.2 mIU/L',
+    category: 'Thyroid Panel',
+    clinicalNote: 'Thyroid Stimulating Hormone; standard primary thyroid screen.',
+    source: 'American Thyroid Association (ATA)'
+  },
+  'Free T3': {
+    minRef: 2.0,
+    maxRef: 4.4,
+    unit: 'pg/mL',
+    referenceRange: '2.0 - 4.4 pg/mL',
+    category: 'Thyroid Panel',
+    clinicalNote: 'Active circulating triiodothyronine.',
+    source: 'American Thyroid Association (ATA)'
+  },
+  'Free T4': {
+    minRef: 0.8,
+    maxRef: 1.8,
+    unit: 'ng/dL',
+    referenceRange: '0.8 - 1.8 ng/dL',
+    category: 'Thyroid Panel',
+    clinicalNote: 'Unbound thyroxine.',
+    source: 'American Thyroid Association (ATA)'
+  },
+  'Vitamin D (25-OH)': {
+    minRef: 30,
+    maxRef: 100,
+    unit: 'ng/mL',
+    referenceRange: '30 - 100 ng/mL',
+    category: 'Vitamins & Minerals',
+    clinicalNote: 'Sufficient: 30-100 ng/mL. Insufficient: 20-29 ng/mL. Deficient: < 20 ng/mL.',
+    source: 'Endocrine Society Clinical Practice Guidelines'
+  },
+  'Vitamin B12': {
+    minRef: 200,
+    maxRef: 900,
+    unit: 'pg/mL',
+    referenceRange: '200 - 900 pg/mL',
+    category: 'Vitamins & Minerals',
+    clinicalNote: 'Normal: 200-900 pg/mL.',
+    source: 'American Society of Hematology'
+  },
+  'Hemoglobin': {
+    minRef: 13.5,
+    maxRef: 17.5,
+    unit: 'g/dL',
+    referenceRange: '13.5 - 17.5 g/dL',
+    category: 'Complete Blood Count',
+    clinicalNote: 'Standard reference oxygen-carrying protein capacity.',
+    source: 'World Health Organization (WHO)'
+  },
+  'CRP': {
+    maxRef: 3.0,
+    unit: 'mg/L',
+    referenceRange: '< 3.0 mg/L',
+    category: 'Inflammation',
+    clinicalNote: 'C-reactive protein; acute phase inflammatory responder.',
+    source: 'CDC / AHA Inflammation Standards'
+  },
+  'hs-CRP': {
+    maxRef: 1.0,
+    unit: 'mg/L',
+    referenceRange: '< 1.0 mg/L',
+    category: 'Inflammation & Cardiac',
+    clinicalNote: 'Low risk: < 1.0 mg/L. Average risk: 1.0 - 3.0 mg/L. High risk: > 3.0 mg/L.',
+    source: 'American Heart Association (AHA / CDC)'
+  }
+};
+
+/**
+ * Retrieves the normalized standard medical reference range for a biomarker name
+ */
+export function getStandardReferenceRange(biomarkerName: string): StandardReferenceRange | null {
+  if (!biomarkerName) return null;
+  const canonical = normalizeBiomarkerName(biomarkerName);
+  
+  if (STANDARD_CLINICAL_RANGES[canonical]) {
+    return STANDARD_CLINICAL_RANGES[canonical];
+  }
+
+  // Fallback case-insensitive search
+  const lower = canonical.toLowerCase();
+  for (const key of Object.keys(STANDARD_CLINICAL_RANGES)) {
+    if (key.toLowerCase() === lower) {
+      return STANDARD_CLINICAL_RANGES[key];
+    }
+  }
+
+  // Fuzzy search for partial match
+  for (const key of Object.keys(STANDARD_CLINICAL_RANGES)) {
+    if (lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) {
+      return STANDARD_CLINICAL_RANGES[key];
+    }
+  }
+
+  return null;
+}
+
 /**
  * Checks whether two biomarker name strings refer to the exact same test.
  */
@@ -491,4 +731,60 @@ export function areBiomarkersEqual(name1: string, name2: string): boolean {
   const norm2 = normalizeBiomarkerName(name2);
 
   return norm1.toLowerCase() === norm2.toLowerCase();
+}
+
+/**
+ * Parses a reference range string into numeric minRef and maxRef limits.
+ * Handles formats like "70 - 99", "70-105", "< 100", "> 30", "0.4 - 4.2", "Desirable: < 200", "70 - 99 mg/dL"
+ */
+export function parseReferenceRange(rangeStr?: string): { minRef?: number; maxRef?: number } {
+  if (!rangeStr) return {};
+
+  const clean = rangeStr.replace(/,/g, '').trim();
+
+  // Single upper limit triggers (if no two-sided range hyphen exists)
+  const lessMatch = clean.match(/(?:<|<=|less than|below|up to|desirable:?\s*<|optimal:?\s*<|target:?\s*<|desirable\s+<|optimal\s+<|target\s+<)\s*([0-9]+(?:\.[0-9]+)?)/i);
+  // Single lower limit triggers
+  const greaterMatch = clean.match(/(?:>|>=|greater than|above|more than|at least)\s*([0-9]+(?:\.[0-9]+)?)/i);
+
+  const hasRangeDash = /[0-9]+\s*[-–—]\s*[0-9]+/.test(clean);
+
+  if (lessMatch && !hasRangeDash) {
+    const maxVal = parseFloat(lessMatch[1]);
+    if (!isNaN(maxVal)) {
+      return { maxRef: maxVal };
+    }
+  }
+
+  if (greaterMatch && !hasRangeDash) {
+    const minVal = parseFloat(greaterMatch[1]);
+    if (!isNaN(minVal)) {
+      return { minRef: minVal };
+    }
+  }
+
+  // Pattern 2: Two-sided Range "70 - 99" or "70-99" or "0.4 - 4.2" or "13.5-17.5"
+  const rangeMatch = clean.match(/([0-9]+(?:\.[0-9]+)?)\s*[-–—]\s*([0-9]+(?:\.[0-9]+)?)/);
+  if (rangeMatch) {
+    const minVal = parseFloat(rangeMatch[1]);
+    const maxVal = parseFloat(rangeMatch[2]);
+    if (!isNaN(minVal) && !isNaN(maxVal) && maxVal > minVal) {
+      if (minVal === 0) {
+        return { maxRef: maxVal };
+      }
+      return { minRef: minVal, maxRef: maxVal };
+    }
+  }
+
+  // Fallbacks if match existed
+  if (lessMatch) {
+    const maxVal = parseFloat(lessMatch[1]);
+    if (!isNaN(maxVal)) return { maxRef: maxVal };
+  }
+  if (greaterMatch) {
+    const minVal = parseFloat(greaterMatch[1]);
+    if (!isNaN(minVal)) return { minRef: minVal };
+  }
+
+  return {};
 }

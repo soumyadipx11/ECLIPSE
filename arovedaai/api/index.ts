@@ -1082,6 +1082,63 @@ Return ONLY a JSON object with this schema:
   }
 });
 
+// Endpoint: Infer Biomarker Reference Range using Gemini AI when lab report lacks reference ranges
+apiRouter.post("/infer-reference-range", authedRateLimitMiddleware, async (req, res) => {
+  try {
+    const { biomarkerName, unit } = req.body;
+    if (!biomarkerName) {
+      return res.status(400).json({ error: "Biomarker name is required." });
+    }
+
+    const ai = getGeminiClient();
+    const prompt = `You are a clinical pathology assistant for HealthLens AI.
+Provide the standard clinical reference range for the biomarker "${biomarkerName}" (unit: "${unit || ''}") according to established guidelines (ADA, AHA, NKF, ATA, WHO).
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "referenceRange": "string (e.g. '< 100 mg/dL' or '70 - 99 mg/dL')",
+  "minRef": number or null,
+  "maxRef": number or null,
+  "unit": "string",
+  "source": "string (e.g. 'Gemini AI Clinical Guidelines (ADA/AHA)')",
+  "clinicalNote": "string"
+}
+`;
+
+    const response = await generateContentWithRetry(ai, {
+      model: "gemini-3.6-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const responseText = response.text || "";
+    let parsedData;
+    try {
+      parsedData = JSON.parse(responseText);
+    } catch (e) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Failed to parse AI reference range.");
+      }
+    }
+
+    res.json({
+      success: true,
+      data: parsedData
+    });
+  } catch (err: any) {
+    console.error("Error in /infer-reference-range:", err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to infer reference range via Gemini AI."
+    });
+  }
+});
+
 // URL normalization for Vercel rewrites
 app.use((req, _res, next) => {
   if (req.url === "/api" && req.originalUrl && req.originalUrl !== "/api") {

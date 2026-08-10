@@ -23,7 +23,7 @@ import {
 } from '../types';
 import { SAMPLE_LAB_REPORTS } from '../data/sampleReports';
 import { cleanUndefined } from '../utils/sanitize';
-import { normalizeBiomarkerName, areBiomarkersEqual } from '../utils/biomarkerNormalizer';
+import { normalizeBiomarkerName, areBiomarkersEqual, parseReferenceRange, getStandardReferenceRange } from '../utils/biomarkerNormalizer';
 
 export function useReports() {
   const { user } = useAuth();
@@ -253,6 +253,9 @@ export function useReports() {
     // Reports sorted chronologically descending in state, let's reverse for chronological line chart
     const sortedChronological = [...reports].sort((a, b) => new Date(a.testDate).getTime() - new Date(b.testDate).getTime());
 
+    const canonicalName = normalizeBiomarkerName(biomarkerName);
+    const standardRef = getStandardReferenceRange(canonicalName);
+
     sortedChronological.forEach(r => {
       const matched = (r.extractedData || []).find(
         b => areBiomarkersEqual(b.testName, biomarkerName)
@@ -262,14 +265,35 @@ export function useReports() {
         unit = matched.unit || unit;
         referenceRange = matched.referenceRange || referenceRange;
 
+        const refStr = (matched.referenceRange || '').toLowerCase().trim();
+        const isLowerOnly = refStr.includes('>') || refStr.includes('greater than') || refStr.includes('above') || refStr.includes('more than');
+        const isUpperOnly = refStr.includes('<') || refStr.includes('less than') || refStr.includes('desirable') || refStr.includes('optimal') || refStr.includes('target') || refStr.includes('below') || refStr.includes('up to');
+
+        const parsed = parseReferenceRange(matched.referenceRange);
+        let minRef = matched.minRef !== undefined ? Number(matched.minRef) : parsed.minRef;
+        let maxRef = matched.maxRef !== undefined ? Number(matched.maxRef) : parsed.maxRef;
+
+        const hasRangeDash = /[0-9]+\s*[-–—]\s*[0-9]+/.test(refStr);
+
+        if (isLowerOnly && !hasRangeDash) {
+          maxRef = undefined;
+        }
+        if (isUpperOnly || minRef === 0 || (minRef !== undefined && maxRef !== undefined && minRef >= maxRef)) {
+          minRef = undefined;
+        }
+
         points.push({
           date: r.testDate,
           value: Number(matched.value),
-          unit: matched.unit,
+          unit: matched.unit || unit || (standardRef ? standardRef.unit : ''),
           reportTitle: r.title,
           flag: matched.flag,
-          minRef: matched.minRef,
-          maxRef: matched.maxRef
+          minRef,
+          maxRef,
+          referenceRange: matched.referenceRange || referenceRange || (standardRef ? standardRef.referenceRange : ''),
+          standardMinRef: standardRef?.minRef,
+          standardMaxRef: standardRef?.maxRef,
+          standardReferenceRange: standardRef?.referenceRange
         });
       }
     });
@@ -297,16 +321,119 @@ export function useReports() {
       }
     }
 
+    // Determine reference range strategy:
+    // 1. Primary: Use reference range from report.
+    // 2. If different reports have different upper limits choose MIN, for different lower limits choose MAX.
+    // 3. If no report provides a range: Use Gemini AI clinical reference range.
+
+    const pointsWithReportRange = points.filter(p => p.referenceRange && p.referenceRange.trim() !== '');
+    const uniqueReportRanges = Array.from(new Set(pointsWithReportRange.map(p => p.referenceRange?.trim())));
+
+    let chosenReferenceRange = '';
+    let chosenMinRef: number | undefined = undefined;
+    let chosenMaxRef: number | undefined = undefined;
+    let rangeSource: 'report' | 'gemini_ai' = 'report';
+    let hasMultipleReportRanges = false;
+    let chosenRangeExplanation = '';
+    const rangeHistory: { date: string; reportTitle: string; range: string }[] = [];
+
+    points.forEach(p => {
+      if (p.referenceRange) {
+        rangeHistory.push({
+          date: p.date,
+          reportTitle: p.reportTitle,
+          range: p.referenceRange
+        });
+      }
+    });
+
+    const reportMinRefs: number[] = [];
+    const reportMaxRefs: number[] = [];
+
+    pointsWithReportRange.forEach(p => {
+      if (p.minRef !== undefined && !isNaN(p.minRef)) {
+        reportMinRefs.push(p.minRef);
+      }
+      if (p.maxRef !== undefined && !isNaN(p.maxRef)) {
+        reportMaxRefs.push(p.maxRef);
+      }
+    });
+
+    if (pointsWithReportRange.length > 0) {
+      rangeSource = 'report';
+
+      const chosenMin = reportMinRefs.length > 0 ? Math.max(...reportMinRefs) : undefined;
+      const chosenMax = reportMaxRefs.length > 0 ? Math.min(...reportMaxRefs) : undefined;
+
+      chosenMinRef = chosenMin;
+      chosenMaxRef = chosenMax;
+
+      const hasMultipleUpper = new Set(reportMaxRefs).size > 1;
+      const hasMultipleLower = new Set(reportMinRefs).size > 1;
+      hasMultipleReportRanges = uniqueReportRanges.length > 1;
+
+      const unitStr = unit ? ` ${unit}` : '';
+      if (chosenMin !== undefined && chosenMax !== undefined) {
+        chosenReferenceRange = `${chosenMin} - ${chosenMax}${unitStr}`;
+      } else if (chosenMax !== undefined) {
+        chosenReferenceRange = `< ${chosenMax}${unitStr}`;
+      } else if (chosenMin !== undefined) {
+        chosenReferenceRange = `> ${chosenMin}${unitStr}`;
+      } else {
+        const latestPointWithRange = pointsWithReportRange[pointsWithReportRange.length - 1];
+        chosenReferenceRange = latestPointWithRange.referenceRange || '';
+      }
+
+      if (hasMultipleUpper || hasMultipleLower || hasMultipleReportRanges) {
+        const rules: string[] = [];
+        if (hasMultipleUpper && chosenMax !== undefined) {
+          rules.push(`upper limit bound set to strictest minimum (${chosenMax}${unitStr})`);
+        }
+        if (hasMultipleLower && chosenMin !== undefined) {
+          rules.push(`lower limit bound set to strictest maximum (${chosenMin}${unitStr})`);
+        }
+        chosenRangeExplanation = `Consolidated reference range (${chosenReferenceRange}) across multiple lab reports: ${rules.length > 0 ? rules.join(', ') : 'selected strictest limits'}.`;
+      } else {
+        chosenRangeExplanation = `Reference range extracted directly from lab reports (${chosenReferenceRange}).`;
+      }
+    } else {
+      // Fallback: No reference range was given in reports -> Use Gemini AI clinical guidelines
+      rangeSource = 'gemini_ai';
+      chosenReferenceRange = standardRef?.referenceRange || '';
+      chosenMinRef = standardRef?.minRef;
+      chosenMaxRef = standardRef?.maxRef;
+      hasMultipleReportRanges = false;
+      chosenRangeExplanation = chosenReferenceRange
+        ? `No reference range provided in lab reports. Standard reference range generated via Gemini AI clinical guidelines (${chosenReferenceRange}).`
+        : 'No reference range available.';
+    }
+
+    // Ensure all points carry reference range for tooltip display
+    points.forEach(p => {
+      if (!p.referenceRange) {
+        p.referenceRange = chosenReferenceRange;
+        p.minRef = chosenMinRef;
+        p.maxRef = chosenMaxRef;
+      }
+    });
+
     return {
-      biomarkerName,
-      category: category || 'Biomarkers',
+      biomarkerName: canonicalName || biomarkerName,
+      category: category || standardRef?.category || 'Biomarkers',
       currentVal,
       previousVal,
-      unit,
+      unit: unit || standardRef?.unit || '',
       changePercent,
       status,
       historicalPoints: points,
-      referenceRange
+      referenceRange: chosenReferenceRange,
+      minRef: chosenMinRef,
+      maxRef: chosenMaxRef,
+      rangeSource,
+      hasMultipleReportRanges,
+      chosenRangeExplanation,
+      rangeHistory,
+      standardReference: standardRef || undefined
     };
   };
 
