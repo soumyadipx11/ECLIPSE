@@ -20,3 +20,35 @@ export function cleanUndefined<T>(obj: T): T {
   }
   return obj;
 }
+
+/**
+ * Sanitizes an error to ensure users never see raw stack traces, file paths,
+ * code line numbers, or raw database connection errors.
+ */
+export function cleanUserErrorMessage(err: any, fallbackMessage: string = "An unexpected error occurred. Please try again."): string {
+  if (!err) return fallbackMessage;
+
+  const raw = typeof err === "string" ? err : err.message || String(err);
+
+  const isTechnicalLeak =
+    raw.includes("at ") ||
+    raw.includes("/var/") ||
+    raw.includes("node_modules") ||
+    raw.includes(".ts:") ||
+    raw.includes(".js:") ||
+    raw.includes("ECONNREFUSED") ||
+    raw.includes("FirebaseError:") ||
+    raw.includes("Firestore") ||
+    raw.includes("SQL") ||
+    raw.includes("file:///") ||
+    raw.includes("SyntaxError") ||
+    raw.includes("TypeError") ||
+    raw.includes("ReferenceError") ||
+    raw.length > 200;
+
+  if (isTechnicalLeak) {
+    return fallbackMessage;
+  }
+
+  return raw;
+}

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { LabBiomarker, LabReport, ReportAiSummary } from '../types';
 import { safeFetchJson } from '../lib/api';
-import { cleanUndefined } from '../utils/sanitize';
+import { cleanUndefined, cleanUserErrorMessage } from '../utils/sanitize';
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 import { useAuth } from '../context/AuthContext';
 
@@ -207,7 +207,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
       setIsExtracted(true);
     } catch (err: any) {
       console.error("Analysis error:", err);
-      setError(err.message || 'An error occurred while parsing the lab report.');
+      setError(cleanUserErrorMessage(err, 'An error occurred while analyzing the lab report document. Please try again.'));
     } finally {
       setAnalyzing(false);
     }
@@ -298,7 +298,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
       onSuccess();
     } catch (err: any) {
       console.error("Save error:", err);
-      setError(err.message || 'Failed to save report to database.');
+      setError(cleanUserErrorMessage(err, 'Failed to save report to database. Please try again.'));
     } finally {
       setSaving(false);
     }

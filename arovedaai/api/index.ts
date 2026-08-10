@@ -874,8 +874,7 @@ Return ONLY a valid JSON object matching this schema:
     console.error("Error in /ocr-analyze:", err);
     res.status(500).json({
       success: false,
-      error: "Failed to analyze lab report document.",
-      details: err.message || String(err)
+      error: "Failed to analyze lab report document. Please try again."
     });
   }
 });
@@ -973,8 +972,7 @@ Return ONLY a JSON object matching this schema:
     console.error("Error in /trend-insights:", err);
     res.status(500).json({
       success: false,
-      error: "Failed to generate health trend insights.",
-      details: err.message || String(err)
+      error: "Failed to generate health trend insights. Please try again later."
     });
   }
 });
@@ -1079,8 +1077,7 @@ Return ONLY a JSON object with this schema:
     console.error("Error in /doctor-summary-ai:", err);
     res.status(500).json({
       success: false,
-      error: "Failed to generate doctor visit summary.",
-      details: err.message || String(err)
+      error: "Failed to generate doctor visit summary. Please try again later."
     });
   }
 });
@@ -1119,8 +1116,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   console.error("Unhandled API error:", err);
   res.status(500).json({
     success: false,
-    error: err?.message || "An internal server error occurred.",
-    details: String(err)
+    error: "An unexpected server error occurred. Please try again later."
   });
 });
 

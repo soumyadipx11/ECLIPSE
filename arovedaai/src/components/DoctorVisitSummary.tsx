@@ -18,6 +18,7 @@ import { LabReport, DoctorVisitSummaryData } from '../types';
 import jsPDF from 'jspdf';
 import { safeFetchJson } from '../lib/api';
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
+import { cleanUserErrorMessage } from '../utils/sanitize';
 
 interface DoctorVisitSummaryProps {
   reports: LabReport[];
@@ -155,7 +156,7 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
       setSummaryData(formattedSummary);
     } catch (err: any) {
       console.error("Doctor summary error:", err);
-      setErrorMsg(err.message || "Failed to generate doctor visit summary. Please try again.");
+      setErrorMsg(cleanUserErrorMessage(err, "Failed to generate doctor visit summary. Please try again."));
     } finally {
       setLoading(false);
     }

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { auth, updatePassword } from '../lib/firebase';
+import { cleanUserErrorMessage } from '../utils/sanitize';
 
 interface ProfileViewProps {
   totalReportsCount?: number;
@@ -82,7 +83,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
       if (err.code === 'auth/requires-recent-login') {
         setPasswordError('For security reasons, this operation requires recent authentication. Please sign out, sign back in, and try again.');
       } else {
-        setPasswordError(err.message || 'Failed to update password. Please try again.');
+        setPasswordError(cleanUserErrorMessage(err, 'Failed to update password. Please try again.'));
       }
     } finally {
       setPasswordUpdating(false);

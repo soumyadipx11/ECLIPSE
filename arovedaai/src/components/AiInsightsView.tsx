@@ -18,6 +18,7 @@ import { db } from '../lib/firebase';
 import { LabReport, UserReminder } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { safeFetchJson } from '../lib/api';
+import { cleanUserErrorMessage } from '../utils/sanitize';
 
 interface AiInsightsViewProps {
   reports: LabReport[];
@@ -217,7 +218,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
       setInsightsData(formattedInsights);
     } catch (err: any) {
       console.error("Insights error:", err);
-      setError(err.message || 'An error occurred while fetching AI insights.');
+      setError(cleanUserErrorMessage(err, 'An error occurred while fetching AI insights. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -3,7 +3,8 @@ export async function safeFetchJson<T = any>(url: string, options?: RequestInit)
   try {
     response = await fetch(url, options);
   } catch (netErr: any) {
-    throw new Error(`Network request failed to ${url}: ${netErr.message || String(netErr)}`);
+    console.error("Network error during fetch to:", url, netErr);
+    throw new Error("Network request failed. Please check your internet connection and try again.");
   }
 
   const rawText = await response.text();
@@ -12,26 +13,30 @@ export async function safeFetchJson<T = any>(url: string, options?: RequestInit)
   try {
     data = JSON.parse(rawText);
   } catch (jsonErr) {
-    // Response is not valid JSON (e.g. HTML error page from Vercel/proxy or Express fallback)
-    const cleanText = rawText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-    const snippet = cleanText.length > 120 ? cleanText.slice(0, 120) + "..." : cleanText;
+    console.error("Failed to parse JSON response from:", url, rawText);
 
     if (response.status === 404) {
-      throw new Error(`API route not found (404): ${snippet || "The requested endpoint does not exist."}`);
+      throw new Error("API route not found (404). Please try again.");
     }
 
     if (response.status >= 500) {
-      throw new Error(
-        `Server error (${response.status}): ${snippet || "A server error occurred"}. Please ensure GEMINI_API_KEY environment variable is set in production deployment settings.`
-      );
+      throw new Error(`A server error occurred (${response.status}). Please try again in a few moments.`);
     }
 
-    throw new Error(`Unexpected server response (${response.status}): ${snippet || rawText.slice(0, 100)}`);
+    throw new Error(`Unexpected server response (${response.status}). Please try again.`);
   }
 
   if (!response.ok || (data && data.success === false)) {
-    const errorMsg = data?.error || data?.details || `Server returned error (${response.status})`;
-    throw new Error(errorMsg);
+    const rawError = data?.error || `Request failed (${response.status})`;
+    // Ensure no stack traces or file paths leak
+    const isLeak = typeof rawError === 'string' && (
+      rawError.includes('at ') || 
+      rawError.includes('/var/') || 
+      rawError.includes('.ts:') || 
+      rawError.includes('ECONNREFUSED')
+    );
+    const cleanError = isLeak ? "A server processing error occurred. Please try again." : rawError;
+    throw new Error(cleanError);
   }
 
   return data;
