@@ -4,7 +4,7 @@
 [![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38bdf8.svg)](https://tailwindcss.com/)
 [![Express](https://img.shields.io/badge/Express-4.21-000000.svg)](https://expressjs.com/)
-[![Google Gemini API](https://img.shields.io/badge/Gemini_API-2.5_Flash-4285f4.svg)](https://ai.google.dev/)
+[![Google Gemini API](https://img.shields.io/badge/Gemini_API-3.6_Flash-4285f4.svg)](https://ai.google.dev/)
 
 ArovedaAI is an intelligent, secure personal health platform that parses diagnostic lab reports, extracts complex clinical biomarkers, tracks longitudinal health trends, and equips patients with actionable health insights and physician visit summaries.
 
@@ -13,7 +13,7 @@ ArovedaAI is an intelligent, secure personal health platform that parses diagnos
 ## ✨ Key Features
 
 - 📄 **AI-Powered Multi-Page OCR Lab Extraction**:
-  - Automatically processes PDF documents and medical images using Google Gemini 2.5 Flash vision.
+  - Automatically processes PDF documents and medical images using Google Gemini 3.6 Flash vision.
   - Extracts test names, numerical values, units, reference intervals, and flags out-of-range results.
   - Features intelligent normalization that strictly distinguishes ambiguous test names across labs (e.g., distinguishing **VLDL Cholesterol** from **LDL Cholesterol**, **HbA1c**, **Fasting Blood Sugar**, **ALT/SGPT**, **TSH**, etc.).
 
@@ -40,7 +40,7 @@ ArovedaAI is an intelligent, secure personal health platform that parses diagnos
 
 - **Frontend**: React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Recharts, Motion
 - **Backend**: Express.js, TypeScript (`tsx` for dev, `esbuild` for production bundle)
-- **AI Integration**: `@google/genai` (Gemini 2.5 Flash)
+- **AI Integration**: `@google/genai` (Gemini 3.6 Flash)
 - **Export & Utilities**: `jsPDF`, `html2canvas`
 - **Database / Auth**: Firebase Firestore & Firebase Auth (Optional Cloud Sync)
 
