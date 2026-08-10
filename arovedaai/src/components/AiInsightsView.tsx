@@ -223,6 +223,22 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
     }
   };
 
+  const handleClearInsights = async () => {
+    setInsightsData(null);
+    try {
+      localStorage.removeItem('aroveda_ai_insights');
+    } catch (e) {
+      console.error('Failed to clear AI insights from localStorage', e);
+    }
+
+    if (user) {
+      await setDoc(doc(db, 'users', user.uid), {
+        aiInsights: null,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((err) => console.error('Error clearing AI insights in Firestore:', err));
+    }
+  };
+
   const handleAddCustomReminder = () => {
     if (!newReminderName) return;
     const now = new Date();
@@ -266,23 +282,34 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
         </div>
 
         {insightsData && (
-          <button
-            onClick={handleGenerateInsights}
-            disabled={loading}
-            className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center gap-2 shrink-0 cursor-pointer"
-          >
-            {loading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Analyzing Trends...</span>
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4" />
-                <span>Refresh AI Insights</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleGenerateInsights}
+              disabled={loading}
+              className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Analyzing Trends...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  <span>Refresh AI Insights</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleClearInsights}
+              disabled={loading}
+              title="Clear AI Insights"
+              className="bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700/60 font-bold px-3 py-2.5 rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Clear Insights</span>
+            </button>
+          </div>
         )}
       </div>
 

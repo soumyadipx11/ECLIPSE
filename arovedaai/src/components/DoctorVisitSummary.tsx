@@ -8,7 +8,8 @@ import {
   Sparkles, 
   Printer, 
   CheckCircle2, 
-  ShieldCheck 
+  ShieldCheck,
+  Trash2
 } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -157,6 +158,22 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
       setErrorMsg(err.message || "Failed to generate doctor visit summary. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClearDoctorSummary = async () => {
+    setSummaryData(null);
+    try {
+      localStorage.removeItem('aroveda_doctor_summary');
+    } catch (e) {
+      console.error('Failed to clear doctor summary from localStorage', e);
+    }
+
+    if (user) {
+      await setDoc(doc(db, 'users', user.uid), {
+        doctorSummary: null,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch((err) => console.error('Error clearing Doctor Visit Summary in Firestore:', err));
     }
   };
 
@@ -510,6 +527,18 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
             )}
             <span>Download PDF</span>
           </button>
+
+          {summaryData && (
+            <button
+              onClick={handleClearDoctorSummary}
+              disabled={loading}
+              title="Clear Doctor Visit Summary"
+              className="bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-600 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-700/60 font-bold px-3 py-2.5 rounded-2xl text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Clear</span>
+            </button>
+          )}
         </div>
       </div>
 
