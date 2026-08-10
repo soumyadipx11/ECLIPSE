@@ -12,8 +12,9 @@ import { DoctorVisitSummary } from './components/DoctorVisitSummary';
 import { PrivacyCenter } from './components/PrivacyCenter';
 import { ProfileView } from './components/ProfileView';
 import { SmartAlertsModal } from './components/SmartAlertsModal';
+import { TermsPrivacyModal } from './components/TermsPrivacyModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, Scale, Lock } from 'lucide-react';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -44,6 +45,7 @@ function AppContent() {
   });
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [termsModalTab, setTermsModalTab] = useState<'terms' | 'privacy' | null>(null);
 
   const triggerNotification = (message: string) => {
     setNotification(message);
@@ -192,6 +194,34 @@ function AppContent() {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        {/* Global Footer */}
+        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-[#121418]/40 backdrop-blur-md py-6 transition-colors duration-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#ec003f]" />
+              <span className="font-semibold text-slate-700 dark:text-slate-300">ArovedaAI</span>
+              <span>— Encrypted Lab Analytics & AI Health Insights</span>
+            </div>
+            <div className="flex items-center gap-4 font-medium">
+              <button
+                onClick={() => setTermsModalTab('terms')}
+                className="hover:text-[#ec003f] transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <Scale className="w-3.5 h-3.5" />
+                Terms & Conditions
+              </button>
+              <span>•</span>
+              <button
+                onClick={() => setTermsModalTab('privacy')}
+                className="hover:text-[#ec003f] transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                Privacy Policy
+              </button>
+            </div>
+          </div>
+        </footer>
       </div>
 
       <SmartAlertsModal
@@ -201,6 +231,12 @@ function AppContent() {
         onNavigateToReport={() => setActiveTab('reports')}
         onClearAlerts={clearAlerts}
         onDismissAlert={dismissAlert}
+      />
+
+      <TermsPrivacyModal
+        isOpen={!!termsModalTab}
+        onClose={() => setTermsModalTab(null)}
+        initialTab={termsModalTab || 'terms'}
       />
     </div>
   );

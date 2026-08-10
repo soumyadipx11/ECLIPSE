@@ -9,10 +9,12 @@ import {
   CheckCircle2, 
   AlertTriangle, 
   Sparkles,
-  Key
+  Key,
+  Scale
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuditLogEntry } from '../types';
+import { TermsPrivacyModal } from './TermsPrivacyModal';
 
 interface PrivacyCenterProps {
   auditLogs: AuditLogEntry[];
@@ -28,6 +30,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
   const [showPiiDemo, setShowPiiDemo] = useState(false);
   const [showConfirmWipeModal, setShowConfirmWipeModal] = useState(false);
   const [wipeSuccess, setWipeSuccess] = useState(false);
+  const [modalTab, setModalTab] = useState<'terms' | 'privacy' | null>(null);
 
   const handleToggleConsent = async (e: React.ChangeEvent<HTMLInputElement>) => {
     await updateConsent(e.target.checked);
@@ -166,6 +169,35 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
         </div>
       </div>
 
+      {/* Legal & Policy Documentation Card */}
+      <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Scale className="w-4 h-4 text-[#ec003f]" />
+            Legal Documentation & Terms
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Review our formal Terms & Conditions, Medical Disclaimer, and comprehensive Privacy Policy.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setModalTab('terms')}
+            className="px-4 py-2 bg-white/60 dark:bg-slate-800/60 hover:bg-white/90 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/50 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-[#ec003f]" />
+            Terms & Conditions
+          </button>
+          <button
+            onClick={() => setModalTab('privacy')}
+            className="px-4 py-2 bg-[#ec003f]/10 hover:bg-[#ec003f]/20 border border-[#ec003f]/20 rounded-xl text-xs font-semibold text-[#ec003f] dark:text-rose-400 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-[#ec003f]" />
+            Privacy Policy
+          </button>
+        </div>
+      </div>
+
       {/* Wipe All Data Modal */}
       {showConfirmWipeModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -267,6 +299,12 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
           </div>
         )}
       </div>
+
+      <TermsPrivacyModal
+        isOpen={!!modalTab}
+        onClose={() => setModalTab(null)}
+        initialTab={modalTab || 'terms'}
+      />
     </div>
   );
 };

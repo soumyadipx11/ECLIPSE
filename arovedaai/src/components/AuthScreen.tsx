@@ -12,9 +12,11 @@ import {
   AlertCircle,
   FileText,
   Eye,
-  EyeOff
+  EyeOff,
+  Scale
 } from 'lucide-react';
 import { auth } from '../lib/firebase';
+import { TermsPrivacyModal } from './TermsPrivacyModal';
 
 export const AuthScreen: React.FC = () => {
   const { loginWithEmail, signupWithEmail, signInWithGoogle, resetPassword } = useAuth();
@@ -28,6 +30,7 @@ export const AuthScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [modalTab, setModalTab] = useState<'terms' | 'privacy' | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,7 +218,22 @@ export const AuthScreen: React.FC = () => {
                     className="mt-0.5 rounded border-slate-300 dark:border-slate-700 text-[#ec003f] focus:ring-[#ec003f] focus:ring-offset-slate-100 dark:focus:ring-offset-slate-900"
                   />
                   <span className="text-slate-700 dark:text-slate-300 leading-tight">
-                    I consent to isolated storing of my health records with automatic PII removal before AI analysis.
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      onClick={() => setModalTab('terms')}
+                      className="text-[#ec003f] dark:text-rose-400 font-semibold hover:underline"
+                    >
+                      Terms & Conditions
+                    </button>{' '}
+                    and consent to isolated storing of my health records under our{' '}
+                    <button
+                      type="button"
+                      onClick={() => setModalTab('privacy')}
+                      className="text-[#ec003f] dark:text-rose-400 font-semibold hover:underline"
+                    >
+                      Privacy Policy
+                    </button>.
                   </span>
                 </label>
               </div>
@@ -288,7 +306,7 @@ export const AuthScreen: React.FC = () => {
         )}
 
         {/* Security & Medical Footer Disclaimer */}
-        <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800/80 text-center text-[10px] text-slate-500 space-y-1">
+        <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800/80 text-center text-[10px] text-slate-500 space-y-2">
           <div className="flex items-center justify-center gap-1.5 text-[#f43f5e] font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Isolated Cloud Database & Encrypted Auth</span>
@@ -296,8 +314,29 @@ export const AuthScreen: React.FC = () => {
           <p>
             ArovedaAI is an educational tool and does not provide medical diagnoses or replace physician care.
           </p>
+          <div className="flex items-center justify-center gap-3 pt-1 text-slate-500 dark:text-slate-400 font-medium">
+            <button
+              onClick={() => setModalTab('terms')}
+              className="hover:text-[#ec003f] transition-colors cursor-pointer"
+            >
+              Terms & Conditions
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => setModalTab('privacy')}
+              className="hover:text-[#ec003f] transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+          </div>
         </div>
       </div>
+
+      <TermsPrivacyModal
+        isOpen={!!modalTab}
+        onClose={() => setModalTab(null)}
+        initialTab={modalTab || 'terms'}
+      />
     </div>
   );
 };
