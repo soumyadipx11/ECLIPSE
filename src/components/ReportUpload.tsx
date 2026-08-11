@@ -818,15 +818,15 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
             className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {analyzing ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span key="analyzing" className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
                 <span>Running Medical OCR & AI Extraction...</span>
-              </>
+              </span>
             ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
+              <span key="idle" className="flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4 shrink-0" />
                 <span>Extract Lab Values with AI</span>
-              </>
+              </span>
             )}
           </button>
         </div>
