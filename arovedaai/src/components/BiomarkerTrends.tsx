@@ -30,7 +30,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, u
   if (active && payload && payload.length) {
     const ptData = payload[0].payload;
     return (
-      <div className="bg-white/95 dark:bg-[#121418]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-3.5 rounded-2xl shadow-xl text-xs space-y-1.5 min-w-[190px]">
+      <div className="bg-white/95 dark:bg-[#121418]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-3.5 rounded-2xl shadow-xl text-xs space-y-1.5 min-w-[160px]">
         <p className="font-semibold text-slate-500 dark:text-slate-400">Date: {label}</p>
         <p className="font-bold text-rose-600 dark:text-rose-400 text-sm flex items-center justify-between gap-2">
           <span>{payload[0].value} <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">{unit}</span></span>
@@ -42,16 +42,6 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label, u
             </span>
           )}
         </p>
-        {ptData.standardReferenceRange && (
-          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium pt-1 border-t border-slate-100 dark:border-slate-800">
-            Standard Guideline Target: <span className="font-bold">{ptData.standardReferenceRange}</span>
-          </p>
-        )}
-        {ptData.referenceRange && (
-          <p className="text-[10px] text-slate-500 dark:text-slate-400">
-            Lab Report Target: <span className="font-semibold text-slate-700 dark:text-slate-300">{ptData.referenceRange}</span>
-          </p>
-        )}
       </div>
     );
   }
