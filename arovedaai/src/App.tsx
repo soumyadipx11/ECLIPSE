@@ -24,6 +24,7 @@ function AppContent() {
     smartAlerts, 
     loading: reportsLoading, 
     addReport, 
+    updateReport,
     loadDemoReports, 
     deleteReport, 
     clearAllUserData, 
@@ -155,8 +156,10 @@ function AppContent() {
                 <div className="space-y-8">
                   <ReportUpload
                     onSaveReport={addReport}
+                    onUpdateReport={updateReport}
                     onLoadDemo={handleLoadDemo}
                     onSuccess={() => setActiveTab('reports')}
+                    existingReports={reports}
                   />
                   <ReportTimeline
                     reports={reports}

@@ -15,24 +15,29 @@ import {
   Database,
   Eye,
   FileCode,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import { LabBiomarker, LabReport, ReportAiSummary } from '../types';
 import { safeFetchJson } from '../lib/api';
 import { cleanUndefined, cleanUserErrorMessage } from '../utils/sanitize';
-import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
+import { normalizeBiomarkerName, areBiomarkersEqual } from '../utils/biomarkerNormalizer';
 import { useAuth } from '../context/AuthContext';
 
 interface ReportUploadProps {
   onSaveReport: (report: Omit<LabReport, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<string>;
+  onUpdateReport?: (reportId: string, updatedFields: Partial<LabReport>) => Promise<void>;
   onLoadDemo: () => void;
   onSuccess: () => void;
+  existingReports?: LabReport[];
 }
 
 export const ReportUpload: React.FC<ReportUploadProps> = ({
   onSaveReport,
+  onUpdateReport,
   onLoadDemo,
-  onSuccess
+  onSuccess,
+  existingReports
 }) => {
   const { userProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +47,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
   const [fileBase64, setFileBase64] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string>('');
   const [userConsent, setUserConsent] = useState<boolean>(true);
+  const [duplicateReportPrompt, setDuplicateReportPrompt] = useState<LabReport | null>(null);
 
   useEffect(() => {
     if (userProfile && userProfile.privacyConsent !== undefined) {
@@ -131,6 +137,140 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
     e.preventDefault();
   };
 
+  // Helper functions for duplicate detection
+  const normalizeDate = (d?: string): string => {
+    if (!d) return '';
+    const trimmed = d.trim();
+    if (!trimmed) return '';
+
+    // ISO format YYYY-MM-DD or YYYY/MM/DD
+    const isoMatch = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (isoMatch) {
+      return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
+    }
+
+    // MM/DD/YYYY or DD/MM/YYYY
+    const mdyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+    if (mdyMatch) {
+      const p1 = parseInt(mdyMatch[1], 10);
+      const p2 = parseInt(mdyMatch[2], 10);
+      const y = mdyMatch[3];
+      const m = p1 <= 12 ? p1 : p2;
+      const day = p1 <= 12 ? p2 : p1;
+      return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) {
+      const year = parsed.getUTCFullYear();
+      const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(parsed.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return trimmed.toLowerCase().replace(/[^0-9a-z]/g, '');
+  };
+
+  const normalizeText = (s?: string): string => {
+    return (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  };
+
+  const isGenericLabOrTitle = (lName?: string, rTitle?: string): boolean => {
+    const normLab = normalizeText(lName);
+    const normTitle = normalizeText(rTitle);
+    const genericTerms = ['laboratorycenter', 'labcenter', 'laboratory', 'lab', 'laboratorytestreport', 'labtestreport', 'testreport', 'labreport'];
+    return genericTerms.includes(normLab) || genericTerms.includes(normTitle);
+  };
+
+  const countMatchingBiomarkers = (existing: LabBiomarker[], current: LabBiomarker[]): number => {
+    if (!existing?.length || !current?.length) return 0;
+    let matches = 0;
+    for (const c of current) {
+      const cName = c.testName || '';
+      if (!cName) continue;
+      const found = existing.find(e => {
+        const eName = e.testName || '';
+        if (!eName) return false;
+        const namesMatch = areBiomarkersEqual(eName, cName) ||
+                           normalizeText(eName) === normalizeText(cName) ||
+                           (normalizeText(eName).length > 3 && normalizeText(cName).length > 3 &&
+                            (normalizeText(eName).includes(normalizeText(cName)) || normalizeText(cName).includes(normalizeText(eName))));
+        
+        const numE = parseFloat(String(e.value));
+        const numC = parseFloat(String(c.value));
+        const valuesMatch = (!isNaN(numE) && !isNaN(numC))
+          ? Math.abs(numE - numC) < 0.1
+          : String(e.value).trim().toLowerCase() === String(c.value).trim().toLowerCase();
+
+        return namesMatch && valuesMatch;
+      });
+      if (found) matches++;
+    }
+    return matches;
+  };
+
+  const findDuplicateReport = (
+    cDate: string,
+    cLab: string,
+    cTitle: string,
+    cFileName?: string,
+    cItems: LabBiomarker[] = []
+  ): LabReport | null => {
+    if (!existingReports || existingReports.length === 0) return null;
+
+    const currentNormDate = normalizeDate(cDate);
+    const currentNormLab = normalizeText(cLab);
+    const currentNormTitle = normalizeText(cTitle);
+    const normFileName = cFileName?.toLowerCase().trim();
+
+    for (const r of existingReports) {
+      const rNormDate = normalizeDate(r.testDate);
+      const rNormLab = normalizeText(r.labName);
+      const rNormTitle = normalizeText(r.title);
+      const rFileName = r.fileName?.toLowerCase().trim();
+
+      // 1. Same exact non-manual file name match
+      if (
+        normFileName &&
+        rFileName &&
+        normFileName === rFileName &&
+        normFileName !== 'manual_entry.txt'
+      ) {
+        return r;
+      }
+
+      // 2. Same date
+      const sameDate = Boolean(rNormDate && currentNormDate && rNormDate === currentNormDate);
+
+      // 3. Same / fuzzy lab name or report title
+      const sameLab = Boolean(
+        rNormLab && currentNormLab &&
+        (rNormLab === currentNormLab || rNormLab.includes(currentNormLab) || currentNormLab.includes(rNormLab))
+      );
+      const sameTitle = Boolean(
+        rNormTitle && currentNormTitle &&
+        (rNormTitle === currentNormTitle || rNormTitle.includes(currentNormTitle) || currentNormTitle.includes(rNormTitle))
+      );
+
+      // 4. Overlapping biomarker measurements
+      const matchingBiomarkers = countMatchingBiomarkers(r.extractedData || [], cItems);
+
+      // Match conditions
+      if (sameDate && (sameLab || sameTitle || isGenericLabOrTitle(cLab, cTitle) || matchingBiomarkers >= 1)) {
+        return r;
+      }
+
+      if (matchingBiomarkers >= 2) {
+        return r;
+      }
+
+      if (sameDate && r.extractedData?.length && cItems.length && r.extractedData.length === cItems.length) {
+        return r;
+      }
+    }
+
+    return null;
+  };
+
   // Submit to Backend Express /api/ocr-analyze
   const handleAnalyze = async () => {
     if (!selectedFile && !rawText) {
@@ -217,6 +357,15 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
       };
       setAiSummary(summaryObj);
       setIsExtracted(true);
+
+      // Check for potential duplicate report right after extraction
+      const extractedDate = hasValidDate ? d.testDate : (new Date().toISOString().split('T')[0]);
+      const extractedLab = d.labName || 'Laboratory Center';
+      const extractedTitle = d.title || selectedFile?.name?.replace(/\.[^/.]+$/, "") || 'Laboratory Test Report';
+      const dupMatch = findDuplicateReport(extractedDate, extractedLab, extractedTitle, selectedFile?.name, mappedItems);
+      if (dupMatch) {
+        setDuplicateReportPrompt(dupMatch);
+      }
     } catch (err: any) {
       console.error("Analysis error:", err);
       setError(cleanUserErrorMessage(err, 'An error occurred while analyzing the lab report document. Please try again.'));
@@ -260,7 +409,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
   };
 
   // Save to Health Record
-  const handleSave = async () => {
+  const handleSave = async (forceSave: boolean | unknown = false) => {
     if (!extractedItems.length) {
       setError('At least one extracted biomarker is required to save a report.');
       return;
@@ -272,6 +421,21 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
       return;
     }
 
+    // Check for duplicate report if not forcing save
+    const shouldSkipDuplicateCheck = forceSave === true;
+    if (!shouldSkipDuplicateCheck) {
+      const match = findDuplicateReport(testDate, labName, reportTitle, selectedFile?.name, extractedItems);
+      if (match) {
+        setDuplicateReportPrompt(match);
+        return;
+      }
+    }
+
+    executeSave();
+  };
+
+  const executeSave = async () => {
+    setDuplicateReportPrompt(null);
     setSaving(true);
     setError(null);
 
@@ -311,6 +475,58 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
     } catch (err: any) {
       console.error("Save error:", err);
       setError(cleanUserErrorMessage(err, 'Failed to save report to database. Please try again.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const executeReplace = async () => {
+    if (!duplicateReportPrompt) return;
+    const targetId = duplicateReportPrompt.id;
+    setDuplicateReportPrompt(null);
+    setSaving(true);
+    setError(null);
+
+    const payload = cleanUndefined({
+      title: reportTitle,
+      testDate,
+      labName,
+      fileType: selectedFile ? (selectedFile.type.includes('pdf') ? 'pdf' : 'image') : 'manual',
+      fileName: selectedFile?.name || 'manual_entry.txt',
+      status: 'processed' as const,
+      extractedData: extractedItems,
+      aiSummary: aiSummary,
+      anonymizedTextSentToAi: anonymizedTextSent
+    });
+
+    try {
+      if (onUpdateReport) {
+        await onUpdateReport(targetId, payload);
+      } else {
+        await onSaveReport(payload);
+      }
+
+      setSavedReportInsights({
+        title: reportTitle,
+        testDate,
+        labName,
+        aiSummary,
+        extractedItems: [...extractedItems]
+      });
+
+      setSelectedFile(null);
+      setFileBase64(null);
+      setRawText('');
+      setExtractedItems([]);
+      setReportTitle('Laboratory Test Report');
+      setTestDate('');
+      setIsExtracted(false);
+      setIsDateMissing(false);
+
+      onSuccess();
+    } catch (err: any) {
+      console.error("Replace report error:", err);
+      setError(cleanUserErrorMessage(err, 'Failed to update existing report. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -816,7 +1032,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
             </button>
 
             <button
-              onClick={handleSave}
+              onClick={() => handleSave(false)}
               disabled={saving}
               className="flex-1 bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
@@ -832,6 +1048,82 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
                 </>
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Report Confirmation Modal */}
+      {duplicateReportPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#16181d] border border-neutral-200 dark:border-neutral-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Report Already Exists</h3>
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Duplicate Record Detected</p>
+              </div>
+            </div>
+
+            <div className="text-xs text-neutral-600 dark:text-neutral-300 space-y-3">
+              <p>
+                A lab report from <strong className="text-neutral-900 dark:text-white">{duplicateReportPrompt.labName || 'Laboratory'}</strong> on <strong className="text-neutral-900 dark:text-white">{duplicateReportPrompt.testDate}</strong> already exists in your health records.
+              </p>
+
+              <div className="bg-rose-50/40 dark:bg-rose-950/10 border border-rose-200/40 dark:border-rose-900/30 p-3.5 rounded-2xl space-y-1">
+                <div className="font-bold text-neutral-900 dark:text-white text-xs">{duplicateReportPrompt.title}</div>
+                <div className="text-[11px] text-neutral-500 dark:text-neutral-400 flex flex-wrap gap-2">
+                  <span>Lab: {duplicateReportPrompt.labName || 'N/A'}</span>
+                  <span>•</span>
+                  <span>Date: {duplicateReportPrompt.testDate}</span>
+                  <span>•</span>
+                  <span>{duplicateReportPrompt.extractedData?.length || 0} biomarkers</span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                How would you like to handle this report? You can replace the previous record, add it as a new separate entry, or discard these changes.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              <button
+                onClick={() => executeReplace()}
+                className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-[#ec003f] hover:bg-[#ff2b66] text-white shadow-md shadow-[#ec003f]/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Replace Data</span>
+              </button>
+
+              <button
+                onClick={() => executeSave()}
+                className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add as New</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  handleDiscardDraft();
+                  setDuplicateReportPrompt(null);
+                }}
+                className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Discard Draft</span>
+              </button>
+            </div>
+
+            <div className="text-center pt-1">
+              <button
+                onClick={() => setDuplicateReportPrompt(null)}
+                className="text-[11px] text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 underline font-medium cursor-pointer"
+              >
+                Cancel & Return to Editing
+              </button>
+            </div>
           </div>
         </div>
       )}
