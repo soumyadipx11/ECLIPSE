@@ -310,7 +310,9 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           fileBase64: fileBase64,
           mimeType: mimeType,
           rawText: rawText,
-          userConsentGiven: userConsent
+          userConsentGiven: userConsent,
+          age: userProfile?.age,
+          gender: userProfile?.gender
         })
       });
 

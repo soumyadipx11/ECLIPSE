@@ -161,7 +161,9 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reportHistory: reports,
-          userConsentGiven: true
+          userConsentGiven: true,
+          age: userProfile?.age,
+          gender: userProfile?.gender
         })
       });
 

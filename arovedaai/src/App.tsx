@@ -13,11 +13,12 @@ import { PrivacyCenter } from './components/PrivacyCenter';
 import { ProfileView } from './components/ProfileView';
 import { SmartAlertsModal } from './components/SmartAlertsModal';
 import { TermsPrivacyModal } from './components/TermsPrivacyModal';
+import { OnboardingModal } from './components/OnboardingModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, ShieldCheck, Scale, Lock } from 'lucide-react';
 
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userProfile, updateProfile, loading: authLoading } = useAuth();
   const { 
     reports, 
     auditLogs, 
@@ -47,6 +48,24 @@ function AppContent() {
   const [isAlertsOpen, setIsAlertsOpen] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [termsModalTab, setTermsModalTab] = useState<'terms' | 'privacy' | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (user && userProfile) {
+      const hasAge = userProfile.age !== undefined && userProfile.age !== null && userProfile.age !== '';
+      const hasGender = userProfile.gender !== undefined && userProfile.gender !== null && userProfile.gender !== '';
+      if (!hasAge || !hasGender) {
+        setShowOnboarding(true);
+      } else {
+        setShowOnboarding(false);
+      }
+    }
+  }, [user, userProfile]);
+
+  const handleOnboardingSave = async (age: number, gender: string) => {
+    await updateProfile({ age, gender });
+    triggerNotification('Health profile customized successfully!');
+  };
 
   const triggerNotification = (message: string) => {
     setNotification(message);
@@ -240,6 +259,11 @@ function AppContent() {
         isOpen={!!termsModalTab}
         onClose={() => setTermsModalTab(null)}
         initialTab={termsModalTab || 'terms'}
+      />
+
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onSave={handleOnboardingSave}
       />
     </div>
   );

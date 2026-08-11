@@ -25,7 +25,7 @@ interface DoctorVisitSummaryProps {
 }
 
 export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports }) => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const printableRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(false);
@@ -104,7 +104,11 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
       const resData = await safeFetchJson('/api/doctor-summary-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reportHistory: reports })
+        body: JSON.stringify({
+          reportHistory: reports,
+          age: userProfile?.age,
+          gender: userProfile?.gender
+        })
       });
 
       if (!resData.success) {

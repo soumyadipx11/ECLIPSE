@@ -750,7 +750,7 @@ function normalizeServerBiomarkerName(rawName: string): string {
 // Endpoint: OCR & AI Biomarker Extraction (Authenticated User Action Rate Limit)
 apiRouter.post("/ocr-analyze", authedRateLimitMiddleware, async (req, res) => {
   try {
-    const { fileBase64, mimeType, rawText, userConsentGiven } = req.body;
+    const { fileBase64, mimeType, rawText, userConsentGiven, age, gender } = req.body;
 
     if (!userConsentGiven) {
       return res.status(403).json({ error: "User consent for AI data processing is required." });
@@ -762,9 +762,17 @@ apiRouter.post("/ocr-analyze", authedRateLimitMiddleware, async (req, res) => {
 
     const ai = getGeminiClient();
 
+    let demographicsContext = "";
+    if (age || gender) {
+      demographicsContext = `\nCRITICAL PATIENT DEMOGRAPHICS:\n`;
+      if (age) demographicsContext += `- Patient Age: ${age} years old\n`;
+      if (gender) demographicsContext += `- Patient Biological Gender: ${gender}\n`;
+      demographicsContext += `You MUST interpret all biomarkers, evaluate high/low/normal flags, reference ranges, and formulate all insights specifically calibrated for an individual matching these demographics.\n`;
+    }
+
     const systemPrompt = `You are a medical lab report data extractor and clinical insights AI for HealthLens AI.
 Analyze the provided medical lab report (image/PDF or text) and extract structured biomarker findings dynamically.
-
+${demographicsContext}
 CRITICAL INSTRUCTIONS:
 1. Extract report metadata:
    - title: concise title of the lab report (e.g., "Comprehensive Metabolic Panel", "Lipid Profile & Thyroid Test")
@@ -882,7 +890,7 @@ Return ONLY a valid JSON object matching this schema:
 // Endpoint: Multi-Report Trend Insights & Recommendations
 apiRouter.post("/trend-insights", authedRateLimitMiddleware, async (req, res) => {
   try {
-    const { reportHistory, userConsentGiven } = req.body;
+    const { reportHistory, userConsentGiven, age, gender } = req.body;
 
     if (!userConsentGiven) {
       return res.status(403).json({ error: "User consent required for health analytics." });
@@ -893,6 +901,14 @@ apiRouter.post("/trend-insights", authedRateLimitMiddleware, async (req, res) =>
     }
 
     const ai = getGeminiClient();
+
+    let demographicsContext = "";
+    if (age || gender) {
+      demographicsContext = `\nPatient Demographics Context:\n`;
+      if (age) demographicsContext += `- Patient Age: ${age} years old\n`;
+      if (gender) demographicsContext += `- Patient Biological Gender: ${gender}\n`;
+      demographicsContext += `Customize all longitudinal insights, dietary recommendations, and health trajectories specifically for an individual matching these demographics.\n`;
+    }
 
     const sanitizedHistory = reportHistory.map((rep: any) => {
       const date = rep.testDate || rep.reportDate || rep.createdAt || "Recent Date";
@@ -911,7 +927,7 @@ apiRouter.post("/trend-insights", authedRateLimitMiddleware, async (req, res) =>
 
     const prompt = `You are a clinical biomarker analytics expert for HealthLens AI.
 Analyze this user's historical lab reports across time and identify longitudinal trends, positive trajectories, areas of concern, and evidence-based health recommendations.
-
+${demographicsContext}
 User Report History:
 ${JSON.stringify(sanitizedHistory, null, 2)}
 
@@ -980,12 +996,20 @@ Return ONLY a JSON object matching this schema:
 // Endpoint: Doctor Visit Summary Generator
 apiRouter.post("/doctor-summary-ai", authedRateLimitMiddleware, async (req, res) => {
   try {
-    const { reportHistory } = req.body;
+    const { reportHistory, age, gender } = req.body;
     if (!reportHistory || reportHistory.length === 0) {
       return res.status(400).json({ error: "No lab reports selected for summary." });
     }
 
     const ai = getGeminiClient();
+
+    let demographicsContext = "";
+    if (age || gender) {
+      demographicsContext = `\nPatient Demographics Context:\n`;
+      if (age) demographicsContext += `- Patient Age: ${age} years old\n`;
+      if (gender) demographicsContext += `- Patient Biological Gender: ${gender}\n`;
+      demographicsContext += `Synthesize the doctor visit prep briefing, general summary notes, out-of-range flag highlighting, and clinical consultation questions specifically calibrated for this patient's age and biological gender.\n`;
+    }
 
     const sanitizedHistory = reportHistory.map((rep: any) => {
       const date = rep.testDate || rep.reportDate || rep.createdAt || "Recent Date";
@@ -1004,7 +1028,7 @@ apiRouter.post("/doctor-summary-ai", authedRateLimitMiddleware, async (req, res)
 
     const prompt = `You are a clinical physician assistant tool creating a concise, high-yield "Doctor Visit Prep Brief".
 Review these lab reports and synthesize a 1-page structured briefing for the patient's upcoming physician consultation.
-
+${demographicsContext}
 Report Data:
 ${JSON.stringify(sanitizedHistory, null, 2)}
 
