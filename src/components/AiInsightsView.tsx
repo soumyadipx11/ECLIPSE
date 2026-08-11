@@ -287,20 +287,21 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
         {insightsData && (
           <div className="flex items-center gap-2 shrink-0">
             <button
+              key={loading ? "btn-loading" : "btn-idle"}
               onClick={handleGenerateInsights}
               disabled={loading}
               className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
             >
               {loading ? (
-                <span key="analyzing" className="flex items-center justify-center gap-2">
+                <>
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
                   <span>Analyzing Trends...</span>
-                </span>
+                </>
               ) : (
-                <span key="idle-refresh" className="flex items-center justify-center gap-2">
+                <>
                   <Zap className="w-4 h-4 shrink-0" />
                   <span>Refresh AI Insights</span>
-                </span>
+                </>
               )}
             </button>
             <button
@@ -339,20 +340,21 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
             </div>
           </div>
           <button
+            key={loading ? "btn-regen-loading" : "btn-regen-idle"}
             onClick={handleGenerateInsights}
             disabled={loading}
             className="bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold px-4 py-2 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
             {loading ? (
-              <span key="regenerating" className="flex items-center justify-center gap-2">
+              <>
                 <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
                 <span>Regenerating...</span>
-              </span>
+              </>
             ) : (
-              <span key="idle-regen" className="flex items-center justify-center gap-2">
+              <>
                 <Zap className="w-4 h-4 shrink-0" />
                 <span>Regenerate AI Insights</span>
-              </span>
+              </>
             )}
           </button>
         </div>
@@ -435,20 +437,21 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
             </p>
           </div>
           <button
+            key={loading ? "btn-multi-loading" : "btn-multi-idle"}
             onClick={handleGenerateInsights}
             disabled={loading}
             className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/25 disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
           >
             {loading ? (
-              <span key="analyzing-multi" className="flex items-center justify-center gap-2">
+              <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
                 <span>Analyzing Multi-Report Trends...</span>
-              </span>
+              </>
             ) : (
-              <span key="idle-generate" className="flex items-center justify-center gap-2">
+              <>
                 <Zap className="w-4 h-4 shrink-0" />
                 <span>Generate AI Insights</span>
-              </span>
+              </>
             )}
           </button>
         </div>
