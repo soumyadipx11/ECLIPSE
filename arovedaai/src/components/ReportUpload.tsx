@@ -75,8 +75,10 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
   useEffect(() => {
     if (savedReportInsights) {
       const timer = setTimeout(() => {
-        insightsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 80);
+        if (insightsRef.current) {
+          insightsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
       return () => clearTimeout(timer);
     }
   }, [savedReportInsights]);
@@ -398,7 +400,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
           : 'border-emerald-500/40';
 
         return (
-          <div ref={insightsRef} className={`bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border ${outerBorderClass} p-6 shadow-xl space-y-5 animate-in fade-in duration-300 scroll-mt-6`}>
+          <div ref={insightsRef} className={`bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border ${outerBorderClass} p-6 shadow-xl space-y-5 animate-in fade-in duration-300 scroll-mt-28 sm:scroll-mt-32`}>
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner ${
