@@ -507,7 +507,6 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
 
         <div className="flex items-center gap-2">
           <button
-            key={loading ? "btn-loading" : "btn-idle"}
             onClick={handleGenerateDoctorSummary}
             disabled={loading}
             className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors duration-150 shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
@@ -521,7 +520,6 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
           </button>
 
           <button
-            key={downloading ? "btn-downloading" : "btn-idle"}
             onClick={handleDownloadPdf}
             disabled={downloading || !summaryData}
             title={!summaryData ? "Please generate the AI Summary first to download" : "Download PDF report"}
@@ -566,7 +564,6 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
             </div>
           </div>
           <button
-            key={loading ? "btn-regen" : "btn-idle"}
             onClick={handleGenerateDoctorSummary}
             disabled={loading}
             className="bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold px-4 py-2 rounded-2xl text-xs transition-colors duration-150 shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
