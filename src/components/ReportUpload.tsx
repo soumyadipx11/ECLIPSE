@@ -813,22 +813,23 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
 
           {/* Action Button */}
           <button
-            key={analyzing ? "btn-analyzing" : "btn-idle"}
             onClick={handleAnalyze}
             disabled={analyzing}
             className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
-            {analyzing ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                <span>Running Medical OCR & AI Extraction...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 shrink-0" />
-                <span>Extract Lab Values with AI</span>
-              </>
-            )}
+            <span key={analyzing ? "analyzing" : "idle"} className="flex items-center justify-center gap-2">
+              {analyzing ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                  <span>Running Medical OCR & AI Extraction...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>Extract Lab Values with AI</span>
+                </>
+              )}
+            </span>
           </button>
         </div>
       )}
@@ -1054,17 +1055,19 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
               disabled={saving}
               className="flex-1 bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
-              {saving ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Saving Encrypted Record...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Save to Personal Health Record</span>
-                </>
-              )}
+              <span key={saving ? "saving" : "idle"} className="flex items-center justify-center gap-2">
+                {saving ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                    <span>Saving Encrypted Record...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 shrink-0" />
+                    <span>Save to Personal Health Record</span>
+                  </>
+                )}
+              </span>
             </button>
           </div>
         </div>

@@ -120,11 +120,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onSave
             disabled={loading}
             className="w-full bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold py-3 rounded-xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
           >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              'Save & Initialize AI Insights'
-            )}
+            <span key={loading ? "loading" : "idle"} className="flex items-center justify-center gap-2">
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+              ) : (
+                'Save & Initialize AI Insights'
+              )}
+            </span>
           </button>
         </form>
       </motion.div>
