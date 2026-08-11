@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   User, 
   Mail, 
@@ -434,7 +435,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
       </div>
 
       {/* Delete Profile Confirmation Modal */}
-      {showDeleteProfileModal && (
+      {showDeleteProfileModal && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#121418] border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
@@ -480,7 +481,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

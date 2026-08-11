@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   FileText, 
   Search, 
@@ -269,7 +270,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
       )}
 
       {/* Report Details Modal */}
-      {activeReportModal && (
+      {activeReportModal && createPortal(
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white/95 dark:bg-[#16181c] border border-white/80 dark:border-white/10 backdrop-blur-2xl rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6">
             <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -355,7 +356,7 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
                         <td className="p-3 text-slate-500">{b.referenceRange}</td>
                         <td className="p-3">
                           {b.flag === 'high' ? (
-                            <span className="bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold px-2 py-0.5 rounded text-[10px] border border-rose-200 dark:border-rose-900/40">
+                             <span className="bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold px-2 py-0.5 rounded text-[10px] border border-rose-200 dark:border-rose-900/40">
                               HIGH
                             </span>
                           ) : b.flag === 'low' ? (
@@ -383,11 +384,12 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}
-      {confirmDeleteTarget && (
+      {confirmDeleteTarget && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#121418] border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
@@ -431,7 +433,8 @@ export const ReportTimeline: React.FC<ReportTimelineProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

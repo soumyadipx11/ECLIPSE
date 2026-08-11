@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ShieldCheck, 
   Lock, 
@@ -199,7 +200,7 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
       </div>
 
       {/* Wipe All Data Modal */}
-      {showConfirmWipeModal && (
+      {showConfirmWipeModal && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white/90 dark:bg-[#121418]/90 border border-white/20 dark:border-white/10 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 backdrop-blur-xl">
             <div className="flex items-center gap-3">
@@ -243,7 +244,8 @@ export const PrivacyCenter: React.FC<PrivacyCenterProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Append-Only Audit Log Stream */}
