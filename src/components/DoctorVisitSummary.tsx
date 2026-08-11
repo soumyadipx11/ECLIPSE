@@ -507,34 +507,32 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
 
         <div className="flex items-center gap-2">
           <button
+            key={loading ? "btn-loading" : "btn-idle"}
             onClick={handleGenerateDoctorSummary}
             disabled={loading}
-            className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors duration-150 shadow-md shadow-rose-600/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span key={loading ? "loading" : "idle"} className="flex items-center justify-center gap-2">
-              {loading ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-              ) : (
-                <Sparkles className="w-4 h-4 shrink-0" />
-              )}
-              <span>{summaryData ? 'Regenerate AI Summary' : 'Generate AI Summary'}</span>
-            </span>
+            {loading ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+            ) : (
+              <Sparkles className="w-4 h-4 shrink-0" />
+            )}
+            <span>{summaryData ? 'Regenerate AI Summary' : 'Generate AI Summary'}</span>
           </button>
 
           <button
+            key={downloading ? "btn-downloading" : "btn-idle"}
             onClick={handleDownloadPdf}
             disabled={downloading || !summaryData}
             title={!summaryData ? "Please generate the AI Summary first to download" : "Download PDF report"}
-            className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-sm disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
+            className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors duration-150 shadow-sm disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span key={downloading ? "downloading" : "idle"} className="flex items-center justify-center gap-2">
-              {downloading ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-              ) : (
-                <Download className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-              )}
-              <span>Download PDF</span>
-            </span>
+            {downloading ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+            ) : (
+              <Download className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            )}
+            <span>Download PDF</span>
           </button>
 
           {summaryData && (
@@ -568,23 +566,22 @@ export const DoctorVisitSummary: React.FC<DoctorVisitSummaryProps> = ({ reports 
             </div>
           </div>
           <button
+            key={loading ? "btn-regen" : "btn-idle"}
             onClick={handleGenerateDoctorSummary}
             disabled={loading}
-            className="bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold px-4 py-2 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            className="bg-[#ec003f] hover:bg-[#ff2b66] text-white font-bold px-4 py-2 rounded-2xl text-xs transition-colors duration-150 shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
-            <span key={loading ? "loading" : "idle"} className="flex items-center justify-center gap-2">
-              {loading ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                  <span>Regenerating...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  <span>Regenerate Doctor Summary</span>
-                </>
-              )}
-            </span>
+            {loading ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                <span>Regenerating...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>Regenerate Doctor Summary</span>
+              </>
+            )}
           </button>
         </div>
       )}

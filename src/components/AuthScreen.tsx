@@ -240,21 +240,20 @@ export const AuthScreen: React.FC = () => {
             )}
 
             <button
+              key={loading ? "btn-loading" : mode}
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ec003f] hover:bg-[#f43f5e] text-white font-bold py-3 rounded-2xl text-xs transition-all shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-[#ec003f] hover:bg-[#f43f5e] text-white font-bold py-3 rounded-2xl text-xs transition-colors duration-150 shadow-md shadow-[#ec003f]/25 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span key={loading ? "loading" : mode} className="flex items-center justify-center gap-2">
-                {loading ? (
-                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                ) : mode === 'signin' ? (
-                  'Sign In to Account'
-                ) : mode === 'signup' ? (
-                  'Create Encrypted Account'
-                ) : (
-                  'Send Reset Link'
-                )}
-              </span>
+              {loading ? (
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+              ) : mode === 'signin' ? (
+                'Sign In to Account'
+              ) : mode === 'signup' ? (
+                'Create Encrypted Account'
+              ) : (
+                'Send Reset Link'
+              )}
             </button>
           </form>
 
