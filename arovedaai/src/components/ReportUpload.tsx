@@ -42,6 +42,7 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
   const { userProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const insightsRef = useRef<HTMLDivElement>(null);
+  const reviewSectionRef = useRef<HTMLDivElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileBase64, setFileBase64] = useState<string | null>(null);
@@ -88,6 +89,17 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
       return () => clearTimeout(timer);
     }
   }, [savedReportInsights]);
+
+  useEffect(() => {
+    if (isExtracted) {
+      const timer = setTimeout(() => {
+        if (reviewSectionRef.current) {
+          reviewSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isExtracted]);
 
   // Clear / Discard Draft
   const handleDiscardDraft = () => {
@@ -820,7 +832,10 @@ export const ReportUpload: React.FC<ReportUploadProps> = ({
 
       {/* Step 2: Verification & Manual Correction Table */}
       {isExtracted && (
-        <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-6">
+        <div 
+          ref={reviewSectionRef}
+          className="scroll-mt-36 bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-6"
+        >
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
