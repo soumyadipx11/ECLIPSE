@@ -768,6 +768,9 @@ apiRouter.post("/ocr-analyze", authedRateLimitMiddleware, async (req, res) => {
       if (age) demographicsContext += `- Patient Age: ${age} years old\n`;
       if (gender) demographicsContext += `- Patient Biological Gender: ${gender}\n`;
       demographicsContext += `You MUST interpret all biomarkers, evaluate high/low/normal flags, reference ranges, and formulate all insights specifically calibrated for an individual matching these demographics.\n`;
+      demographicsContext += `CRITICAL PRIVACY & TONE REQUIREMENT:\n`;
+      demographicsContext += `- In your generated text, summaries, and observations, do NOT refer to the patient as "a ${age}-year-old male/female/individual", "this-year-old male/female" or similar. Simply refer to the patient as "the user" or "user".\n`;
+      demographicsContext += `- You MUST only mention or explicitly include the age or gender in your generated response if it is directly important and clinically relevant for a specific biomarker conclusion or reference range context. Otherwise, keep it generalized using "user".\n`;
     }
 
     const systemPrompt = `You are a medical lab report data extractor and clinical insights AI for HealthLens AI.
@@ -908,6 +911,9 @@ apiRouter.post("/trend-insights", authedRateLimitMiddleware, async (req, res) =>
       if (age) demographicsContext += `- Patient Age: ${age} years old\n`;
       if (gender) demographicsContext += `- Patient Biological Gender: ${gender}\n`;
       demographicsContext += `Customize all longitudinal insights, dietary recommendations, and health trajectories specifically for an individual matching these demographics.\n`;
+      demographicsContext += `CRITICAL PRIVACY & TONE REQUIREMENT:\n`;
+      demographicsContext += `- In your generated text, summaries, and observations, do NOT refer to the patient as "a ${age}-year-old male/female/individual", "this-year-old male/female" or similar. Simply refer to the patient as "the user" or "user".\n`;
+      demographicsContext += `- You MUST only mention or explicitly include the age or gender in your generated response if it is directly important and clinically relevant for a specific biomarker conclusion or reference range context. Otherwise, keep it generalized using "user".\n`;
     }
 
     const sanitizedHistory = reportHistory.map((rep: any) => {
@@ -1009,6 +1015,9 @@ apiRouter.post("/doctor-summary-ai", authedRateLimitMiddleware, async (req, res)
       if (age) demographicsContext += `- Patient Age: ${age} years old\n`;
       if (gender) demographicsContext += `- Patient Biological Gender: ${gender}\n`;
       demographicsContext += `Synthesize the doctor visit prep briefing, general summary notes, out-of-range flag highlighting, and clinical consultation questions specifically calibrated for this patient's age and biological gender.\n`;
+      demographicsContext += `CRITICAL PRIVACY & TONE REQUIREMENT:\n`;
+      demographicsContext += `- In your generated text, summaries, and observations, do NOT refer to the patient as "a ${age}-year-old male/female/individual", "this-year-old male/female" or similar. Simply refer to the patient as "the user" or "user".\n`;
+      demographicsContext += `- You MUST only mention or explicitly include the age or gender in your generated response if it is directly important and clinically relevant for a specific biomarker conclusion or reference range context. Otherwise, keep it generalized using "user".\n`;
     }
 
     const sanitizedHistory = reportHistory.map((rep: any) => {
