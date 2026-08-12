@@ -64,7 +64,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
     }
 
     if (!newPasswordEvaluation.isValid) {
-      setPasswordError('Password does not meet security criteria. It must be at least 8 characters long and contain a mix of letters, numbers, or symbols.');
+      setPasswordError('Password does not meet required security rules. It must be at least 8 characters long and contain uppercase, lowercase, number, and special symbol.');
       return;
     }
 
@@ -416,9 +416,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                       {newPasswordEvaluation.requirements.hasLowercase ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
                       <span>Lowercase (a-z)</span>
                     </div>
-                    <div className={`flex items-center gap-1 ${newPasswordEvaluation.requirements.hasNumber || newPasswordEvaluation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
-                      {newPasswordEvaluation.requirements.hasNumber || newPasswordEvaluation.requirements.hasSpecialChar ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
-                      <span>Number / Symbol</span>
+                    <div className={`flex items-center gap-1 ${newPasswordEvaluation.requirements.hasNumber ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                      {newPasswordEvaluation.requirements.hasNumber ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                      <span>Number (0-9)</span>
+                    </div>
+                    <div className={`flex items-center gap-1 col-span-2 sm:col-span-1 ${newPasswordEvaluation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                      {newPasswordEvaluation.requirements.hasSpecialChar ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                      <span>Symbol (!@#$)</span>
                     </div>
                   </div>
                 </div>

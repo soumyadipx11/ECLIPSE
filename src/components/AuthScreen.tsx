@@ -56,7 +56,7 @@ export const AuthScreen: React.FC = () => {
       }
 
       if (!passwordEvaluation.isValid) {
-        setError('Password does not meet minimum security requirements. It must be at least 8 characters long and contain a mix of letters, numbers, or symbols.');
+        setError('Password does not meet required security rules. It must be at least 8 characters long and contain uppercase, lowercase, number, and special symbol.');
         return;
       }
     }
@@ -269,9 +269,13 @@ export const AuthScreen: React.FC = () => {
                           {passwordEvaluation.requirements.hasLowercase ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
                           <span>Lowercase (a-z)</span>
                         </div>
-                        <div className={`flex items-center gap-1 ${passwordEvaluation.requirements.hasNumber || passwordEvaluation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
-                          {passwordEvaluation.requirements.hasNumber || passwordEvaluation.requirements.hasSpecialChar ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
-                          <span>Number / Symbol</span>
+                        <div className={`flex items-center gap-1 ${passwordEvaluation.requirements.hasNumber ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                          {passwordEvaluation.requirements.hasNumber ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                          <span>Number (0-9)</span>
+                        </div>
+                        <div className={`flex items-center gap-1 col-span-2 sm:col-span-1 ${passwordEvaluation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                          {passwordEvaluation.requirements.hasSpecialChar ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                          <span>Symbol (!@#$)</span>
                         </div>
                       </div>
                     </div>

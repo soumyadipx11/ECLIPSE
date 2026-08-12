@@ -62,8 +62,13 @@ export function evaluatePasswordStrength(password: string): PasswordScore {
     color = 'bg-emerald-500';
   }
 
-  // Requires at least 8 characters and at least 3 of the 4 complexity criteria
-  const isValid = requirements.minLength && metCount >= 3;
+  // All 5 rules (minLength, uppercase, lowercase, number, special char) are required to match Firebase mandatory policy
+  const isValid =
+    requirements.minLength &&
+    requirements.hasUppercase &&
+    requirements.hasLowercase &&
+    requirements.hasNumber &&
+    requirements.hasSpecialChar;
 
   return { score, label, color, requirements, isValid };
 }
