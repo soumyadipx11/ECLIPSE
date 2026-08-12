@@ -351,7 +351,7 @@ const apiRouter = express.Router();
 apiRouter.get("/health", publicRateLimitMiddleware, (_req, res) => {
   res.json({
     status: "ok",
-    app: "HealthLens AI Server",
+    app: "Aroveda AI Server",
     timestamp: new Date().toISOString(),
     rateLimits: {
       publicWindowMs: rateLimitConfig.publicWindowMs,
@@ -773,7 +773,7 @@ apiRouter.post("/ocr-analyze", authedRateLimitMiddleware, async (req, res) => {
       demographicsContext += `- You MUST only mention or explicitly include the age or gender in your generated response if it is directly important and clinically relevant for a specific biomarker conclusion or reference range context. Otherwise, keep it generalized using "user".\n`;
     }
 
-    const systemPrompt = `You are a medical lab report data extractor and clinical insights AI for HealthLens AI.
+    const systemPrompt = `You are a medical lab report data extractor and clinical insights AI for Aroveda AI.
 Analyze the provided medical lab report (image/PDF or text) and extract structured biomarker findings dynamically.
 ${demographicsContext}
 CRITICAL INSTRUCTIONS:
@@ -931,7 +931,7 @@ apiRouter.post("/trend-insights", authedRateLimitMiddleware, async (req, res) =>
       return { date, title, biomarkers };
     });
 
-    const prompt = `You are a clinical biomarker analytics expert for HealthLens AI.
+    const prompt = `You are a clinical biomarker analytics expert for Aroveda AI.
 Analyze this user's historical lab reports across time and identify longitudinal trends, positive trajectories, areas of concern, and evidence-based health recommendations.
 ${demographicsContext}
 User Report History:
@@ -1124,7 +1124,7 @@ apiRouter.post("/infer-reference-range", authedRateLimitMiddleware, async (req, 
     }
 
     const ai = getGeminiClient();
-    const prompt = `You are a clinical pathology assistant for HealthLens AI.
+    const prompt = `You are a clinical pathology assistant for Aroveda AI.
 Provide the standard clinical reference range for the biomarker "${biomarkerName}" (unit: "${unit || ''}") according to established guidelines (ADA, AHA, NKF, ATA, WHO).
 
 Return ONLY a valid JSON object matching this schema:
