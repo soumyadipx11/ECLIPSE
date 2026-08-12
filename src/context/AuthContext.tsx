@@ -18,6 +18,8 @@ import {
   query,
   where,
   getDocs,
+  sendEmailVerification,
+  reload,
   User
 } from '../lib/firebase';
 import { UserProfile } from '../types';
@@ -35,6 +37,8 @@ interface AuthContextType {
   updateConsent: (consent: boolean) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
+  checkEmailVerificationStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -137,6 +141,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await createUserWithEmailAndPassword(auth, email, pass);
       if (res.user) {
+        // Send email verification link immediately
+        await sendEmailVerification(res.user);
         const newProfile: UserProfile = {
           uid: res.user.uid,
           email: res.user.email || email,
@@ -151,6 +157,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       await reportAuthOutcome(email, 'signup', false);
       throw err;
+    }
+  };
+
+  const resendVerificationEmail = async () => {
+    if (auth.currentUser) {
+      await sendEmailVerification(auth.currentUser);
+    } else {
+      throw new Error("No user is currently signed in.");
+    }
+  };
+
+  const checkEmailVerificationStatus = async () => {
+    if (auth.currentUser) {
+      await reload(auth.currentUser);
+      // We manually recreate the user object to trigger reactive state updates
+      setUser({ ...auth.currentUser });
     }
   };
 
@@ -257,7 +279,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPassword,
       updateConsent,
       updateProfile,
-      deleteAccount
+      deleteAccount,
+      resendVerificationEmail,
+      checkEmailVerificationStatus
     }}>
       {children}
     </AuthContext.Provider>

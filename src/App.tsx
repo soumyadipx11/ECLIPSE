@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useReports } from './hooks/useReports';
 import { AuthScreen } from './components/AuthScreen';
+import { EmailVerificationScreen } from './components/EmailVerificationScreen';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
 import { ReportUpload } from './components/ReportUpload';
@@ -114,6 +115,10 @@ function AppContent() {
 
   if (!user) {
     return <AuthScreen />;
+  }
+
+  if (!user.emailVerified) {
+    return <EmailVerificationScreen />;
   }
 
   return (

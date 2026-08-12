@@ -13,6 +13,8 @@ import {
   updatePassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  sendEmailVerification,
+  reload,
   User
 } from 'firebase/auth';
 import { 
@@ -66,6 +68,8 @@ export {
   updatePassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  sendEmailVerification,
+  reload,
   doc,
   setDoc,
   getDoc,
