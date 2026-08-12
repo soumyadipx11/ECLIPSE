@@ -13,10 +13,13 @@ import {
   FileText,
   Eye,
   EyeOff,
-  Scale
+  Scale,
+  Check,
+  X
 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { TermsPrivacyModal } from './TermsPrivacyModal';
+import { evaluatePasswordStrength } from '../utils/password';
 
 export const AuthScreen: React.FC = () => {
   const { loginWithEmail, signupWithEmail, signInWithGoogle, resetPassword } = useAuth();
@@ -24,22 +27,38 @@ export const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [privacyConsent, setPrivacyConsent] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [modalTab, setModalTab] = useState<'terms' | 'privacy' | null>(null);
 
+  const passwordEvaluation = evaluatePasswordStrength(password);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
 
-    if (mode === 'signup' && !privacyConsent) {
-      setError('You must accept the privacy policy and AI consent statement to create an account.');
-      return;
+    if (mode === 'signup') {
+      if (!privacyConsent) {
+        setError('You must accept the privacy policy and AI consent statement to create an account.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError('Passwords do not match. Please verify your password entry.');
+        return;
+      }
+
+      if (!passwordEvaluation.isValid) {
+        setError('Password does not meet minimum security requirements. It must be at least 8 characters long and contain a mix of letters, numbers, or symbols.');
+        return;
+      }
     }
 
     setLoading(true);
@@ -60,7 +79,9 @@ export const AuthScreen: React.FC = () => {
       } else if (err.code === 'auth/email-already-in-use') {
         msg = 'This email address is already registered. Please sign in instead.';
       } else if (err.code === 'auth/weak-password') {
-        msg = 'Password should be at least 6 characters.';
+        msg = 'Password is too weak. Please use at least 8 characters with numbers and symbols.';
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = 'Too many failed login attempts. Please wait a few minutes or reset your password.';
       }
       setError(msg);
     } finally {
@@ -173,37 +194,129 @@ export const AuthScreen: React.FC = () => {
             </div>
 
             {mode !== 'reset' && (
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Password</label>
-                  {mode === 'signin' && (
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Password</label>
+                    {mode === 'signin' && (
+                      <button
+                        type="button"
+                        onClick={() => { setMode('reset'); setError(null); }}
+                        className="text-[11px] text-[#ff2b66] hover:underline cursor-pointer"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl py-2.5 pl-9 pr-9 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all backdrop-blur-md"
+                    />
                     <button
                       type="button"
-                      onClick={() => { setMode('reset'); setError(null); }}
-                      className="text-[11px] text-[#ff2b66] hover:underline cursor-pointer"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
                     >
-                      Forgot password?
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
+                  </div>
+
+                  {/* Password Strength Meter & Live Requirements for Signup */}
+                  {mode === 'signup' && password.length > 0 && (
+                    <div className="mt-2.5 p-3 rounded-xl bg-white/40 dark:bg-[#121418]/40 border border-white/20 dark:border-white/10 text-xs space-y-2 backdrop-blur-md">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Password Strength:</span>
+                        <span className={`text-[11px] font-bold ${
+                          passwordEvaluation.score === 1 ? 'text-rose-500' :
+                          passwordEvaluation.score === 2 ? 'text-amber-500' :
+                          passwordEvaluation.score === 3 ? 'text-blue-500' : 'text-emerald-500'
+                        }`}>
+                          {passwordEvaluation.label}
+                        </span>
+                      </div>
+
+                      {/* 4 Segment Progress Bar */}
+                      <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                        {[1, 2, 3, 4].map((step) => (
+                          <div
+                            key={step}
+                            className={`h-full rounded-full transition-all duration-200 ${
+                              step <= passwordEvaluation.score
+                                ? passwordEvaluation.color
+                                : 'bg-slate-200 dark:bg-slate-800'
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Requirement Checklist */}
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1 text-[10px]">
+                        <div className={`flex items-center gap-1 ${passwordEvaluation.requirements.minLength ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                          {passwordEvaluation.requirements.minLength ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                          <span>At least 8 chars</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${passwordEvaluation.requirements.hasUppercase ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                          {passwordEvaluation.requirements.hasUppercase ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                          <span>Uppercase (A-Z)</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${passwordEvaluation.requirements.hasLowercase ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                          {passwordEvaluation.requirements.hasLowercase ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                          <span>Lowercase (a-z)</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${passwordEvaluation.requirements.hasNumber || passwordEvaluation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                          {passwordEvaluation.requirements.hasNumber || passwordEvaluation.requirements.hasSpecialChar ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                          <span>Number / Symbol</span>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <div className="relative">
-                  <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl py-2.5 pl-9 pr-9 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all backdrop-blur-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+
+                {/* Confirm Password field for Signup */}
+                {mode === 'signup' && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Confirm Password</label>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl py-2.5 pl-9 pr-9 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#ec003f] focus:ring-1 focus:ring-[#ec003f] transition-all backdrop-blur-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {confirmPassword.length > 0 && (
+                      <p className={`text-[10px] mt-1 font-medium flex items-center gap-1 ${
+                        password === confirmPassword ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                      }`}>
+                        {password === confirmPassword ? (
+                          <>
+                            <Check className="w-3 h-3" /> Passwords match
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-3 h-3" /> Passwords do not match
+                          </>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

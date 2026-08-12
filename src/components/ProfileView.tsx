@@ -14,11 +14,14 @@ import {
   FileText,
   Trash2,
   AlertTriangle,
-  KeyRound
+  KeyRound,
+  Check,
+  X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { auth, updatePassword } from '../lib/firebase';
 import { cleanUserErrorMessage } from '../utils/sanitize';
+import { evaluatePasswordStrength } from '../utils/password';
 
 interface ProfileViewProps {
   totalReportsCount?: number;
@@ -48,6 +51,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  const newPasswordEvaluation = evaluatePasswordStrength(newPassword);
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
@@ -58,13 +63,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
       return;
     }
 
-    if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters.');
+    if (!newPasswordEvaluation.isValid) {
+      setPasswordError('Password does not meet security criteria. It must be at least 8 characters long and contain a mix of letters, numbers, or symbols.');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match.');
+      setPasswordError('Passwords do not match. Please verify your password entry.');
       return;
     }
 
@@ -369,9 +374,55 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter at least 6 characters"
+                placeholder="At least 8 characters with numbers & symbols"
                 className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
+              {newPassword.length > 0 && (
+                <div className="mt-2 p-2.5 rounded-xl bg-white/40 dark:bg-[#121418]/40 border border-white/20 dark:border-white/10 space-y-2 backdrop-blur-md">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500 font-medium">Strength:</span>
+                    <span className={`font-bold ${
+                      newPasswordEvaluation.score === 1 ? 'text-rose-500' :
+                      newPasswordEvaluation.score === 2 ? 'text-amber-500' :
+                      newPasswordEvaluation.score === 3 ? 'text-blue-500' : 'text-emerald-500'
+                    }`}>
+                      {newPasswordEvaluation.label}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1 h-1">
+                    {[1, 2, 3, 4].map((step) => (
+                      <div
+                        key={step}
+                        className={`h-full rounded-full transition-all duration-200 ${
+                          step <= newPasswordEvaluation.score
+                            ? newPasswordEvaluation.color
+                            : 'bg-slate-200 dark:bg-slate-800'
+                        }`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Password Rule Checklist */}
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1.5 text-[10px]">
+                    <div className={`flex items-center gap-1 ${newPasswordEvaluation.requirements.minLength ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                      {newPasswordEvaluation.requirements.minLength ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                      <span>At least 8 chars</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${newPasswordEvaluation.requirements.hasUppercase ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                      {newPasswordEvaluation.requirements.hasUppercase ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                      <span>Uppercase (A-Z)</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${newPasswordEvaluation.requirements.hasLowercase ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                      {newPasswordEvaluation.requirements.hasLowercase ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                      <span>Lowercase (a-z)</span>
+                    </div>
+                    <div className={`flex items-center gap-1 ${newPasswordEvaluation.requirements.hasNumber || newPasswordEvaluation.requirements.hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                      {newPasswordEvaluation.requirements.hasNumber || newPasswordEvaluation.requirements.hasSpecialChar ? <Check className="w-3 h-3 shrink-0" /> : <X className="w-3 h-3 shrink-0 text-slate-300 dark:text-slate-600" />}
+                      <span>Number / Symbol</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -385,6 +436,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
                 placeholder="Re-enter new password"
                 className="w-full bg-white/30 dark:bg-[#121418]/30 border border-white/30 dark:border-white/10 rounded-xl p-2.5 font-medium text-slate-900 dark:text-white focus:outline-none focus:border-[#ec003f] backdrop-blur-md"
               />
+              {confirmPassword.length > 0 && (
+                <p className={`text-[10px] mt-2 font-medium flex items-center gap-1 ${
+                  newPassword === confirmPassword ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                }`}>
+                  {newPassword === confirmPassword ? '✓ Passwords match' : '✕ Passwords do not match'}
+                </p>
+              )}
             </div>
           </div>
 
