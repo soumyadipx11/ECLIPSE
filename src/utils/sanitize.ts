@@ -31,7 +31,10 @@ export function cleanUserErrorMessage(err: any, fallbackMessage: string = "An un
   const raw = typeof err === "string" ? err : err.message || String(err);
 
   // Friendly mapping for common Firebase / Auth errors
-  if (raw.includes("invalid-credential") || raw.includes("wrong-password") || raw.includes("user-not-found")) {
+  if (raw.includes("user-not-found") || raw.includes("ACCOUNT_NOT_FOUND")) {
+    return "No account found with this email address. Please check the email or sign up for a new account.";
+  }
+  if (raw.includes("invalid-credential") || raw.includes("wrong-password")) {
     return "Incorrect password or email. Please check your credentials and try again.";
   }
   if (raw.includes("email-already-in-use")) {

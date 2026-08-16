@@ -74,14 +74,18 @@ export const AuthScreen: React.FC = () => {
     } catch (err: any) {
       console.error("Auth error:", err);
       let msg = err.message || 'Authentication failed. Please check your credentials.';
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        msg = 'Invalid email or password. Please try again.';
+      if (err.code === 'auth/user-not-found' || err.message?.includes('user-not-found') || err.message?.includes('No account found')) {
+        msg = 'No account found with this email address. Please check the email or sign up for a new account.';
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        msg = mode === 'reset' 
+          ? 'No account found with this email address. Please check the email or sign up for a new account.' 
+          : 'Invalid email or password. Please try again.';
       } else if (err.code === 'auth/email-already-in-use') {
         msg = 'This email address is already registered. Please sign in instead.';
       } else if (err.code === 'auth/weak-password') {
         msg = 'Password is too weak. Please use at least 8 characters with numbers and symbols.';
       } else if (err.code === 'auth/too-many-requests') {
-        msg = 'Too many failed login attempts. Please wait a few minutes or reset your password.';
+        msg = 'Too many failed attempts. Please wait a few minutes or reset your password.';
       }
       setError(msg);
     } finally {

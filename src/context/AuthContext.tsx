@@ -11,6 +11,7 @@ import {
   createUserWithEmailAndPassword, 
   firebaseSignOut, 
   sendPasswordResetEmail,
+  fetchSignInMethodsForEmail,
   deleteUser,
   db,
   doc,
@@ -191,10 +192,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resetPassword = async (email: string) => {
     await verifyAuthRateLimit(email, 'reset-password');
     try {
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods.length === 0) {
+          throw new Error('auth/user-not-found');
+        }
+      } catch (checkErr: any) {
+        if (
+          checkErr.message === 'auth/user-not-found' || 
+          checkErr.code === 'auth/user-not-found' ||
+          checkErr.message?.includes('user-not-found')
+        ) {
+          throw new Error('No account found with this email address. Please check the email or sign up for a new account.');
+        }
+      }
+
       await sendPasswordResetEmail(auth, email);
       await reportAuthOutcome(email, 'reset-password', true);
-    } catch (err) {
+    } catch (err: any) {
       await reportAuthOutcome(email, 'reset-password', false);
+      if (
+        err.code === 'auth/user-not-found' || 
+        err.message?.includes('user-not-found') ||
+        err.message?.includes('ACCOUNT_NOT_FOUND')
+      ) {
+        throw new Error('No account found with this email address. Please check the email or sign up for a new account.');
+      }
       throw err;
     }
   };
