@@ -30,6 +30,23 @@ export function cleanUserErrorMessage(err: any, fallbackMessage: string = "An un
 
   const raw = typeof err === "string" ? err : err.message || String(err);
 
+  // Friendly mapping for common Firebase / Auth errors
+  if (raw.includes("invalid-credential") || raw.includes("wrong-password") || raw.includes("user-not-found")) {
+    return "Incorrect password or email. Please check your credentials and try again.";
+  }
+  if (raw.includes("email-already-in-use")) {
+    return "This email address is already registered. Please sign in instead.";
+  }
+  if (raw.includes("requires-recent-login")) {
+    return "For security, this action requires a recent login. Please sign out and sign back in.";
+  }
+  if (raw.includes("too-many-requests")) {
+    return "Too many failed attempts. Please wait a few minutes before trying again.";
+  }
+  if (raw.includes("weak-password")) {
+    return "Password is too weak. Please use at least 8 characters with numbers and symbols.";
+  }
+
   const isTechnicalLeak =
     raw.includes("at ") ||
     raw.includes("/var/") ||
@@ -38,6 +55,8 @@ export function cleanUserErrorMessage(err: any, fallbackMessage: string = "An un
     raw.includes(".js:") ||
     raw.includes("ECONNREFUSED") ||
     raw.includes("FirebaseError:") ||
+    raw.includes("Firebase:") ||
+    raw.includes("auth/") ||
     raw.includes("Firestore") ||
     raw.includes("SQL") ||
     raw.includes("file:///") ||

@@ -146,7 +146,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
       setShowDeleteProfileModal(false);
     } catch (err: any) {
       console.error("Delete profile error:", err);
-      setDeleteError(err.message || 'Failed to delete profile & account. Please try again.');
+      setDeleteError(cleanUserErrorMessage(err, 'Failed to delete profile & account. Please try again.'));
     } finally {
       setDeletingProfile(false);
     }
@@ -581,3 +581,4 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ totalReportsCount = 0 
     </div>
   );
 };
+

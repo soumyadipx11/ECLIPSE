@@ -26,7 +26,7 @@ import {
   User
 } from '../lib/firebase';
 import { UserProfile } from '../types';
-import { cleanUndefined } from '../utils/sanitize';
+import { cleanUndefined, cleanUserErrorMessage } from '../utils/sanitize';
 
 interface AuthContextType {
   user: User | null;
@@ -250,42 +250,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await reauthenticateWithCredential(user, credential);
       } catch (authErr: any) {
         console.error("Re-authentication error:", authErr);
-        if (authErr.code === 'auth/wrong-password' || authErr.code === 'auth/invalid-credential') {
+        if (
+          authErr.code === 'auth/wrong-password' || 
+          authErr.code === 'auth/invalid-credential' ||
+          authErr.message?.includes('invalid-credential') ||
+          authErr.message?.includes('wrong-password')
+        ) {
           throw new Error("Incorrect password. Please verify your current password and try again.");
         }
-        throw new Error("Authentication failed. Please verify your password and try again.");
+        throw new Error(cleanUserErrorMessage(authErr, "Authentication failed. Please verify your password and try again."));
       }
     }
 
-    // Step 2: Delete Auth User first so if auth fails, database records are not lost prematurely
-    try {
-      await deleteUser(user);
-    } catch (delErr: any) {
-      console.error("Delete user error:", delErr);
-      if (delErr.code === 'auth/requires-recent-login') {
-        if (isGoogleUser) {
-          // Trigger Google reauth popup
-          try {
-            await reauthenticateWithPopup(user, googleProvider);
-            await deleteUser(user);
-          } catch (gErr: any) {
-            throw new Error("Re-authentication with Google failed. Please sign out and sign back in to delete your account.");
-          }
-        } else {
-          throw new Error("For security, account deletion requires a recent login. Please sign out, sign back in, and try again.");
-        }
-      } else {
-        throw new Error(delErr.message || "Failed to delete account. Please try again.");
-      }
-    }
-
-    // Step 3: Delete user data across all Firestore collections
+    // Step 2: Delete user data across all Firestore collections BEFORE deleting Auth user
+    // (This ensures the request is fully authenticated under Firestore security rules)
     try {
       // User Profile document
-      await deleteDoc(doc(db, 'users', uid)).catch(() => {});
+      await deleteDoc(doc(db, 'users', uid)).catch((e) => console.warn("Could not delete user profile doc:", e));
       // AI insights & doctor summaries keyed by userId
-      await deleteDoc(doc(db, 'ai_insights', uid)).catch(() => {});
-      await deleteDoc(doc(db, 'doctor_summaries', uid)).catch(() => {});
+      await deleteDoc(doc(db, 'ai_insights', uid)).catch((e) => console.warn("Could not delete ai_insights doc:", e));
+      await deleteDoc(doc(db, 'doctor_summaries', uid)).catch((e) => console.warn("Could not delete doctor_summaries doc:", e));
     } catch (e) {
       console.error("Error deleting core user docs:", e);
     }
@@ -297,11 +281,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const q = query(collection(db, colName), where('userId', '==', uid));
         const snap = await getDocs(q);
         for (const itemDoc of snap.docs) {
-          await deleteDoc(doc(db, colName, itemDoc.id)).catch(() => {});
+          await deleteDoc(doc(db, colName, itemDoc.id)).catch((e) => console.warn(`Could not delete doc ${itemDoc.id} in ${colName}:`, e));
         }
       }
     } catch (e) {
       console.error("Error deleting user sub-collections:", e);
+    }
+
+    // Step 3: FINALLY delete the Auth User from Firebase Auth
+    try {
+      await deleteUser(user);
+    } catch (delErr: any) {
+      console.error("Delete user error:", delErr);
+      if (delErr.code === 'auth/requires-recent-login' || delErr.message?.includes('requires-recent-login')) {
+        if (isGoogleUser) {
+          try {
+            await reauthenticateWithPopup(user, googleProvider);
+            await deleteUser(user);
+          } catch (gErr: any) {
+            throw new Error("Re-authentication with Google failed. Please sign out and sign back in to delete your account.");
+          }
+        } else {
+          throw new Error("For security, account deletion requires a recent login. Please sign out, sign back in, and try again.");
+        }
+      } else {
+        throw new Error(cleanUserErrorMessage(delErr, "Failed to delete account. Please try again."));
+      }
     }
 
     // Step 4: Local Storage & State cleanup
@@ -311,6 +316,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('aroveda_custom_reminders');
     } catch (e) {}
 
+    setUser(null);
     setUserProfile(null);
   };
 
