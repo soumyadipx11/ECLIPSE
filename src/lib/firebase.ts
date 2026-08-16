@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
   getAuth, 
   GoogleAuthProvider, 
+  EmailAuthProvider,
   signInWithPopup, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -10,6 +11,8 @@ import {
   updateProfile,
   onAuthStateChanged,
   deleteUser,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
   updatePassword,
   RecaptchaVerifier,
   signInWithPhoneNumber,
@@ -57,6 +60,9 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

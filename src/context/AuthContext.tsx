@@ -4,6 +4,9 @@ import {
   onAuthStateChanged, 
   signInWithPopup, 
   googleProvider, 
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   firebaseSignOut, 
@@ -36,7 +39,7 @@ interface AuthContextType {
   resetPassword: (e: string) => Promise<void>;
   updateConsent: (consent: boolean) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  deleteAccount: (currentPassword?: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   checkEmailVerificationStatus: () => Promise<void>;
 }
@@ -228,36 +231,80 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const deleteAccount = async () => {
-    if (!user) return;
+  const deleteAccount = async (currentPassword?: string) => {
+    if (!user) {
+      throw new Error("No user is currently signed in.");
+    }
     const uid = user.uid;
 
+    const isPasswordUser = user.providerData.some(p => p.providerId === 'password');
+    const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+
+    // Step 1: Re-authenticate if password user
+    if (isPasswordUser) {
+      if (!currentPassword) {
+        throw new Error("Please enter your current account password to confirm account deletion.");
+      }
+      try {
+        const credential = EmailAuthProvider.credential(user.email!, currentPassword);
+        await reauthenticateWithCredential(user, credential);
+      } catch (authErr: any) {
+        console.error("Re-authentication error:", authErr);
+        if (authErr.code === 'auth/wrong-password' || authErr.code === 'auth/invalid-credential') {
+          throw new Error("Incorrect password. Please verify your current password and try again.");
+        }
+        throw new Error("Authentication failed. Please verify your password and try again.");
+      }
+    }
+
+    // Step 2: Delete Auth User first so if auth fails, database records are not lost prematurely
     try {
-      // 1. Delete user profile document
-      await deleteDoc(doc(db, 'users', uid));
+      await deleteUser(user);
+    } catch (delErr: any) {
+      console.error("Delete user error:", delErr);
+      if (delErr.code === 'auth/requires-recent-login') {
+        if (isGoogleUser) {
+          // Trigger Google reauth popup
+          try {
+            await reauthenticateWithPopup(user, googleProvider);
+            await deleteUser(user);
+          } catch (gErr: any) {
+            throw new Error("Re-authentication with Google failed. Please sign out and sign back in to delete your account.");
+          }
+        } else {
+          throw new Error("For security, account deletion requires a recent login. Please sign out, sign back in, and try again.");
+        }
+      } else {
+        throw new Error(delErr.message || "Failed to delete account. Please try again.");
+      }
+    }
+
+    // Step 3: Delete user data across all Firestore collections
+    try {
+      // User Profile document
+      await deleteDoc(doc(db, 'users', uid)).catch(() => {});
+      // AI insights & doctor summaries keyed by userId
+      await deleteDoc(doc(db, 'ai_insights', uid)).catch(() => {});
+      await deleteDoc(doc(db, 'doctor_summaries', uid)).catch(() => {});
     } catch (e) {
-      console.error("Failed to delete user profile doc:", e);
+      console.error("Error deleting core user docs:", e);
     }
 
     try {
-      // 2. Delete user reports collection
-      const reportsQuery = query(collection(db, 'reports'), where('userId', '==', uid));
-      const reportsSnap = await getDocs(reportsQuery);
-      for (const reportDoc of reportsSnap.docs) {
-        await deleteDoc(doc(db, 'reports', reportDoc.id));
+      // Clean up collection documents linked by userId
+      const collectionsToClean = ['reports', 'audit_logs', 'smart_alerts'];
+      for (const colName of collectionsToClean) {
+        const q = query(collection(db, colName), where('userId', '==', uid));
+        const snap = await getDocs(q);
+        for (const itemDoc of snap.docs) {
+          await deleteDoc(doc(db, colName, itemDoc.id)).catch(() => {});
+        }
       }
     } catch (e) {
-      console.error("Failed to delete user reports:", e);
+      console.error("Error deleting user sub-collections:", e);
     }
 
-    try {
-      // 3. Delete auth account
-      await deleteUser(user);
-    } catch (e) {
-      console.error("Failed to delete Auth account (may require recent login):", e);
-      await firebaseSignOut(auth);
-    }
-
+    // Step 4: Local Storage & State cleanup
     try {
       localStorage.removeItem('aroveda_ai_insights');
       localStorage.removeItem('aroveda_doctor_summary');
