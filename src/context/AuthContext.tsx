@@ -88,6 +88,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        // Auto-cleanup for stale unverified accounts older than 24 hours
+        if (!currentUser.emailVerified && currentUser.metadata.creationTime) {
+          const creationMs = new Date(currentUser.metadata.creationTime).getTime();
+          const ageMs = Date.now() - creationMs;
+          if (ageMs > 24 * 60 * 60 * 1000) {
+            console.log("Auto-cleaning stale unverified account:", currentUser.email);
+            try {
+              await deleteDoc(doc(db, 'users', currentUser.uid)).catch(() => {});
+              await deleteUser(currentUser).catch(() => {});
+              await firebaseSignOut(auth).catch(() => {});
+            } catch (e) {
+              console.warn("Auto-cleanup error:", e);
+            }
+            setUser(null);
+            setUserProfile(null);
+            setLoading(false);
+            return;
+          }
+        }
+
         // Fetch or create user profile document
         try {
           const userDocRef = doc(db, 'users', currentUser.uid);
@@ -132,7 +152,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithEmail = async (email: string, pass: string) => {
     await verifyAuthRateLimit(email, 'login');
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      const credential = await signInWithEmailAndPassword(auth, email, pass);
+      const currentUser = credential.user;
+
+      // Auto-cleanup check if unverified and older than 24h
+      if (currentUser && !currentUser.emailVerified && currentUser.metadata.creationTime) {
+        const creationMs = new Date(currentUser.metadata.creationTime).getTime();
+        if (Date.now() - creationMs > 24 * 60 * 60 * 1000) {
+          try {
+            await deleteDoc(doc(db, 'users', currentUser.uid)).catch(() => {});
+            await deleteUser(currentUser);
+          } catch (e) {
+            console.warn("Auto-cleanup error during login:", e);
+          }
+          await firebaseSignOut(auth);
+          setUser(null);
+          setUserProfile(null);
+          throw new Error('Your previous unverified account registration expired (older than 24 hours). The stale account has been automatically cleaned up. Please sign up again.');
+        }
+      }
+
       await reportAuthOutcome(email, 'login', true);
     } catch (err) {
       await reportAuthOutcome(email, 'login', false);
@@ -158,8 +197,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserProfile(newProfile);
       }
       await reportAuthOutcome(email, 'signup', true);
-    } catch (err) {
+    } catch (err: any) {
       await reportAuthOutcome(email, 'signup', false);
+      if (err.code === 'auth/email-already-in-use' || err.message?.includes('email-already-in-use')) {
+        throw new Error('This email address is already registered. Please sign in instead.');
+      }
       throw err;
     }
   };
