@@ -880,6 +880,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const enterRecoveryMode = (plan?: RecoveryPlan, customGoals?: DailyGoal[], reason?: string) => {
+    const today = getLocalDateString();
     setState(prev => ({
       ...prev,
       isActive: true,
@@ -889,11 +890,13 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       energyScore: Math.min(prev.energyScore, 40),
       currentPlan: plan || prev.currentPlan,
       adjustedGoals: customGoals || prev.adjustedGoals,
-      streakShieldActive: prev.coachConfig.enableStreakProtection
+      streakShieldActive: prev.coachConfig.enableStreakProtection,
+      lastActiveDate: today
     }));
   };
 
   const exitRecoveryMode = (feedback?: { rating: 'much_better' | 'slightly_calmer' | 'still_drained'; notes?: string }) => {
+    const today = getLocalDateString();
     setState(prev => {
       const updatedHistory = [...prev.checkInHistory];
       if (updatedHistory.length > 0 && feedback) {
@@ -914,15 +917,18 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         energyScore: feedback?.rating === 'much_better' ? 75 : feedback?.rating === 'slightly_calmer' ? 62 : 48,
         adjustedGoals: DEFAULT_GOALS,
         streakShieldActive: false,
-        checkInHistory: updatedHistory
+        checkInHistory: updatedHistory,
+        lastActiveDate: today
       };
     });
   };
 
   const restoreOriginalGoals = () => {
+    const today = getLocalDateString();
     setState(prev => ({
       ...prev,
-      adjustedGoals: DEFAULT_GOALS
+      adjustedGoals: DEFAULT_GOALS,
+      lastActiveDate: today
     }));
   };
 
@@ -972,7 +978,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         adjustedGoals: updatedGoals,
         streakHistory: updatedHistory,
         currentStreakDays: currentStreak,
-        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
+        lastActiveDate: today
       };
     });
   };
@@ -1024,7 +1031,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         adjustedGoals: updatedGoals,
         streakHistory: updatedHistory,
         currentStreakDays: currentStreak,
-        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
+        lastActiveDate: today
       };
     });
   };
@@ -1074,7 +1082,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         adjustedGoals: updatedGoals,
         streakHistory: updatedHistory,
         currentStreakDays: currentStreak,
-        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
+        lastActiveDate: today
       };
     });
   };
@@ -1125,7 +1134,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         adjustedGoals: updatedGoals,
         streakHistory: updatedHistory,
         currentStreakDays: currentStreak,
-        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
+        lastActiveDate: today
       };
     });
   };
@@ -1155,7 +1165,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         adjustedGoals: resetGoals,
         streakHistory: updatedHistory,
         currentStreakDays: currentStreak,
-        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
+        lastActiveDate: today
       };
     });
   };
@@ -1201,7 +1212,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         adjustedGoals: completedGoals,
         streakHistory: updatedHistory,
         currentStreakDays: currentStreak,
-        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
+        lastActiveDate: today
       };
     });
   };
@@ -1404,7 +1416,14 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const saveAndSyncToFirebase = async (): Promise<boolean> => {
     setIsSaving(true);
     try {
-      const currentState = stateRef.current;
+      const today = getLocalDateString();
+      const currentState: RecoveryState = {
+        ...stateRef.current,
+        lastActiveDate: today
+      };
+      stateRef.current = currentState;
+      setState(currentState);
+
       if (user?.uid) {
         const payload = cleanUndefined({
           ...currentState,
