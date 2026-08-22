@@ -27,7 +27,8 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
     state, 
     resetGoalsToday,
     setAllGoalsMet,
-    isCloudSynced 
+    isCloudSynced,
+    isFemaleUser
   } = useRecovery();
 
   const [hoveredDay, setHoveredDay] = useState<{
@@ -47,7 +48,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
     const today = new Date();
     const todayStr = getLocalDateString(today);
     const history = state.streakHistory || {};
-    const isPeriod = Boolean(state.menstrualState?.isPeriodActive);
+    const isPeriod = Boolean(isFemaleUser && state.menstrualState?.isPeriodActive);
 
     // Determine today's live completion status
     const todayGoals = state.adjustedGoals || [];
@@ -408,10 +409,12 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
             <span className="w-3 h-3 rounded-[2px] bg-yellow-400 dark:bg-yellow-400 block shadow-xs shadow-yellow-500/20"></span>
             <span className="text-yellow-700 dark:text-yellow-400 font-bold">Recovery</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-[2px] bg-rose-500 dark:bg-rose-500 block shadow-xs shadow-rose-500/20"></span>
-            <span className="text-rose-700 dark:text-rose-400 font-bold">Period Day</span>
-          </div>
+          {isFemaleUser && (
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-[2px] bg-rose-500 dark:bg-rose-500 block shadow-xs shadow-rose-500/20"></span>
+              <span className="text-rose-700 dark:text-rose-400 font-bold">Period Day</span>
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-[2px] bg-emerald-500 dark:bg-emerald-500 block shadow-xs shadow-emerald-500/20"></span>
             <span className="text-emerald-700 dark:text-emerald-400 font-bold">Completed</span>

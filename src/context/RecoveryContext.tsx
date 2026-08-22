@@ -107,30 +107,9 @@ export const DEFAULT_MENSTRUAL_STATE: MenstrualState = {
   isEnabled: true,
   isPeriodActive: false,
   activePeriodOnset: undefined,
-  activePeriodFlow: 'medium',
-  activeSymptoms: ['cramps', 'fatigue'],
-  periodHistory: [
-    {
-      id: 'cycle_hist_1',
-      onsetDate: '2026-06-25',
-      offsetDate: '2026-06-29',
-      durationDays: 5,
-      cycleLengthDays: 28,
-      flowLevel: 'medium',
-      symptoms: ['cramps', 'fatigue'],
-      isOngoing: false
-    },
-    {
-      id: 'cycle_hist_2',
-      onsetDate: '2026-07-23',
-      offsetDate: '2026-07-27',
-      durationDays: 5,
-      cycleLengthDays: 28,
-      flowLevel: 'medium',
-      symptoms: ['lower_back_pain', 'bloating'],
-      isOngoing: false
-    }
-  ],
+  activePeriodFlow: undefined,
+  activeSymptoms: [],
+  periodHistory: [],
   lastUpdated: new Date().toISOString()
 };
 
@@ -494,6 +473,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               checkInHistory: Array.isArray(data.checkInHistory) ? data.checkInHistory : prev.checkInHistory,
               sessionLogs: Array.isArray(data.sessionLogs) ? data.sessionLogs : prev.sessionLogs,
               coachConfig: data.coachConfig ? { ...DEFAULT_COACH_CONFIG, ...data.coachConfig } : prev.coachConfig,
+              menstrualState: data.menstrualState ? data.menstrualState : prev.menstrualState,
             };
             try {
               localStorage.setItem('aroveda_recovery_state', JSON.stringify(nextState));
@@ -1445,7 +1425,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // Female user detection & cycle analysis
-  const isFemaleUser = (userProfile?.gender?.toLowerCase() === 'female') || (state.menstrualState?.isEnabled === true);
+  const isFemaleUser = userProfile?.gender?.toLowerCase() === 'female';
   const menstrualState = state.menstrualState || DEFAULT_MENSTRUAL_STATE;
   const isPeriodActive = Boolean(menstrualState.isPeriodActive);
 

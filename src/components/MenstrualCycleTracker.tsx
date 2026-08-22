@@ -66,7 +66,7 @@ export const MenstrualCycleTracker: React.FC<MenstrualCycleTrackerProps> = ({ co
   const [pastSymptoms, setPastSymptoms] = useState<string[]>(['cramps']);
   const [pastNotes, setPastNotes] = useState('');
 
-  if (!isFemaleUser && !menstrualState.isEnabled) {
+  if (!isFemaleUser) {
     return null;
   }
 
