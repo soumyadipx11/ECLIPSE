@@ -23,8 +23,7 @@ import {
   PauseCircle,
   Clock,
   Check,
-  BookOpen,
-  Power
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { recoveryAudio } from '../utils/audioSynthesis';
@@ -87,7 +86,6 @@ export const InteractiveRecoveryPlayer: React.FC = () => {
     activePlayerModal, 
     closePlayerModal, 
     recordSessionCompleted, 
-    recordPostActivityFeedback,
     exitRecoveryMode 
   } = useRecovery();
 
@@ -343,18 +341,9 @@ export const InteractiveRecoveryPlayer: React.FC = () => {
     recoveryAudio.speakGuidance("Starting fresh recovery cycle. Settle in and follow the cadence.");
   };
 
-  const handleFinishKeepRecoveryActive = () => {
-    if (feedbackRating) {
-      recordPostActivityFeedback({ rating: feedbackRating, notes: feedbackNotes });
-    }
-    closePlayerModal();
-  };
-
-  const handleFinishTurnOffRecovery = () => {
+  const handleFinishFeedback = () => {
     if (feedbackRating) {
       exitRecoveryMode({ rating: feedbackRating, notes: feedbackNotes });
-    } else {
-      exitRecoveryMode();
     }
     closePlayerModal();
   };
@@ -1084,10 +1073,10 @@ export const InteractiveRecoveryPlayer: React.FC = () => {
                     Repeat 3-Min Exercise
                   </button>
                   <button
-                    onClick={handleFinishKeepRecoveryActive}
-                    className="w-full sm:w-auto bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold py-2.5 px-4 rounded-xl text-xs transition-all border border-emerald-400/40 cursor-pointer"
+                    onClick={handleFinishFeedback}
+                    className="w-full sm:w-auto bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all border border-white/10 cursor-pointer"
                   >
-                    Keep Recovery Active
+                    Complete & Rest
                   </button>
                 </div>
               </motion.div>
@@ -1108,7 +1097,7 @@ export const InteractiveRecoveryPlayer: React.FC = () => {
                       Great to hear you feel much better!
                     </h4>
                     <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                      Would you like to do another 3-minute round to consolidate this calm and energized state, or keep your reduced targets active?
+                      Would you like to do another 3-minute round to consolidate this calm and energized state, or save your progress?
                     </p>
                   </div>
                 </div>
@@ -1122,33 +1111,26 @@ export const InteractiveRecoveryPlayer: React.FC = () => {
                     Do Another Round
                   </button>
                   <button
-                    onClick={handleFinishKeepRecoveryActive}
-                    className="w-full sm:w-auto bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold py-2.5 px-4 rounded-xl text-xs transition-all border border-emerald-400/40 cursor-pointer"
+                    onClick={handleFinishFeedback}
+                    className="w-full sm:w-auto bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all border border-white/10 cursor-pointer"
                   >
-                    Keep Recovery Active
+                    Log & Return
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {/* Standard Return Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={handleFinishKeepRecoveryActive}
-                className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-3 rounded-xl sm:rounded-2xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer border-2 border-emerald-300"
-              >
-                <Check className="w-4 h-4" />
-                Complete Exercise & Keep Recovery Active
-              </button>
-
-              <button
-                onClick={handleFinishTurnOffRecovery}
-                className="w-full sm:w-auto bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 font-bold px-4 py-3 rounded-xl sm:rounded-2xl text-xs flex items-center justify-center gap-2 transition-all border border-rose-400/40 cursor-pointer"
-              >
-                <Power className="w-4 h-4 text-rose-400" />
-                Turn Off Recovery Mode
-              </button>
-            </div>
+            {/* Standard Return Action Button (when not prompting or for slightly calmer) */}
+            {(!feedbackRating || feedbackRating === 'slightly_calmer') && (
+              <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={handleFinishFeedback}
+                  className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer border-2 border-emerald-300"
+                >
+                  Log Feedback & Return <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
 

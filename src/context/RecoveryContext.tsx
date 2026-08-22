@@ -336,7 +336,6 @@ interface RecoveryContextType {
   submitCheckIn: (input: string, mode: 'text' | 'voice' | 'preset') => Promise<EnergyCheckIn>;
   enterRecoveryMode: (plan?: RecoveryPlan, customGoals?: DailyGoal[], reason?: string) => void;
   exitRecoveryMode: (feedback?: { rating: 'much_better' | 'slightly_calmer' | 'still_drained'; notes?: string }) => void;
-  recordPostActivityFeedback: (feedback: { rating: 'much_better' | 'slightly_calmer' | 'still_drained'; notes?: string }) => void;
   toggleGoalProgress: (goalId: string, delta?: number) => void;
   setGoalValue: (goalId: string, value: number) => void;
   setGoalTarget: (goalId: string, target: number) => void;
@@ -1013,26 +1012,6 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         currentStreakDays: currentStreak,
         longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
         lastActiveDate: today
-      };
-    });
-  };
-
-  const recordPostActivityFeedback = (feedback: { rating: 'much_better' | 'slightly_calmer' | 'still_drained'; notes?: string }) => {
-    setState(prev => {
-      const updatedHistory = [...prev.checkInHistory];
-      if (updatedHistory.length > 0 && feedback) {
-        updatedHistory[0] = {
-          ...updatedHistory[0],
-          postActivityFeedback: {
-            rating: feedback.rating,
-            notes: feedback.notes,
-            completedAt: new Date().toISOString()
-          }
-        };
-      }
-      return {
-        ...prev,
-        checkInHistory: updatedHistory
       };
     });
   };
@@ -1756,7 +1735,6 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       submitCheckIn,
       enterRecoveryMode,
       exitRecoveryMode,
-      recordPostActivityFeedback,
       toggleGoalProgress,
       setGoalValue,
       setGoalTarget,
