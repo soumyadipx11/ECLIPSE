@@ -912,7 +912,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       const today = getLocalDateString();
       const updatedHistory = { ...(prev.streakHistory || {}) };
-      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const isPeriod = Boolean(isFemaleUser && prev.menstrualState?.isPeriodActive);
       const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
         updatedHistory,
         updatedGoals,
@@ -965,7 +965,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       const today = getLocalDateString();
       const updatedHistory = { ...(prev.streakHistory || {}) };
-      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const isPeriod = Boolean(isFemaleUser && prev.menstrualState?.isPeriodActive);
       const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
         updatedHistory,
         updatedGoals,
@@ -1015,7 +1015,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       const today = getLocalDateString();
       const updatedHistory = { ...(prev.streakHistory || {}) };
-      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const isPeriod = Boolean(isFemaleUser && prev.menstrualState?.isPeriodActive);
       const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
         updatedHistory,
         updatedGoals,
@@ -1065,7 +1065,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       const today = getLocalDateString();
       const updatedHistory = { ...(prev.streakHistory || {}) };
-      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const isPeriod = Boolean(isFemaleUser && prev.menstrualState?.isPeriodActive);
       const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
         updatedHistory,
         updatedGoals,
@@ -1108,7 +1108,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const updatedHistory = { ...(prev.streakHistory || {}) };
       delete updatedHistory[today];
 
-      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const isPeriod = Boolean(isFemaleUser && prev.menstrualState?.isPeriodActive);
       const { currentStreak, longestStreak } = calculateStreakFromHistory(
         updatedHistory,
         resetGoals,
@@ -1135,7 +1135,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }));
 
       const today = getLocalDateString();
-      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const isPeriod = Boolean(isFemaleUser && prev.menstrualState?.isPeriodActive);
       const status: 'completed' | 'recovery' | 'period' = isPeriod 
         ? 'period' 
         : (prev.isActive || prev.streakShieldActive ? 'recovery' : 'completed');
@@ -1180,6 +1180,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     symptoms: string[] = ['cramps', 'fatigue'], 
     notes?: string
   ) => {
+    if (!isFemaleUser) return;
     const today = getLocalDateString();
     const effectiveOnset = onsetDate || today;
 
@@ -1232,6 +1233,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const endPeriodMode = (offsetDate?: string, notes?: string) => {
+    if (!isFemaleUser) return;
     const today = getLocalDateString();
     const effectiveOffset = offsetDate || today;
 
@@ -1302,6 +1304,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const logMenstrualEntry = (entry: Partial<MenstrualPeriodEntry>) => {
+    if (!isFemaleUser) return;
     setState(prev => {
       const existing = prev.menstrualState?.periodHistory || [];
       const entryId = entry.id || ('cycle_' + Date.now());
@@ -1338,6 +1341,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const deleteMenstrualEntry = (entryId: string) => {
+    if (!isFemaleUser) return;
     setState(prev => {
       const existing = prev.menstrualState?.periodHistory || [];
       const updatedHistory = existing.filter(e => e.id !== entryId);
@@ -1353,6 +1357,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const toggleMenstrualTracking = (enable: boolean) => {
+    if (!isFemaleUser) return;
     setState(prev => ({
       ...prev,
       menstrualState: {
@@ -1427,7 +1432,66 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Female user detection & cycle analysis
   const isFemaleUser = userProfile?.gender?.toLowerCase() === 'female';
   const menstrualState = state.menstrualState || DEFAULT_MENSTRUAL_STATE;
-  const isPeriodActive = Boolean(menstrualState.isPeriodActive);
+  const isPeriodActive = Boolean(isFemaleUser && menstrualState.isPeriodActive);
+
+  // Automatically reset menstrual state and restore baseline targets if gender changes from female to male or other
+  useEffect(() => {
+    if (!isFemaleUser) {
+      setState(prev => {
+        const activePeriod = prev.menstrualState?.isPeriodActive;
+        const hasMenstrualNote = prev.adjustedGoals.some(g => g.recoveryNote?.includes('Menstrual') || g.recoveryNote?.includes('🌸'));
+
+        if (!activePeriod && !hasMenstrualNote) {
+          return prev;
+        }
+
+        // Restore normal targets if they were modified by menstrual mode
+        const restoredGoals = prev.adjustedGoals.map(g => ({
+          ...g,
+          adjustedTarget: g.normalTarget,
+          currentValue: Math.min(g.normalTarget, g.currentValue),
+          isPausedOrReduced: false,
+          recoveryNote: undefined,
+          recoveryAdjustmentReason: undefined
+        }));
+
+        const updatedMenstrual: MenstrualState = {
+          ...(prev.menstrualState || DEFAULT_MENSTRUAL_STATE),
+          isPeriodActive: false,
+          activePeriodOnset: undefined,
+          activePeriodFlow: undefined,
+          activeSymptoms: [],
+        };
+
+        const today = getLocalDateString();
+        const updatedHistory = { ...(prev.streakHistory || {}) };
+        if (updatedHistory[today]?.status === 'period') {
+          updatedHistory[today] = {
+            ...updatedHistory[today],
+            status: 'completed',
+            note: 'All daily targets met'
+          };
+        }
+
+        const { currentStreak, longestStreak } = calculateStreakFromHistory(
+          updatedHistory,
+          restoredGoals,
+          prev.isActive,
+          prev.streakShieldActive,
+          false
+        );
+
+        return {
+          ...prev,
+          menstrualState: updatedMenstrual,
+          adjustedGoals: restoredGoals,
+          streakHistory: updatedHistory,
+          currentStreakDays: currentStreak,
+          longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        };
+      });
+    }
+  }, [isFemaleUser]);
 
   const cycleAnalysis = useMemo(() => {
     return analyzeMenstrualCycle(
