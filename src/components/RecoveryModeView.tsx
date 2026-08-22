@@ -31,6 +31,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { StreakCalendar } from './StreakCalendar';
 
 interface RecoveryModeViewProps {
   onNavigateToDashboard: () => void;
@@ -54,7 +55,9 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
     toggleGoalProgress,
     setGoalValue,
     setGoalTarget,
-    restoreOriginalGoals
+    restoreOriginalGoals,
+    setAllGoalsMet,
+    resetGoalsToday
   } = useRecovery();
 
   const [saveSuccessNotification, setSaveSuccessNotification] = useState<string | null>(null);
@@ -76,10 +79,8 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
   };
 
   const handleMarkAllMet = () => {
-    state.adjustedGoals.forEach(g => {
-      setGoalValue(g.id, g.adjustedTarget);
-    });
-    setSaveSuccessNotification("All goals marked completed! Click 'Save & Sync' to persist to Firebase.");
+    setAllGoalsMet();
+    setSaveSuccessNotification("All 5 goals marked completed! Streak updated.");
     setTimeout(() => {
       setSaveSuccessNotification(null);
     }, 3500);
@@ -459,6 +460,9 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* GitHub-style Streak Calendar Heatmap */}
+      <StreakCalendar />
     </div>
   );
 };

@@ -39,7 +39,7 @@ const DEFAULT_GOALS: DailyGoal[] = [
     category: 'movement',
     normalTarget: 10000,
     adjustedTarget: 10000,
-    currentValue: 3420,
+    currentValue: 0,
     unit: 'steps',
     isPausedOrReduced: false,
     recoveryNote: 'Standard active movement goal.'
@@ -63,7 +63,7 @@ const DEFAULT_GOALS: DailyGoal[] = [
     category: 'sleep',
     normalTarget: 7.5,
     adjustedTarget: 7.5,
-    currentValue: 4.5,
+    currentValue: 0,
     unit: 'hours',
     isPausedOrReduced: false,
     recoveryNote: 'Standard rest baseline.'
@@ -75,7 +75,7 @@ const DEFAULT_GOALS: DailyGoal[] = [
     category: 'hydration',
     normalTarget: 2000,
     adjustedTarget: 2000,
-    currentValue: 900,
+    currentValue: 0,
     unit: 'ml',
     isPausedOrReduced: false,
     recoveryNote: 'Optimal daily water intake.'
@@ -87,12 +87,106 @@ const DEFAULT_GOALS: DailyGoal[] = [
     category: 'focus',
     normalTarget: 6.0,
     adjustedTarget: 6.0,
-    currentValue: 3.5,
+    currentValue: 0,
     unit: 'hours',
     isPausedOrReduced: false,
     recoveryNote: 'Standard work focus block.'
   }
 ];
+
+export const getLocalDateString = (d: Date = new Date()): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const calculateStreakFromHistory = (
+  history: Record<string, any> = {},
+  todayGoals: DailyGoal[] = [],
+  isRecoveryActive: boolean = false,
+  isShieldActive: boolean = false
+): { currentStreak: number; longestStreak: number; todayStatus: 'completed' | 'recovery' | 'inactive' } => {
+  const todayStr = getLocalDateString();
+  const todayCompletedCount = todayGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
+  const todayTotal = todayGoals.length;
+  
+  let todayStatus: 'completed' | 'recovery' | 'inactive' = 'inactive';
+  if (todayCompletedCount === todayTotal && todayTotal > 0) {
+    todayStatus = (isRecoveryActive || isShieldActive) ? 'recovery' : 'completed';
+  } else if (todayCompletedCount > 0 && (isRecoveryActive || isShieldActive)) {
+    todayStatus = 'recovery';
+  }
+
+  const allRecords = { ...history };
+  if (todayStatus !== 'inactive') {
+    allRecords[todayStr] = {
+      date: todayStr,
+      status: todayStatus,
+      completedCount: todayCompletedCount,
+      totalGoals: todayTotal
+    };
+  }
+
+  // Calculate consecutive streak working backwards
+  let currentStreak = 0;
+  const cursor = new Date();
+  
+  // If today is completed or recovery, count today
+  const todayRec = allRecords[todayStr];
+  if (todayRec && (todayRec.status === 'completed' || todayRec.status === 'recovery')) {
+    currentStreak++;
+    cursor.setDate(cursor.getDate() - 1);
+  } else {
+    // Today not done yet: check if yesterday was completed
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  // Count backwards day-by-day
+  for (let i = 0; i < 365; i++) {
+    const key = getLocalDateString(cursor);
+    const rec = allRecords[key];
+    if (rec && (rec.status === 'completed' || rec.status === 'recovery')) {
+      currentStreak++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  // Calculate longest streak from all recorded days
+  const activeDates = Object.keys(allRecords)
+    .filter(k => allRecords[k]?.status === 'completed' || allRecords[k]?.status === 'recovery')
+    .sort();
+
+  let longest = 0;
+  let tempStreak = 0;
+  let prevDateObj: Date | null = null;
+
+  for (const dateKey of activeDates) {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const currDateObj = new Date(y, m - 1, d);
+    if (!prevDateObj) {
+      tempStreak = 1;
+    } else {
+      const diffTime = currDateObj.getTime() - prevDateObj.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        tempStreak++;
+      } else {
+        tempStreak = 1;
+      }
+    }
+    if (tempStreak > longest) longest = tempStreak;
+    prevDateObj = currDateObj;
+  }
+
+  return {
+    currentStreak,
+    longestStreak: Math.max(longest, currentStreak),
+    todayStatus
+  };
+};
 
 export const getGoalDisplayTitle = (goal: { category: string; title?: string; name?: string }): string => {
   if (goal.title && goal.title.trim().length > 0) return goal.title;
@@ -187,6 +281,8 @@ interface RecoveryContextType {
   setGoalValue: (goalId: string, value: number) => void;
   setGoalTarget: (goalId: string, target: number) => void;
   updateGoal: (goalId: string, updates: Partial<DailyGoal>) => void;
+  resetGoalsToday: () => void;
+  setAllGoalsMet: () => void;
   saveAndSyncToFirebase: () => Promise<boolean>;
   recordSessionCompleted: (planTitle: string, durationSeconds: number, rating?: 'much_better' | 'slightly_calmer' | 'still_drained') => void;
   updateCoachConfig: (newConfig: Partial<CoachTriggerConfig>) => void;
@@ -198,6 +294,7 @@ const RecoveryContext = createContext<RecoveryContextType | undefined>(undefined
 
 export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, userProfile } = useAuth();
+  const todayStr = getLocalDateString();
 
   const [state, setState] = useState<RecoveryState>(() => {
     if (typeof window !== 'undefined') {
@@ -205,9 +302,55 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
+          const normalizedGoals = normalizeGoalList(parsed.adjustedGoals);
+          const parsedHistory = parsed.streakHistory || {};
+          const parsedLastDate = parsed.lastActiveDate || todayStr;
+
+          // Check if stored date is a previous date (day rollover reset)
+          if (parsedLastDate < todayStr) {
+            // Archive previous day's record if completed
+            const prevCompleted = normalizedGoals.filter((g: DailyGoal) => g.currentValue >= g.adjustedTarget).length;
+            const prevTotal = normalizedGoals.length;
+            if (prevCompleted === prevTotal && prevTotal > 0) {
+              parsedHistory[parsedLastDate] = {
+                date: parsedLastDate,
+                status: parsed.isActive || parsed.streakShieldActive ? 'recovery' : 'completed',
+                completedCount: prevCompleted,
+                totalGoals: prevTotal
+              };
+            }
+            // Reset today's progress to 0
+            const resetGoals = normalizedGoals.map((g: DailyGoal) => ({ ...g, currentValue: 0 }));
+            const { currentStreak, longestStreak } = calculateStreakFromHistory(
+              parsedHistory,
+              resetGoals,
+              parsed.isActive,
+              parsed.streakShieldActive
+            );
+            return {
+              ...parsed,
+              adjustedGoals: resetGoals,
+              lastActiveDate: todayStr,
+              streakHistory: parsedHistory,
+              currentStreakDays: currentStreak,
+              longestStreakDays: Math.max(parsed.longestStreakDays || 0, longestStreak)
+            };
+          }
+
+          const { currentStreak, longestStreak } = calculateStreakFromHistory(
+            parsedHistory,
+            normalizedGoals,
+            parsed.isActive,
+            parsed.streakShieldActive
+          );
+
           return {
             ...parsed,
-            adjustedGoals: normalizeGoalList(parsed.adjustedGoals)
+            adjustedGoals: normalizedGoals,
+            lastActiveDate: todayStr,
+            streakHistory: parsedHistory,
+            currentStreakDays: typeof parsed.currentStreakDays === 'number' ? parsed.currentStreakDays : currentStreak,
+            longestStreakDays: typeof parsed.longestStreakDays === 'number' ? parsed.longestStreakDays : longestStreak
           };
         } catch (e) {}
       }
@@ -218,7 +361,10 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       energyScore: 88,
       adjustedGoals: DEFAULT_GOALS,
       streakShieldActive: false,
-      currentStreakDays: 14,
+      currentStreakDays: 0,
+      longestStreakDays: 0,
+      lastActiveDate: todayStr,
+      streakHistory: {},
       checkInHistory: [],
       sessionLogs: [],
       coachConfig: DEFAULT_COACH_CONFIG
@@ -250,6 +396,21 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (data) {
           isRemoteUpdateRef.current = true;
           setState(prev => {
+            const rawGoals = Array.isArray(data.adjustedGoals) && data.adjustedGoals.length > 0 
+              ? normalizeGoalList(data.adjustedGoals) 
+              : prev.adjustedGoals;
+            const history = data.streakHistory && typeof data.streakHistory === 'object' ? data.streakHistory : (prev.streakHistory || {});
+            const lastDate = data.lastActiveDate || prev.lastActiveDate || getLocalDateString();
+            const currentToday = getLocalDateString();
+
+            // Calculate current streak from history
+            const { currentStreak, longestStreak } = calculateStreakFromHistory(
+              history,
+              rawGoals,
+              typeof data.isActive === 'boolean' ? data.isActive : prev.isActive,
+              typeof data.streakShieldActive === 'boolean' ? data.streakShieldActive : prev.streakShieldActive
+            );
+
             const nextState: RecoveryState = {
               isActive: typeof data.isActive === 'boolean' ? data.isActive : prev.isActive,
               strainLevel: data.strainLevel || prev.strainLevel,
@@ -257,11 +418,12 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               activatedAt: data.activatedAt ?? prev.activatedAt,
               reason: data.reason ?? prev.reason,
               currentPlan: data.currentPlan ?? prev.currentPlan,
-              adjustedGoals: Array.isArray(data.adjustedGoals) && data.adjustedGoals.length > 0 
-                ? normalizeGoalList(data.adjustedGoals) 
-                : prev.adjustedGoals,
+              adjustedGoals: rawGoals,
               streakShieldActive: typeof data.streakShieldActive === 'boolean' ? data.streakShieldActive : prev.streakShieldActive,
-              currentStreakDays: typeof data.currentStreakDays === 'number' ? data.currentStreakDays : prev.currentStreakDays,
+              currentStreakDays: typeof data.currentStreakDays === 'number' ? data.currentStreakDays : currentStreak,
+              longestStreakDays: typeof data.longestStreakDays === 'number' ? data.longestStreakDays : longestStreak,
+              lastActiveDate: lastDate,
+              streakHistory: history,
               lastShieldUsedDate: data.lastShieldUsedDate ?? prev.lastShieldUsedDate,
               checkInHistory: Array.isArray(data.checkInHistory) ? data.checkInHistory : prev.checkInHistory,
               sessionLogs: Array.isArray(data.sessionLogs) ? data.sessionLogs : prev.sessionLogs,
@@ -295,6 +457,76 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     return () => unsub();
   }, [user?.uid]);
+
+  // Periodic and on-focus check for calendar day turnover (Midnight Reset)
+  useEffect(() => {
+    const checkDayRollover = () => {
+      const currentToday = getLocalDateString();
+      setState(prev => {
+        if (!prev.lastActiveDate || prev.lastActiveDate === currentToday) {
+          return prev;
+        }
+
+        // The day has changed! Archive previous day's completion record
+        const prevGoals = prev.adjustedGoals || [];
+        const prevCompleted = prevGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
+        const prevTotal = prevGoals.length;
+        const updatedHistory = { ...(prev.streakHistory || {}) };
+
+        if (prevCompleted === prevTotal && prevTotal > 0) {
+          updatedHistory[prev.lastActiveDate] = {
+            date: prev.lastActiveDate,
+            status: prev.isActive || prev.streakShieldActive ? 'recovery' : 'completed',
+            completedCount: prevCompleted,
+            totalGoals: prevTotal,
+            note: 'All daily goals completed on previous day'
+          };
+        } else if (prevCompleted > 0 && (prev.isActive || prev.streakShieldActive)) {
+          updatedHistory[prev.lastActiveDate] = {
+            date: prev.lastActiveDate,
+            status: 'recovery',
+            completedCount: prevCompleted,
+            totalGoals: prevTotal,
+            note: 'Grace Shield restorative day on previous day'
+          };
+        }
+
+        // Reset today's goals: progress back to 0, retaining user targets & limits
+        const freshGoals = prevGoals.map(g => ({
+          ...g,
+          currentValue: 0
+        }));
+
+        const { currentStreak, longestStreak } = calculateStreakFromHistory(
+          updatedHistory,
+          freshGoals,
+          prev.isActive,
+          prev.streakShieldActive
+        );
+
+        return {
+          ...prev,
+          adjustedGoals: freshGoals,
+          lastActiveDate: currentToday,
+          streakHistory: updatedHistory,
+          currentStreakDays: currentStreak,
+          longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        };
+      });
+    };
+
+    // Run check immediately
+    checkDayRollover();
+
+    // Re-check every 60 seconds and on window focus
+    const interval = setInterval(checkDayRollover, 60000);
+    window.addEventListener('focus', checkDayRollover);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', checkDayRollover);
+    };
+  }, []);
 
   // Persist local state updates to Firestore & localStorage
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -617,14 +849,11 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setGoalValue = (goalId: string, value: number) => {
     const rawVal = isNaN(value) ? 0 : Number(value);
-    setState(prev => ({
-      ...prev,
-      adjustedGoals: prev.adjustedGoals.map(g => {
+    setState(prev => {
+      const updatedGoals = prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
-          // Progress value cannot be less than 0 or greater than the goal's target limit
           const maxLimit = Math.max(0, g.adjustedTarget);
           const clampedVal = Math.min(maxLimit, Math.max(0, rawVal));
-          // Precision round if decimal (sleep / focus)
           const isDecimal = g.category === 'sleep' || g.category === 'focus';
           const finalVal = isDecimal ? Math.round(clampedVal * 10) / 10 : Math.round(clampedVal);
           return {
@@ -633,21 +862,49 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           };
         }
         return g;
-      })
-    }));
+      });
+
+      const today = getLocalDateString();
+      const updatedHistory = { ...(prev.streakHistory || {}) };
+      const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
+        updatedHistory,
+        updatedGoals,
+        prev.isActive,
+        prev.streakShieldActive
+      );
+
+      if (todayStatus !== 'inactive') {
+        const completedCount = updatedGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
+        updatedHistory[today] = {
+          date: today,
+          status: todayStatus,
+          completedCount,
+          totalGoals: updatedGoals.length,
+          note: todayStatus === 'completed' ? 'All daily targets met' : 'Restorative day active'
+        };
+      } else {
+        delete updatedHistory[today];
+      }
+
+      return {
+        ...prev,
+        adjustedGoals: updatedGoals,
+        streakHistory: updatedHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+      };
+    });
   };
 
   const setGoalTarget = (goalId: string, target: number) => {
     const rawTarget = isNaN(target) ? 0 : Number(target);
-    setState(prev => ({
-      ...prev,
-      adjustedGoals: prev.adjustedGoals.map(g => {
+    setState(prev => {
+      const updatedGoals = prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
           const limits = GOAL_LIMITS[g.category] || { maxTarget: 10000, minTarget: 1 };
           const clampedTarget = Math.min(limits.maxTarget, Math.max(limits.minTarget, rawTarget));
           const isDecimal = g.category === 'sleep' || g.category === 'focus';
           const finalTarget = isDecimal ? Math.round(clampedTarget * 10) / 10 : Math.round(clampedTarget);
-          // If current progress value exceeds the newly adjusted target limit, clamp currentValue to target
           const clampedCurrent = Math.min(finalTarget, g.currentValue);
           return {
             ...g,
@@ -656,14 +913,42 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           };
         }
         return g;
-      })
-    }));
+      });
+
+      const today = getLocalDateString();
+      const updatedHistory = { ...(prev.streakHistory || {}) };
+      const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
+        updatedHistory,
+        updatedGoals,
+        prev.isActive,
+        prev.streakShieldActive
+      );
+
+      if (todayStatus !== 'inactive') {
+        const completedCount = updatedGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
+        updatedHistory[today] = {
+          date: today,
+          status: todayStatus,
+          completedCount,
+          totalGoals: updatedGoals.length
+        };
+      } else {
+        delete updatedHistory[today];
+      }
+
+      return {
+        ...prev,
+        adjustedGoals: updatedGoals,
+        streakHistory: updatedHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+      };
+    });
   };
 
   const updateGoal = (goalId: string, updates: Partial<DailyGoal>) => {
-    setState(prev => ({
-      ...prev,
-      adjustedGoals: prev.adjustedGoals.map(g => {
+    setState(prev => {
+      const updatedGoals = prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
           const updated = { ...g, ...updates };
           if (typeof updated.adjustedTarget === 'number') {
@@ -676,18 +961,45 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return updated;
         }
         return g;
-      })
-    }));
+      });
+
+      const today = getLocalDateString();
+      const updatedHistory = { ...(prev.streakHistory || {}) };
+      const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
+        updatedHistory,
+        updatedGoals,
+        prev.isActive,
+        prev.streakShieldActive
+      );
+
+      if (todayStatus !== 'inactive') {
+        const completedCount = updatedGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
+        updatedHistory[today] = {
+          date: today,
+          status: todayStatus,
+          completedCount,
+          totalGoals: updatedGoals.length
+        };
+      } else {
+        delete updatedHistory[today];
+      }
+
+      return {
+        ...prev,
+        adjustedGoals: updatedGoals,
+        streakHistory: updatedHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+      };
+    });
   };
 
   const toggleGoalProgress = (goalId: string, delta?: number) => {
-    setState(prev => ({
-      ...prev,
-      adjustedGoals: prev.adjustedGoals.map(g => {
+    setState(prev => {
+      const updatedGoals = prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
           const step = delta ?? (g.category === 'movement' ? 500 : g.category === 'hydration' ? 250 : 1);
           const rawNext = g.currentValue + step;
-          // Clamp progress value between 0 and adjustedTarget limit
           const nextVal = Math.min(g.adjustedTarget, Math.max(0, rawNext));
           const isDecimal = g.category === 'sleep' || g.category === 'focus';
           const finalVal = isDecimal ? Math.round(nextVal * 10) / 10 : Math.round(nextVal);
@@ -697,8 +1009,103 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           };
         }
         return g;
-      })
-    }));
+      });
+
+      const today = getLocalDateString();
+      const updatedHistory = { ...(prev.streakHistory || {}) };
+      const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
+        updatedHistory,
+        updatedGoals,
+        prev.isActive,
+        prev.streakShieldActive
+      );
+
+      if (todayStatus !== 'inactive') {
+        const completedCount = updatedGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
+        updatedHistory[today] = {
+          date: today,
+          status: todayStatus,
+          completedCount,
+          totalGoals: updatedGoals.length,
+          note: todayStatus === 'completed' ? 'All daily targets met' : 'Restorative day active'
+        };
+      } else {
+        delete updatedHistory[today];
+      }
+
+      return {
+        ...prev,
+        adjustedGoals: updatedGoals,
+        streakHistory: updatedHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+      };
+    });
+  };
+
+  const resetGoalsToday = () => {
+    setState(prev => {
+      const resetGoals = prev.adjustedGoals.map(g => ({
+        ...g,
+        currentValue: 0
+      }));
+
+      const today = getLocalDateString();
+      const updatedHistory = { ...(prev.streakHistory || {}) };
+      delete updatedHistory[today];
+
+      const { currentStreak, longestStreak } = calculateStreakFromHistory(
+        updatedHistory,
+        resetGoals,
+        prev.isActive,
+        prev.streakShieldActive
+      );
+
+      return {
+        ...prev,
+        adjustedGoals: resetGoals,
+        streakHistory: updatedHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+      };
+    });
+  };
+
+  const setAllGoalsMet = () => {
+    setState(prev => {
+      const completedGoals = prev.adjustedGoals.map(g => ({
+        ...g,
+        currentValue: g.adjustedTarget
+      }));
+
+      const today = getLocalDateString();
+      const status: 'completed' | 'recovery' = prev.isActive || prev.streakShieldActive ? 'recovery' : 'completed';
+      const updatedHistory = {
+        ...(prev.streakHistory || {}),
+        [today]: {
+          date: today,
+          status,
+          completedCount: completedGoals.length,
+          totalGoals: completedGoals.length,
+          note: status === 'completed' ? 'All 5 daily targets met' : 'Grace Shield protected day'
+        }
+      };
+
+      const { currentStreak, longestStreak } = calculateStreakFromHistory(
+        updatedHistory,
+        completedGoals,
+        prev.isActive,
+        prev.streakShieldActive
+      );
+
+      return {
+        ...prev,
+        adjustedGoals: completedGoals,
+        streakHistory: updatedHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+      };
+    });
   };
 
   const saveAndSyncToFirebase = async (): Promise<boolean> => {
@@ -782,6 +1189,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setGoalValue,
       setGoalTarget,
       updateGoal,
+      resetGoalsToday,
+      setAllGoalsMet,
       saveAndSyncToFirebase,
       recordSessionCompleted,
       updateCoachConfig,

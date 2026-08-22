@@ -37,22 +37,20 @@ import {
   onSnapshot,
   serverTimestamp 
 } from 'firebase/firestore';
-import appletConfig from '../../firebase-applet-config.json';
-
-const configJson: Record<string, any> = appletConfig || {};
-
+// Firebase client initialization
+// Safely reads from environment variables or standard project configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || configJson.apiKey || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || configJson.authDomain || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || configJson.projectId || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || configJson.storageBucket || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || configJson.messagingSenderId || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || configJson.appId || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAyRhAJugwMk-dnaBI2BT-SI8PJwkLnP9w",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "aroveda-ai.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "aroveda-ai",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "aroveda-ai.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "757883291219",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:757883291219:web:ded93449b09599292de8a6",
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const rawDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || configJson.firestoreDatabaseId;
+const rawDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "(default)";
 const firestoreDbId = (rawDbId && rawDbId !== '(default)' && rawDbId !== '') ? rawDbId : undefined;
 
 // Use the databaseId provisioned by AI Studio or configured via environment

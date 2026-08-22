@@ -247,6 +247,16 @@ export interface RecoverySessionLog {
   streakProtected: boolean;
 }
 
+export interface StreakDayRecord {
+  date: string; // YYYY-MM-DD
+  status: 'completed' | 'recovery' | 'inactive';
+  completedCount: number;
+  totalGoals: number;
+  strainLevel?: StrainLevel;
+  isShieldProtected?: boolean;
+  note?: string;
+}
+
 export interface RecoveryState {
   isActive: boolean;
   activatedAt?: string;
@@ -257,8 +267,12 @@ export interface RecoveryState {
   adjustedGoals: DailyGoal[];
   streakShieldActive: boolean;
   currentStreakDays: number;
+  longestStreakDays?: number;
+  lastActiveDate?: string; // YYYY-MM-DD
+  streakHistory?: Record<string, StreakDayRecord>;
   lastShieldUsedDate?: string;
   checkInHistory: EnergyCheckIn[];
   sessionLogs: RecoverySessionLog[];
   coachConfig: CoachTriggerConfig;
 }
+
