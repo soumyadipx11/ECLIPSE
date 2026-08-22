@@ -19,14 +19,15 @@ import {
   ArrowLeft, 
   RefreshCw, 
   AlertCircle, 
-  Coffee, 
   Smile, 
-  Sun, 
   Layers, 
   Clock, 
   Cloud, 
   CheckCheck, 
-  RotateCcw 
+  RotateCcw,
+  Save,
+  CheckCircle2,
+  Sliders
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -42,16 +43,41 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
   const { 
     state, 
     isCloudSynced,
+    isSaving,
+    lastSyncedAt,
+    saveAndSyncToFirebase,
     openCheckInModal, 
     openPlayerModal, 
     exitRecoveryMode, 
     toggleGoalProgress,
     setGoalValue,
     setGoalTarget,
-    triggerPresetScenario 
+    restoreOriginalGoals
   } = useRecovery();
 
+  const [saveSuccessNotification, setSaveSuccessNotification] = useState<string | null>(null);
+
   const plan = state.currentPlan;
+
+  const handleManualSave = async () => {
+    const success = await saveAndSyncToFirebase();
+    if (success) {
+      setSaveSuccessNotification("Goals and target limits saved! Synced in real-time across all devices via Firebase.");
+      setTimeout(() => {
+        setSaveSuccessNotification(null);
+      }, 3500);
+    }
+  };
+
+  const handleMarkAllMet = () => {
+    state.adjustedGoals.forEach(g => {
+      setGoalValue(g.id, g.adjustedTarget);
+    });
+    setSaveSuccessNotification("All goals marked completed! Click 'Save & Sync' to persist to Firebase.");
+    setTimeout(() => {
+      setSaveSuccessNotification(null);
+    }, 3500);
+  };
 
   return (
     <div className="space-y-6 pb-16 max-w-5xl mx-auto">
@@ -68,19 +94,19 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-400">
-                    LOW-EFFORT TRIAGE CANVAS
+                    RECOVERY & GOALS CANVAS
                   </span>
                   <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-                    Active
+                    {state.isActive ? "Recovery Mode Active" : "Interactive Mode"}
                   </span>
                   {isCloudSynced && (
                     <span className="bg-teal-500/20 text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-teal-400/30 flex items-center gap-1">
-                      <Cloud className="w-3 h-3 text-teal-400" /> Synced across devices
+                      <Cloud className="w-3 h-3 text-teal-400" /> Firebase Synced
                     </span>
                   )}
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
-                  Recovery & Nervous System <span className="text-emerald-400 italic">Reset</span>
+                  Recovery & Goals <span className="text-emerald-400 italic">Management</span>
                 </h1>
               </div>
             </div>
@@ -95,11 +121,11 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
               </button>
 
               <button
-                onClick={() => exitRecoveryMode()}
+                onClick={onNavigateToDashboard}
                 className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                Resume Standard Mode
+                Back to Dashboard
               </button>
             </div>
           </div>
@@ -108,11 +134,12 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
           <div className="bg-white/10 border border-white/10 rounded-2xl p-4 sm:p-5 backdrop-blur-sm space-y-2">
             <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold">
               <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span>AI Biological Assessment & Compassion Guidance</span>
+              <span>AI Biological Assessment & Goal Protection</span>
             </div>
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
-              "{state.reason ? `We detected: ${state.reason}. ` : 'High strain detected. '}
-              Your brain and body are signaling fatigue. Complex metrics and demanding targets have been paused so your autonomic nervous system can decompress."
+              {state.isActive 
+                ? `"${state.reason ? `We detected: ${state.reason}. ` : 'High physiological strain detected. '} Your energy reserve is at ${state.energyScore}%. Target limits have been calibrated to protect your autonomic nervous system from overtraining."`
+                : "Customize your active targets, log completed steps, workouts, sleep, and hydration, and sync your baseline limits across all devices via Firebase."}
             </p>
           </div>
 
@@ -142,7 +169,7 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Streak Protection</span>
                 <p className="text-sm font-black text-emerald-400 mt-0.5 flex items-center gap-1">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> Active (14 Days)
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> Active ({state.currentStreakDays} Days)
                 </p>
               </div>
               <Flame className="w-4 h-4 text-amber-400" />
@@ -151,9 +178,9 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
         </div>
       </div>
 
-      {/* Main Recovery Section: 3-Minute Plan + Goal Adjustments */}
+      {/* Main Section: 3-Minute Plan + Goal Adjustments */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: 3-Minute Interactive Routine (2 cols) */}
+        {/* Left Column: 3-Minute Interactive Routine & Goal Edit Module (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
           {plan && (
             <div className="bg-white/40 dark:bg-[#121418]/40 backdrop-blur-md rounded-3xl border border-emerald-500/30 p-6 shadow-sm space-y-4">
@@ -218,27 +245,91 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
             </div>
           )}
 
-          {/* Safely Adjusted Daily Goals ("Restorative Baselines") */}
-          <div className="bg-white/40 dark:bg-[#121418]/40 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/50 dark:border-slate-800 pb-3">
+          {/* EDITABLE DAILY GOALS & LIMITS SECTION WITH FIREBASE SAVE BUTTON */}
+          <div className="bg-white/40 dark:bg-[#121418]/40 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-white/10 p-6 shadow-sm space-y-5">
+            {/* Header & Primary Save Actions */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/50 dark:border-slate-800 pb-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                    Nervous System Protection
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Sliders className="w-3.5 h-3.5" /> GOAL EDITOR & LIMIT CONTROLS
                   </span>
-                  <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    Direct Type & Adjust
+                  <span className="bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Cloud className="w-3 h-3 text-teal-500" /> Firebase Cloud Sync
                   </span>
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-0.5">
-                  Restorative Daily Targets
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+                  Edit Daily Goals, Progress & Target Limits
                 </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Type your progress numbers, click targets to adjust upper limits, and click Save to synchronize across all devices.
+                </p>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Type directly into any number field or use quick adjust
-              </p>
+
+              {/* SAVE & SYNC BUTTON */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleManualSave}
+                  disabled={isSaving}
+                  className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-400 text-white font-bold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 transition-all shadow-md shadow-emerald-600/25 cursor-pointer"
+                  title="Save completed goals and custom limits to Firebase"
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving to Firebase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save & Sync Goals</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
+            {/* Save Notification Toast */}
+            <AnimatePresence>
+              {saveSuccessNotification && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs font-semibold p-3 rounded-2xl flex items-center gap-2.5 shadow-sm"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>{saveSuccessNotification}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Quick Bulk Action Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 text-xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                Quick Goal Actions:
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleMarkAllMet}
+                  className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <CheckCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Mark All Met</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={restoreOriginalGoals}
+                  className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Reset Default Baselines</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Goal Row List */}
             <div className="space-y-3.5">
               {state.adjustedGoals.map((goal) => (
                 <RecoveryGoalRow
@@ -249,6 +340,27 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
                   onToggleStep={(delta) => toggleGoalProgress(goal.id, delta)}
                 />
               ))}
+            </div>
+
+            {/* Bottom Save Bar with Last Synced Timestamp */}
+            <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>
+                  {lastSyncedAt 
+                    ? `Last synced to Firebase: ${lastSyncedAt.toLocaleTimeString()}`
+                    : "Auto-synced with Firestore database"}
+                </span>
+              </div>
+
+              <button
+                onClick={handleManualSave}
+                disabled={isSaving}
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-400 text-white font-bold px-5 py-2.5 rounded-2xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save All Completed Goals & Limits</span>
+              </button>
             </div>
           </div>
         </div>
@@ -266,7 +378,7 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
                   Streak Grace Shield Active
                 </h4>
                 <p className="text-sm font-black text-slate-900 dark:text-white">
-                  14-Day Streak Preserved
+                  {state.currentStreakDays}-Day Streak Preserved
                 </p>
               </div>
             </div>
@@ -433,7 +545,6 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
   };
 
   const handleTargetBlur = () => {
-    setIsEditingTarget(false);
     if (targetValue === '' || isNaN(Number(targetValue))) {
       setTargetValue(goal.adjustedTarget.toString());
     } else {
@@ -446,63 +557,56 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
 
   const getCategoryIcon = () => {
     switch (goal.category) {
-      case 'movement': return <Footprints className="w-4 h-4 text-teal-400" />;
-      case 'exercise': return <Activity className="w-4 h-4 text-rose-400" />;
-      case 'sleep': return <Moon className="w-4 h-4 text-indigo-400" />;
-      case 'hydration': return <Droplets className="w-4 h-4 text-blue-400" />;
+      case 'movement':
+        return <Footprints className="w-4 h-4 text-teal-500" />;
+      case 'exercise':
+        return <Activity className="w-4 h-4 text-rose-500" />;
+      case 'sleep':
+        return <Moon className="w-4 h-4 text-indigo-500" />;
+      case 'hydration':
+        return <Droplets className="w-4 h-4 text-blue-500" />;
       case 'focus':
-      default: return <Tv className="w-4 h-4 text-amber-400" />;
+      default:
+        return <Tv className="w-4 h-4 text-amber-500" />;
     }
   };
 
   return (
-    <div className={`p-4 rounded-2xl border backdrop-blur-sm transition-all space-y-3 ${
+    <div className={`p-4 rounded-2xl border transition-all space-y-3 relative ${
       isCompleted 
-        ? 'bg-emerald-950/20 border-emerald-500/40 shadow-sm' 
-        : 'bg-white/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-white/10'
+        ? 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/40 shadow-sm' 
+        : 'bg-white/70 dark:bg-slate-900/60 border-slate-200/80 dark:border-white/10'
     }`}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-slate-800/80 border border-white/10 flex items-center justify-center">
-              {getCategoryIcon()}
-            </div>
-            <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
-              {goal.name}
-            </span>
-            {goal.isPausedOrReduced ? (
-              <span className="bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-500/20">
-                Reduced for Recovery
-              </span>
-            ) : isCompleted ? (
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Check className="w-3 h-3" /> Met
-              </span>
-            ) : null}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            {getCategoryIcon()}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 pl-9">
-            {goal.recoveryNote}
-          </p>
+          <div>
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-tight">
+              {goal.title}
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {goal.recoveryAdjustmentReason || "Daily target baseline"}
+            </p>
+          </div>
         </div>
 
-        {/* Normal target note */}
-        {goal.normalTarget !== goal.adjustedTarget && (
-          <div className="text-[10px] text-slate-400 sm:text-right pl-9 sm:pl-0">
-            <span className="line-through">Normal: {goal.normalTarget} {goal.unit}</span>
-            <span className="text-emerald-500 ml-1 font-semibold">({Math.round(((goal.normalTarget - goal.adjustedTarget)/goal.normalTarget)*100)}% load reduction)</span>
-          </div>
-        )}
-      </div>
-
-      {/* Progress Bar */}
-      <div className="space-y-1">
-        <div className="w-full h-2 bg-slate-200/70 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-300/40 dark:border-slate-700/40">
-          <motion.div 
-            className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.3 }}
-          />
+        {/* Status Badge & Complete Button */}
+        <div className="flex items-center gap-1.5">
+          {isCompleted ? (
+            <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <Check className="w-3 h-3 text-emerald-500" /> Target Met
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onUpdateValue(goal.adjustedTarget)}
+              className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <Check className="w-3 h-3" /> Mark Met
+            </button>
+          )}
         </div>
       </div>
 
@@ -524,11 +628,9 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
       {/* Typing Input & Quick Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         {/* Type progress number directly */}
-        <div className="flex items-center gap-2">
-          <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-            Progress:
-          </label>
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Logged:</span>
+          <div className="relative">
             <input
               type="number"
               step={isDecimal ? "0.1" : "1"}
@@ -537,13 +639,14 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
               value={inputValue}
               onChange={handleInputChange}
               onBlur={handleInputBlur}
-              aria-label={`Type value for ${goal.name}`}
-              className="w-24 sm:w-28 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-center shadow-inner"
-              placeholder="0"
+              className="w-20 sm:w-24 px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
-            <span className="text-xs font-medium text-slate-400">/</span>
-            
-            {isEditingTarget ? (
+          </div>
+          <span className="text-xs text-slate-400">/</span>
+
+          {/* Editable target limit */}
+          {isEditingTarget ? (
+            <div className="flex items-center gap-1">
               <input
                 type="number"
                 step={isDecimal ? "0.1" : "1"}
@@ -552,24 +655,31 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
                 autoFocus
                 value={targetValue}
                 onChange={handleTargetChange}
-                onBlur={handleTargetBlur}
-                className="w-20 bg-white dark:bg-slate-950 border border-emerald-500 rounded-lg px-2 py-1 text-xs font-bold text-slate-900 dark:text-white text-center focus:outline-none"
+                onBlur={() => { handleTargetBlur(); setIsEditingTarget(false); }}
+                className="w-20 sm:w-24 px-2 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-800 border-2 border-emerald-500 text-slate-900 dark:text-white focus:outline-none"
               />
-            ) : (
               <button
                 type="button"
-                onClick={() => setIsEditingTarget(true)}
-                title="Click to edit target"
-                className="font-bold text-slate-800 dark:text-slate-200 hover:text-emerald-500 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1 text-xs cursor-pointer"
+                onClick={() => { handleTargetBlur(); setIsEditingTarget(false); }}
+                className="p-1 rounded bg-emerald-500 text-slate-950 text-xs font-bold"
               >
-                {goal.adjustedTarget} {goal.unit}
-                <Edit2 className="w-2.5 h-2.5 opacity-40 hover:opacity-100" />
+                <Check className="w-3 h-3" />
               </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingTarget(true)}
+              title="Click to customize target limit"
+              className="font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1 cursor-pointer text-xs"
+            >
+              <span>{goal.adjustedTarget} {goal.unit}</span>
+              <Edit2 className="w-3 h-3 opacity-60" />
+            </button>
+          )}
         </div>
 
-        {/* Stepper + Preset Buttons */}
+        {/* Quick Stepper Adjusters */}
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -580,7 +690,6 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
-
           <button
             type="button"
             onClick={() => onToggleStep(stepDelta)}
@@ -591,19 +700,24 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
             <Plus className="w-3.5 h-3.5" />
             <span className="text-[10px] hidden sm:inline">+{stepDelta}</span>
           </button>
+        </div>
+      </div>
 
-          <button
-            type="button"
-            onClick={() => onUpdateValue(goal.adjustedTarget)}
-            title="Mark target as reached"
-            className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 hover:bg-emerald-500 hover:text-white text-slate-600 dark:text-slate-300 font-bold transition-all text-[11px] cursor-pointer flex items-center gap-1"
-          >
-            <CheckCheck className="w-3 h-3" />
-            <span>Done</span>
-          </button>
+      {/* Numerical Progress Bar */}
+      <div className="space-y-1 pt-1">
+        <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400">
+          <span>Progress</span>
+          <span className="font-bold">{progressPercent}%</span>
+        </div>
+        <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
+          <motion.div
+            className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
         </div>
       </div>
     </div>
   );
 };
-

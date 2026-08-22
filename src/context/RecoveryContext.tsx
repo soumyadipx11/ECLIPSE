@@ -126,6 +126,8 @@ interface RecoveryContextType {
   state: RecoveryState;
   isAssessing: boolean;
   isCloudSynced: boolean;
+  isSaving: boolean;
+  lastSyncedAt: Date | null;
   activeCheckInModal: boolean;
   activePlayerModal: boolean;
   openCheckInModal: () => void;
@@ -139,6 +141,7 @@ interface RecoveryContextType {
   setGoalValue: (goalId: string, value: number) => void;
   setGoalTarget: (goalId: string, target: number) => void;
   updateGoal: (goalId: string, updates: Partial<DailyGoal>) => void;
+  saveAndSyncToFirebase: () => Promise<boolean>;
   recordSessionCompleted: (planTitle: string, durationSeconds: number, rating?: 'much_better' | 'slightly_calmer' | 'still_drained') => void;
   updateCoachConfig: (newConfig: Partial<CoachTriggerConfig>) => void;
   restoreOriginalGoals: () => void;
@@ -174,6 +177,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [isAssessing, setIsAssessing] = useState<boolean>(false);
   const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [activeCheckInModal, setActiveCheckInModal] = useState<boolean>(false);
   const [activePlayerModal, setActivePlayerModal] = useState<boolean>(false);
 
@@ -638,6 +643,31 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
+  const saveAndSyncToFirebase = async (): Promise<boolean> => {
+    setIsSaving(true);
+    try {
+      if (user?.uid) {
+        const payload = cleanUndefined({
+          ...state,
+          userId: user.uid,
+          updatedAt: new Date().toISOString()
+        });
+        await setDoc(doc(db, 'recovery_states', user.uid), payload, { merge: true });
+        setIsCloudSynced(true);
+      }
+      try {
+        localStorage.setItem('aroveda_recovery_state', JSON.stringify(state));
+      } catch (e) {}
+      setLastSyncedAt(new Date());
+      setIsSaving(false);
+      return true;
+    } catch (err) {
+      console.warn("Manual save to Firebase failed:", err);
+      setIsSaving(false);
+      return false;
+    }
+  };
+
   const recordSessionCompleted = (planTitle: string, durationSeconds: number, rating?: 'much_better' | 'slightly_calmer' | 'still_drained') => {
     const newLog: RecoverySessionLog = {
       id: 'sess_' + Date.now(),
@@ -678,6 +708,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       state,
       isAssessing,
       isCloudSynced,
+      isSaving,
+      lastSyncedAt,
       activeCheckInModal,
       activePlayerModal,
       openCheckInModal,
@@ -691,6 +723,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setGoalValue,
       setGoalTarget,
       updateGoal,
+      saveAndSyncToFirebase,
       recordSessionCompleted,
       updateCoachConfig,
       restoreOriginalGoals,
