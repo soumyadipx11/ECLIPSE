@@ -16,10 +16,14 @@ import {
   FlaskConical,
   Database,
   Stethoscope,
-  Clock
+  Clock,
+  HeartPulse,
+  Flame,
+  ShieldCheck
 } from 'lucide-react';
 import { LabReport } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
+import { useRecovery } from '../context/RecoveryContext';
 
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 
@@ -61,6 +65,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onLoadDemo,
   getBiomarkerTrend
 }) => {
+  const { state: recoveryState, openCheckInModal } = useRecovery();
   const totalReports = reports.length;
   
   // Calculate total unique biomarkers tracked
@@ -158,6 +163,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
+              onClick={openCheckInModal}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-3 rounded-2xl text-xs transition-all shadow-md shadow-emerald-600/25 flex items-center gap-2 cursor-pointer"
+            >
+              <HeartPulse className="w-4 h-4 animate-pulse" />
+              Energy Check-In
+            </button>
+
+            <button
               onClick={() => onNavigate('reports')}
               className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-3 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/25 flex items-center gap-2 cursor-pointer"
             >
@@ -207,26 +220,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-5 rounded-3xl border border-white/30 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Abnormal Flagged</p>
-            <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{totalAbnormalCount}</p>
-            <p className="text-[11px] text-slate-400 mt-1">outside standard reference range</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Energy & Strain</p>
+            <p className={`text-xl font-black mt-1 capitalize flex items-center gap-1 ${
+              recoveryState.strainLevel === 'high' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+            }`}>
+              <HeartPulse className="w-5 h-5" />
+              {recoveryState.strainLevel} Strain
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Score: {recoveryState.energyScore}/100 • 
+              <button onClick={() => onNavigate('recovery')} className="text-emerald-500 font-bold ml-1 hover:underline">
+                View Reset
+              </button>
+            </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-200 dark:border-rose-900">
-            <AlertTriangle className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
+            <ShieldCheck className="w-6 h-6" />
           </div>
         </div>
 
         <div className="bg-white/30 dark:bg-[#121418]/30 backdrop-blur-md p-5 rounded-3xl border border-white/30 dark:border-white/10 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Health Trajectory</p>
-            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
-              {totalReports > 1 ? 'Improving' : 'Baseline Set'}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Daily Streak</p>
+            <p className="text-2xl font-black text-amber-500 dark:text-amber-400 mt-1 flex items-center gap-1">
+              <Flame className="w-5 h-5 text-amber-500" />
+              {recoveryState.currentStreakDays} Days
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">long-term biomarker stability</p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              {recoveryState.streakShieldActive ? 'Grace shield active' : 'Habit consistency protected'}
+            </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
-            <Activity className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-900/40">
+            <Flame className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -268,7 +293,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="pt-2 flex justify-center gap-3">
                 <button
                   onClick={onLoadDemo}
-                  className="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/20"
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-md shadow-rose-600/20 cursor-pointer"
                 >
                   Load 3 Sample Lab Reports
                 </button>
@@ -338,7 +363,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="pt-2 flex justify-end">
                 <button
                   onClick={() => onNavigate('reports')}
-                  className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   View All Reports & Full Test Lists →
                 </button>

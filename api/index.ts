@@ -1172,6 +1172,284 @@ Return ONLY a valid JSON object matching this schema:
   }
 });
 
+// Endpoint: AI-Powered Recovery & Strain Assessment
+apiRouter.post("/recovery/assess-checkin", authedRateLimitMiddleware, async (req, res) => {
+  try {
+    const { checkInText, inputMode, age, gender, coachConfig, currentGoals } = req.body;
+
+    if (!checkInText || typeof checkInText !== "string" || checkInText.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Check-in text or voice transcript is required."
+      });
+    }
+
+    const ai = getGeminiClient();
+
+    let userContext = "";
+    if (age) userContext += `User Age: ${age}. `;
+    if (gender) userContext += `Biological Gender: ${gender}. `;
+
+    const sensitivity = coachConfig?.highStrainSensitivity || "medium";
+    const goalReductionFactor = coachConfig?.goalReductionPercentage ?? 70;
+
+    const prompt = `You are the lead clinical wellness & triage AI for ArovedaAI.
+Evaluate the user's quick health/energy check-in. Detect whether they are experiencing high strain, acute exhaustion, sleep deprivation, stress, illness, or normal baseline energy.
+${userContext}
+Strain Sensitivity Setting: ${sensitivity}
+Goal Reduction Percentage Setting: ${goalReductionFactor}%
+
+User Check-in:
+"${scrubPiiFromText(checkInText)}"
+
+Instructions:
+1. Identify if this indicates HIGH STRAIN (e.g. headaches, very poor sleep, upcoming exam anxiety, nausea, fever, physical burnout, acute stress) or MODERATE STRAIN or NORMAL.
+2. Formulate a compassionate, guilt-free AI assessment that reassures the user that pausing is essential biology, not failure.
+3. Design a targeted, actionable 3-MINUTE RECOVERY ACTIVITY (exactly 3 steps of 60 seconds each) tailored specifically to their symptoms (e.g., temple release + physiological sigh for exam panic and headache).
+4. Dynamically adjust their daily wellness targets to restorative baselines (e.g. reduce high step targets, pause strenuous workouts, increase hydration and restorative rest) with concise recovery notes.
+5. Provide a comforting affirmation and hydration guidance.
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "strainLevel": "high" | "moderate" | "normal",
+  "energyScore": number,
+  "isHighStrain": boolean,
+  "primaryFactors": ["string"],
+  "emotionalState": "string",
+  "aiAssessment": "string",
+  "aiEmpathyMessage": "string",
+  "recommendedMode": "recovery" | "normal",
+  "recoveryPlan": {
+    "title": "string",
+    "tagline": "string",
+    "totalDurationMinutes": 3,
+    "rationale": "string",
+    "comfortAffirmation": "string",
+    "hydrationTip": "string",
+    "steps": [
+      {
+        "stepNumber": 1,
+        "title": "string",
+        "durationSeconds": 60,
+        "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
+        "instruction": "string",
+        "guidanceAudioText": "string",
+        "breathingPattern": {
+          "inhale": 4,
+          "hold1": 4,
+          "exhale": 4,
+          "hold2": 0
+        },
+        "tips": ["string"]
+      },
+      {
+        "stepNumber": 2,
+        "title": "string",
+        "durationSeconds": 60,
+        "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
+        "instruction": "string",
+        "guidanceAudioText": "string",
+        "breathingPattern": {
+          "inhale": 4,
+          "hold1": 7,
+          "exhale": 8,
+          "hold2": 0
+        },
+        "tips": ["string"]
+      },
+      {
+        "stepNumber": 3,
+        "title": "string",
+        "durationSeconds": 60,
+        "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
+        "instruction": "string",
+        "guidanceAudioText": "string",
+        "tips": ["string"]
+      }
+    ]
+  },
+  "adjustedGoals": [
+    {
+      "id": "goal-movement",
+      "name": "Daily Movement",
+      "category": "movement",
+      "normalTarget": 10000,
+      "adjustedTarget": 2000,
+      "currentValue": 850,
+      "unit": "steps",
+      "isPausedOrReduced": true,
+      "recoveryNote": "Reduced to light restorative stroll. No cardio intensity."
+    },
+    {
+      "id": "goal-exercise",
+      "name": "Strenuous Workout",
+      "category": "exercise",
+      "normalTarget": 45,
+      "adjustedTarget": 0,
+      "currentValue": 0,
+      "unit": "mins",
+      "isPausedOrReduced": true,
+      "recoveryNote": "Paused. Strenuous exercise under sleep deprivation strains the heart and immune system."
+    },
+    {
+      "id": "goal-sleep",
+      "name": "Recovery & Sleep",
+      "category": "sleep",
+      "normalTarget": 7.5,
+      "adjustedTarget": 9.0,
+      "currentValue": 3.0,
+      "unit": "hours",
+      "isPausedOrReduced": false,
+      "recoveryNote": "Target increased. Prioritize a 20-min power nap or early bedtime."
+    },
+    {
+      "id": "goal-hydration",
+      "name": "Hydration & Electrolytes",
+      "category": "hydration",
+      "normalTarget": 2000,
+      "adjustedTarget": 2500,
+      "currentValue": 750,
+      "unit": "ml",
+      "isPausedOrReduced": false,
+      "recoveryNote": "Increased target with pinch of salt/electrolytes to ease tension headaches."
+    },
+    {
+      "id": "goal-focus",
+      "name": "Deep Screen Focus",
+      "category": "focus",
+      "normalTarget": 6.0,
+      "adjustedTarget": 2.0,
+      "currentValue": 1.5,
+      "unit": "hours",
+      "isPausedOrReduced": true,
+      "recoveryNote": "Capped to reduce eye strain and sensory overload."
+    }
+  ],
+  "streakProtected": true,
+  "streakShieldMessage": "Resting when exhausted protects biological resilience. Your streak is safeguarded."
+}
+`;
+
+    const response = await generateContentWithRetry(ai, {
+      model: "gemini-3.7-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const responseText = response.text || "";
+    let parsedData;
+    try {
+      parsedData = JSON.parse(responseText);
+    } catch (e) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Failed to parse AI recovery assessment.");
+      }
+    }
+
+    res.json({
+      success: true,
+      data: parsedData
+    });
+  } catch (err: any) {
+    console.error("Error in /recovery/assess-checkin:", err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to process health check-in. Please try again."
+    });
+  }
+});
+
+// Endpoint: Generate Alternative Recovery Routine
+apiRouter.post("/recovery/generate-activity", authedRateLimitMiddleware, async (req, res) => {
+  try {
+    const { activityType, strainContext } = req.body;
+    const ai = getGeminiClient();
+
+    const prompt = `You are a somatic recovery specialist for ArovedaAI.
+Create a targeted 3-minute guided recovery activity (exactly 3 steps of 60 seconds each) for: "${activityType || "Quick Reset"}".
+Context: "${strainContext || "General high strain and mental fatigue"}".
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "title": "string",
+  "tagline": "string",
+  "totalDurationMinutes": 3,
+  "rationale": "string",
+  "comfortAffirmation": "string",
+  "hydrationTip": "string",
+  "steps": [
+    {
+      "stepNumber": 1,
+      "title": "string",
+      "durationSeconds": 60,
+      "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
+      "instruction": "string",
+      "guidanceAudioText": "string",
+      "breathingPattern": { "inhale": 4, "hold1": 4, "exhale": 4, "hold2": 0 },
+      "tips": ["string"]
+    },
+    {
+      "stepNumber": 2,
+      "title": "string",
+      "durationSeconds": 60,
+      "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
+      "instruction": "string",
+      "guidanceAudioText": "string",
+      "breathingPattern": { "inhale": 4, "hold1": 7, "exhale": 8, "hold2": 0 },
+      "tips": ["string"]
+    },
+    {
+      "stepNumber": 3,
+      "title": "string",
+      "durationSeconds": 60,
+      "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
+      "instruction": "string",
+      "guidanceAudioText": "string",
+      "tips": ["string"]
+    }
+  ]
+}
+`;
+
+    const response = await generateContentWithRetry(ai, {
+      model: "gemini-3.7-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const responseText = response.text || "";
+    let parsedData;
+    try {
+      parsedData = JSON.parse(responseText);
+    } catch (e) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Failed to parse AI activity response.");
+      }
+    }
+
+    res.json({
+      success: true,
+      data: parsedData
+    });
+  } catch (err: any) {
+    console.error("Error in /recovery/generate-activity:", err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate recovery activity."
+    });
+  }
+});
+
 // URL normalization for Vercel rewrites
 app.use((req, _res, next) => {
   if (req.url === "/api" && req.originalUrl && req.originalUrl !== "/api") {

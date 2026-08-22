@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { RecoveryProvider, useRecovery } from './context/RecoveryContext';
 import { useReports } from './hooks/useReports';
 import { AuthScreen } from './components/AuthScreen';
 import { EmailVerificationScreen } from './components/EmailVerificationScreen';
@@ -15,11 +16,17 @@ import { ProfileView } from './components/ProfileView';
 import { SmartAlertsModal } from './components/SmartAlertsModal';
 import { TermsPrivacyModal } from './components/TermsPrivacyModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { RecoveryBanner } from './components/RecoveryBanner';
+import { CheckInModal } from './components/CheckInModal';
+import { InteractiveRecoveryPlayer } from './components/InteractiveRecoveryPlayer';
+import { RecoveryModeView } from './components/RecoveryModeView';
+import { CoachRecoveryView } from './components/CoachRecoveryView';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, ShieldCheck, Scale, Lock } from 'lucide-react';
 
 function AppContent() {
   const { user, userProfile, updateProfile, loading: authLoading } = useAuth();
+  const { state: recoveryState } = useRecovery();
   const { 
     reports, 
     auditLogs, 
@@ -142,6 +149,9 @@ function AppContent() {
         />
 
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 lg:pt-24 pb-12">
+          {/* Recovery Banner if Recovery Mode is Active */}
+          <RecoveryBanner onNavigateToRecoveryView={() => setActiveTab('recovery')} />
+
           <AnimatePresence>
             {notification && (
               <motion.div
@@ -174,6 +184,17 @@ function AppContent() {
                   onLoadDemo={handleLoadDemo}
                   getBiomarkerTrend={getBiomarkerTrend}
                 />
+              )}
+
+              {activeTab === 'recovery' && (
+                <RecoveryModeView 
+                  onNavigateToDashboard={() => setActiveTab('dashboard')}
+                  onNavigateToCoachView={() => setActiveTab('coach')}
+                />
+              )}
+
+              {activeTab === 'coach' && (
+                <CoachRecoveryView />
               )}
 
               {activeTab === 'reports' && (
@@ -251,6 +272,10 @@ function AppContent() {
         </footer>
       </div>
 
+      {/* Global Modals */}
+      <CheckInModal />
+      <InteractiveRecoveryPlayer />
+
       <SmartAlertsModal
         alerts={smartAlerts}
         isOpen={isAlertsOpen}
@@ -277,7 +302,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <RecoveryProvider>
+        <AppContent />
+      </RecoveryProvider>
     </AuthProvider>
   );
 }

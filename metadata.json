@@ -1,6 +1,6 @@
 {
   "name": "ArovedaAI",
-  "description": "ArovedaAI - AI-powered secure personal health record platform for lab report extraction, trend analysis, health insights, and doctor visit summaries.",
-  "requestFramePermissions": [],
+  "description": "ArovedaAI - AI-powered personal health record & biomarker analytics platform with adaptive recovery mode, strain triage, and doctor visit briefings.",
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

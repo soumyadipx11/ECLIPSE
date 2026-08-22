@@ -153,3 +153,110 @@ export interface DoctorVisitSummaryData {
   generatedReportIds?: string[];
   generatedReportCount?: number;
 }
+
+// -------------------------------------------------------------
+// AI-Powered Recovery & Triage Mode Types
+// -------------------------------------------------------------
+
+export type StrainLevel = 'normal' | 'moderate' | 'high';
+
+export interface RecoveryActivityStep {
+  id: string;
+  stepNumber: number;
+  title: string;
+  durationSeconds: number;
+  instruction: string;
+  guidanceAudioText?: string;
+  actionType: 'breathing' | 'somatic' | 'hydration' | 'cognitive_pause' | 'rest';
+  breathingPattern?: {
+    inhale: number;
+    hold1?: number;
+    exhale: number;
+    hold2?: number;
+    cycles?: number;
+  };
+  tips?: string[];
+}
+
+export interface RecoveryPlan {
+  id: string;
+  title: string;
+  tagline: string;
+  totalDurationMinutes: number;
+  rationale: string;
+  comfortAffirmation: string;
+  hydrationTip: string;
+  steps: RecoveryActivityStep[];
+  emergencyNote?: string;
+}
+
+export interface DailyGoal {
+  id: string;
+  name: string;
+  category: 'movement' | 'exercise' | 'sleep' | 'hydration' | 'mindfulness' | 'focus';
+  normalTarget: number;
+  adjustedTarget: number;
+  currentValue: number;
+  unit: string;
+  isPausedOrReduced: boolean;
+  recoveryNote: string;
+}
+
+export interface EnergyCheckIn {
+  id: string;
+  userId: string;
+  timestamp: string;
+  inputMode: 'text' | 'voice' | 'preset';
+  rawInput: string;
+  strainLevel: StrainLevel;
+  energyScore: number; // 0 (critically exhausted) to 100 (full energetic baseline)
+  primaryFactors: string[];
+  emotionalState: string;
+  aiAssessment: string;
+  aiEmpathyMessage: string;
+  recoveryPlan?: RecoveryPlan;
+  adjustedGoals?: DailyGoal[];
+  postActivityFeedback?: {
+    rating: 'much_better' | 'slightly_calmer' | 'still_drained';
+    notes?: string;
+    completedAt: string;
+  };
+}
+
+export interface CoachTriggerConfig {
+  highStrainSensitivity: 'low' | 'medium' | 'high';
+  autoActivateRecovery: boolean;
+  goalReductionPercentage: number; // e.g. 70 means 70% reduction in high-pressure goals
+  enableStreakProtection: boolean;
+  minRestAllocationHours: number;
+  emergencyHelplineEnabled: boolean;
+  customSupportMessage: string;
+}
+
+export interface RecoverySessionLog {
+  id: string;
+  timestamp: string;
+  planTitle: string;
+  durationSecondsCompleted: number;
+  totalDurationSeconds: number;
+  strainLevelBefore: StrainLevel;
+  energyScoreBefore: number;
+  ratingAfter?: 'much_better' | 'slightly_calmer' | 'still_drained';
+  streakProtected: boolean;
+}
+
+export interface RecoveryState {
+  isActive: boolean;
+  activatedAt?: string;
+  reason?: string;
+  strainLevel: StrainLevel;
+  energyScore: number;
+  currentPlan?: RecoveryPlan;
+  adjustedGoals: DailyGoal[];
+  streakShieldActive: boolean;
+  currentStreakDays: number;
+  lastShieldUsedDate?: string;
+  checkInHistory: EnergyCheckIn[];
+  sessionLogs: RecoverySessionLog[];
+  coachConfig: CoachTriggerConfig;
+}
