@@ -38,19 +38,19 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 // Firebase client initialization
-// Safely reads from environment variables or standard project configuration
+// Read strictly from Vite environment variables (e.g. configured in Vercel or .env)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAyRhAJugwMk-dnaBI2BT-SI8PJwkLnP9w",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "aroveda-ai.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "aroveda-ai",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "aroveda-ai.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "757883291219",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:757883291219:web:ded93449b09599292de8a6",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const rawDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || "(default)";
+const rawDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID;
 const firestoreDbId = (rawDbId && rawDbId !== '(default)' && rawDbId !== '') ? rawDbId : undefined;
 
 // Use the databaseId provisioned by AI Studio or configured via environment
