@@ -294,14 +294,15 @@ async function generateContentWithRetry(
     contents: any;
     config?: any;
   },
-  maxRetries = 2
+  maxRetries = 1
 ) {
-  const primaryModel = params.model || "gemini-3.6-flash";
-  const modelsToTry = [
+  const primaryModel = params.model || "gemini-2.5-flash";
+  const modelsToTry = Array.from(new Set([
     primaryModel,
-    "gemini-3.6-flash",
-    "gemini-flash-latest"
-  ];
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash"
+  ]));
 
   let lastError: any = null;
 
@@ -328,20 +329,15 @@ async function generateContentWithRetry(
           message.includes("quota");
 
         if (isTransient && attempt < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 1200));
+          await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
           continue;
         }
-
-        if (isTransient) {
-          break;
-        }
-
-        throw err;
+        break;
       }
     }
   }
 
-  throw lastError;
+  throw lastError || new Error("Failed to generate AI content across models.");
 }
 
 // Express Router for API Endpoints
@@ -857,7 +853,7 @@ Return ONLY a valid JSON object matching this schema:
     contents.push({ text: promptText });
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.6-flash",
+      model: "gemini-2.5-flash",
       contents: contents,
       config: {
         responseMimeType: "application/json"
@@ -965,7 +961,7 @@ Return ONLY a JSON object matching this schema:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.6-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -1081,7 +1077,7 @@ Return ONLY a JSON object with this schema:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.6-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -1139,7 +1135,7 @@ Return ONLY a valid JSON object matching this schema:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.6-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -1193,6 +1189,18 @@ apiRouter.post("/recovery/assess-checkin", authedRateLimitMiddleware, async (req
     const sensitivity = coachConfig?.highStrainSensitivity || "medium";
     const goalReductionFactor = coachConfig?.goalReductionPercentage ?? 70;
 
+    const goalsContext = currentGoals && Array.isArray(currentGoals) && currentGoals.length > 0
+      ? `User's Current Daily Goals to Adjust:\n${JSON.stringify(currentGoals.map((g: any) => ({
+          id: g.id,
+          title: g.title,
+          category: g.category,
+          normalTarget: g.normalTarget,
+          adjustedTarget: g.adjustedTarget,
+          currentValue: g.currentValue,
+          unit: g.unit
+        })), null, 2)}`
+      : `Default Daily Goals: Movement (steps: 10000), Exercise (mins: 45), Sleep (hours: 7.5), Hydration (ml: 2000), Focus (hours: 6.0).`;
+
     const prompt = `You are the lead clinical wellness & triage AI for ArovedaAI.
 Evaluate the user's quick health/energy check-in. Detect whether they are experiencing high strain, acute exhaustion, sleep deprivation, stress, illness, or normal baseline energy.
 ${userContext}
@@ -1202,17 +1210,18 @@ Goal Reduction Percentage Setting: ${goalReductionFactor}%
 User Check-in:
 "${scrubPiiFromText(checkInText)}"
 
-Instructions:
-1. Identify if this indicates HIGH STRAIN (e.g. headaches, very poor sleep, upcoming exam anxiety, nausea, fever, physical burnout, acute stress) or MODERATE STRAIN or NORMAL.
-2. Formulate a compassionate, guilt-free AI assessment that reassures the user that pausing is essential biology, not failure.
-3. Design a targeted, actionable 3-MINUTE RECOVERY ACTIVITY (exactly 3 steps of 60 seconds each) tailored specifically to their symptoms (e.g., temple release + physiological sigh for exam panic and headache).
-4. Dynamically adjust their daily wellness targets to restorative baselines (e.g. reduce high step targets, pause strenuous workouts, increase hydration and restorative rest) with concise recovery notes.
-5. Provide a comforting affirmation and hydration guidance.
+${goalsContext}
 
-Return ONLY a valid JSON object matching this schema:
+Instructions:
+1. Identify if this indicates HIGH STRAIN (e.g. headaches, poor sleep, exam anxiety, nausea, fever, burnout, acute stress), MODERATE STRAIN, or NORMAL.
+2. Formulate a concise, compassionate AI assessment (2 sentences max) reassuring the user that pausing is essential biology.
+3. Design a 3-step, 3-minute guided recovery activity (60s per step) tailored specifically to their symptoms.
+4. Adjust their daily goals (reduce strenuous workout targets, lower movement steps, increase hydration/sleep goals) with brief recovery notes.
+
+Return ONLY a JSON object matching this structure:
 {
   "strainLevel": "high" | "moderate" | "normal",
-  "energyScore": number,
+  "energyScore": number (0-100),
   "isHighStrain": boolean,
   "primaryFactors": ["string"],
   "emotionalState": "string",
@@ -1234,12 +1243,7 @@ Return ONLY a valid JSON object matching this schema:
         "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
         "instruction": "string",
         "guidanceAudioText": "string",
-        "breathingPattern": {
-          "inhale": 4,
-          "hold1": 4,
-          "exhale": 4,
-          "hold2": 0
-        },
+        "breathingPattern": { "inhale": 4, "hold1": 4, "exhale": 4, "hold2": 0 },
         "tips": ["string"]
       },
       {
@@ -1249,12 +1253,7 @@ Return ONLY a valid JSON object matching this schema:
         "actionType": "somatic" | "breathing" | "hydration" | "cognitive_pause" | "rest",
         "instruction": "string",
         "guidanceAudioText": "string",
-        "breathingPattern": {
-          "inhale": 4,
-          "hold1": 7,
-          "exhale": 8,
-          "hold2": 0
-        },
+        "breathingPattern": { "inhale": 4, "hold1": 7, "exhale": 8, "hold2": 0 },
         "tips": ["string"]
       },
       {
@@ -1270,73 +1269,24 @@ Return ONLY a valid JSON object matching this schema:
   },
   "adjustedGoals": [
     {
-      "id": "goal-movement",
-      "title": "Daily Movement",
-      "name": "Daily Movement",
-      "category": "movement",
-      "normalTarget": 10000,
-      "adjustedTarget": 2000,
-      "currentValue": 850,
-      "unit": "steps",
-      "isPausedOrReduced": true,
-      "recoveryNote": "Reduced to light restorative stroll. No cardio intensity."
-    },
-    {
-      "id": "goal-exercise",
-      "title": "Cardio / Workout",
-      "name": "Cardio / Workout",
-      "category": "exercise",
-      "normalTarget": 45,
-      "adjustedTarget": 0,
-      "currentValue": 0,
-      "unit": "mins",
-      "isPausedOrReduced": true,
-      "recoveryNote": "Paused. Strenuous exercise under sleep deprivation strains the heart and immune system."
-    },
-    {
-      "id": "goal-sleep",
-      "title": "Sleep Duration",
-      "name": "Sleep Duration",
-      "category": "sleep",
-      "normalTarget": 7.5,
-      "adjustedTarget": 9.0,
-      "currentValue": 3.0,
-      "unit": "hours",
-      "isPausedOrReduced": false,
-      "recoveryNote": "Target increased. Prioritize a 20-min power nap or early bedtime."
-    },
-    {
-      "id": "goal-hydration",
-      "title": "Hydration Intake",
-      "name": "Hydration Intake",
-      "category": "hydration",
-      "normalTarget": 2000,
-      "adjustedTarget": 2500,
-      "currentValue": 750,
-      "unit": "ml",
-      "isPausedOrReduced": false,
-      "recoveryNote": "Increased target with pinch of salt/electrolytes to ease tension headaches."
-    },
-    {
-      "id": "goal-focus",
-      "title": "Screen & Deep Focus",
-      "name": "Screen & Deep Focus",
-      "category": "focus",
-      "normalTarget": 6.0,
-      "adjustedTarget": 2.0,
-      "currentValue": 1.5,
-      "unit": "hours",
-      "isPausedOrReduced": true,
-      "recoveryNote": "Capped to reduce eye strain and sensory overload."
+      "id": "string",
+      "title": "string",
+      "category": "movement" | "exercise" | "sleep" | "hydration" | "focus",
+      "normalTarget": number,
+      "adjustedTarget": number,
+      "currentValue": number,
+      "unit": "string",
+      "isPausedOrReduced": boolean,
+      "recoveryNote": "string"
     }
   ],
-  "streakProtected": true,
-  "streakShieldMessage": "Resting when exhausted protects biological resilience. Your streak is safeguarded."
+  "streakProtected": boolean,
+  "streakShieldMessage": "string"
 }
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.7-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
@@ -1422,7 +1372,7 @@ Return ONLY a valid JSON object matching this schema:
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: "gemini-3.7-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json"
