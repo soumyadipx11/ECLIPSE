@@ -273,7 +273,7 @@ export const AiInsightsView: React.FC<AiInsightsViewProps> = ({ reports }) => {
           <div className="flex items-center gap-2 mb-1">
             <span className="w-6 h-0.5 bg-rose-600 rounded-full"></span>
             <span className="text-[10px] font-extrabold tracking-widest text-rose-600 dark:text-rose-500 uppercase">
-              Q3 CLINICAL SUMMARY • SYSTEM SYNC: 100%
+              Q3 CLINICAL SUMMARY • SYSTEM INTEGRITY: 100%
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">

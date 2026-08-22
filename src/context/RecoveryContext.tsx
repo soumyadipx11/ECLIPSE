@@ -245,10 +245,23 @@ export const normalizeGoal = (goal: any): DailyGoal => {
     else if (category === 'hydration') title = 'Hydration Intake';
     else title = 'Screen & Deep Focus';
   }
+  const rawNormal = typeof goal.normalTarget === 'number' && !isNaN(goal.normalTarget) ? goal.normalTarget : (typeof goal.adjustedTarget === 'number' && !isNaN(goal.adjustedTarget) ? goal.adjustedTarget : 100);
+  const rawAdjusted = typeof goal.adjustedTarget === 'number' && !isNaN(goal.adjustedTarget) ? goal.adjustedTarget : rawNormal;
+  const rawCurrent = typeof goal.currentValue === 'number' && !isNaN(goal.currentValue) ? goal.currentValue : 0;
+
   return {
     ...goal,
+    id: goal.id || `goal-${category}`,
     title,
-    name: goal.name || title
+    name: goal.name || title,
+    category,
+    normalTarget: rawNormal,
+    adjustedTarget: rawAdjusted,
+    currentValue: rawCurrent,
+    unit: goal.unit || '',
+    isPausedOrReduced: Boolean(goal.isPausedOrReduced),
+    recoveryNote: goal.recoveryNote || undefined,
+    recoveryAdjustmentReason: goal.recoveryAdjustmentReason || undefined
   };
 };
 
@@ -448,10 +461,28 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             const lastDate = data.lastActiveDate || prev.lastActiveDate || getLocalDateString();
             const currentToday = getLocalDateString();
 
+            let finalGoals = rawGoals;
+            let finalHistory = { ...history };
+
+            // Handle day rollover if snapshot data is from a previous day
+            if (lastDate < currentToday) {
+              const prevCompleted = rawGoals.filter((g: DailyGoal) => g.currentValue >= g.adjustedTarget).length;
+              const prevTotal = rawGoals.length;
+              if (prevCompleted === prevTotal && prevTotal > 0) {
+                finalHistory[lastDate] = {
+                  date: lastDate,
+                  status: (data.isActive || data.streakShieldActive) ? 'recovery' : 'completed',
+                  completedCount: prevCompleted,
+                  totalGoals: prevTotal
+                };
+              }
+              finalGoals = rawGoals.map((g: DailyGoal) => ({ ...g, currentValue: 0 }));
+            }
+
             // Calculate current streak from history
             const { currentStreak, longestStreak } = calculateStreakFromHistory(
-              history,
-              rawGoals,
+              finalHistory,
+              finalGoals,
               typeof data.isActive === 'boolean' ? data.isActive : prev.isActive,
               typeof data.streakShieldActive === 'boolean' ? data.streakShieldActive : prev.streakShieldActive
             );
@@ -463,12 +494,12 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               activatedAt: data.activatedAt ?? prev.activatedAt,
               reason: data.reason ?? prev.reason,
               currentPlan: data.currentPlan ?? prev.currentPlan,
-              adjustedGoals: rawGoals,
+              adjustedGoals: finalGoals,
               streakShieldActive: typeof data.streakShieldActive === 'boolean' ? data.streakShieldActive : prev.streakShieldActive,
               currentStreakDays: typeof data.currentStreakDays === 'number' ? data.currentStreakDays : currentStreak,
               longestStreakDays: typeof data.longestStreakDays === 'number' ? data.longestStreakDays : longestStreak,
-              lastActiveDate: lastDate,
-              streakHistory: history,
+              lastActiveDate: currentToday,
+              streakHistory: finalHistory,
               lastShieldUsedDate: data.lastShieldUsedDate ?? prev.lastShieldUsedDate,
               checkInHistory: Array.isArray(data.checkInHistory) ? data.checkInHistory : prev.checkInHistory,
               sessionLogs: Array.isArray(data.sessionLogs) ? data.sessionLogs : prev.sessionLogs,
@@ -580,8 +611,10 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const syncToCloud = useCallback(async (stateToSave: RecoveryState) => {
     if (!user?.uid) return;
     try {
+      const today = getLocalDateString();
       const payload = cleanUndefined({
         ...stateToSave,
+        lastActiveDate: today,
         userId: user.uid,
         updatedAt: new Date().toISOString()
       });

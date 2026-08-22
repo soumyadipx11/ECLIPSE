@@ -33,7 +33,6 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { StreakCalendar } from './StreakCalendar';
 import { MenstrualCycleTracker } from './MenstrualCycleTracker';
-import { MenstrualCycleTracker } from './MenstrualCycleTracker';
 
 interface RecoveryModeViewProps {
   onNavigateToDashboard: () => void;
@@ -70,9 +69,9 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
     const success = await saveAndSyncToFirebase();
     if (success) {
       if (user) {
-        setSaveSuccessNotification(`Goals and target limits saved! Synced in real-time to Firebase across all devices for ${user.email}.`);
+        setSaveSuccessNotification(`Goals and target limits saved for ${user.email}.`);
       } else {
-        setSaveSuccessNotification("Goals saved locally. To synchronize in real-time across your phone, tablet, and other devices, please sign in.");
+        setSaveSuccessNotification("Goals saved locally. To access across all your devices, please sign in.");
       }
       setTimeout(() => {
         setSaveSuccessNotification(null);
@@ -110,7 +109,7 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
                   </span>
                   {isCloudSynced && (
                     <span className="bg-teal-500/20 text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-teal-400/30 flex items-center gap-1">
-                      <Cloud className="w-3 h-3 text-teal-400" /> Firebase Synced
+                      <Cloud className="w-3 h-3 text-teal-400" /> Saved
                     </span>
                   )}
                 </div>
@@ -148,7 +147,7 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
               {state.isActive 
                 ? `"${state.reason ? `We detected: ${state.reason}. ` : 'High physiological strain detected. '} Your energy reserve is at ${state.energyScore}%. Target limits have been calibrated to protect your autonomic nervous system from overtraining."`
-                : "Customize your active targets, log completed steps, workouts, sleep, and hydration, and sync your baseline limits across all devices via Firebase."}
+                : "Customize your active targets, log completed steps, workouts, sleep, and hydration, and manage your baseline limits across all devices."}
             </p>
           </div>
 
@@ -264,34 +263,34 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
                     <Sliders className="w-3.5 h-3.5" /> GOAL EDITOR & LIMIT CONTROLS
                   </span>
                   <span className="bg-teal-500/10 border border-teal-500/20 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Cloud className="w-3 h-3 text-teal-500" /> Firebase Cloud Sync
+                    <Cloud className="w-3 h-3 text-teal-500" /> Saved
                   </span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
                   Edit Daily Goals, Progress & Target Limits
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Type your progress numbers, click targets to adjust upper limits, and click Save to synchronize across all devices.
+                  Type your progress numbers, click targets to adjust upper limits, and click Save Goals to apply changes.
                 </p>
               </div>
 
-              {/* SAVE & SYNC BUTTON */}
+              {/* SAVE BUTTON */}
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={handleManualSave}
                   disabled={isSaving}
                   className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-400 text-white font-bold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 transition-all shadow-md shadow-emerald-600/25 cursor-pointer"
-                  title="Save completed goals and custom limits to Firebase"
+                  title="Save completed goals and custom limits"
                 >
                   {isSaving ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving to Firebase...</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>
                       <Save className="w-3.5 h-3.5" />
-                      <span>Save & Sync Goals</span>
+                      <span>Save Goals</span>
                     </>
                   )}
                 </button>
@@ -351,7 +350,7 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
               ))}
             </div>
 
-            {/* Bottom Save Bar with Last Synced Timestamp */}
+            {/* Bottom Save Bar with Last Saved Timestamp */}
             <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 {user ? (
@@ -359,15 +358,15 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span className="text-emerald-700 dark:text-emerald-300 font-medium">
                       {lastSyncedAt 
-                        ? `Live Firestore Synced for ${user.email} (${lastSyncedAt.toLocaleTimeString()})`
-                        : `Live Firestore Sync active for ${user.email}`}
+                        ? `Saved for ${user.email} (${lastSyncedAt.toLocaleTimeString()})`
+                        : `Saved for ${user.email}`}
                     </span>
                   </>
                 ) : (
                   <>
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                     <span className="text-amber-700 dark:text-amber-300">
-                      Local mode. Sign in to synchronize goals live across multiple devices.
+                      Local mode. Sign in to save goals across multiple devices.
                     </span>
                   </>
                 )}

@@ -34,7 +34,7 @@ export const RecoveryBanner: React.FC<RecoveryBannerProps> = ({ onNavigateToReco
               </span>
               {isCloudSynced && (
                 <span className="bg-teal-500/20 border border-teal-400/30 text-teal-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Cloud className="w-3 h-3 text-teal-400" /> Synced across devices
+                  <Cloud className="w-3 h-3 text-teal-400" /> Saved
                 </span>
               )}
               {state.streakShieldActive && (

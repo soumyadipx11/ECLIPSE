@@ -53,15 +53,15 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
               <Sparkles className="w-3.5 h-3.5" /> DAILY TARGET TRACKER
             </span>
             
-            {/* Real-time cross-device sync badge */}
+            {/* Real-time status indicator */}
             {user ? (
-              <span className="bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1" title={`Live cross-device Firestore sync active for ${user.email}`}>
+              <span className="bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1" title={`Cloud backup active for ${user.email}`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
-                <Cloud className="w-3 h-3 text-teal-500" /> Firebase Synced
+                <Cloud className="w-3 h-3 text-teal-500" /> Cloud Saved
               </span>
             ) : (
-              <span className="bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1" title="Log in to synchronize goals across your phone, tablet, and computer">
-                <CloudOff className="w-3 h-3 text-amber-500" /> Sign in to sync devices
+              <span className="bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1" title="Log in to save goals across devices">
+                <CloudOff className="w-3 h-3 text-amber-500" /> Sign in to save
               </span>
             )}
 
@@ -118,7 +118,7 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
             <button
               onClick={onNavigateToRecovery}
               className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm shadow-emerald-500/20 w-full xs:w-auto shrink-0"
-              title="Open Recovery Mode to edit progress, customize limits, and sync"
+              title="Open Recovery Mode to edit progress and customize limits"
             >
               <Sliders className="w-3.5 h-3.5 shrink-0" />
               <span className="whitespace-nowrap">Edit Goals <span className="hidden sm:inline">in Recovery Mode</span></span>
