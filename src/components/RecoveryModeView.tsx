@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRecovery } from '../context/RecoveryContext';
+import { DailyGoal } from '../types';
 import { 
   HeartPulse, 
   Sparkles, 
@@ -13,6 +14,8 @@ import {
   Tv, 
   Check, 
   Plus, 
+  Minus,
+  Edit2,
   ArrowLeft, 
   RefreshCw, 
   AlertCircle, 
@@ -21,7 +24,9 @@ import {
   Sun,
   Layers,
   Clock,
-  Cloud
+  Cloud,
+  CheckCheck,
+  RotateCcw
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -41,6 +46,8 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
     openPlayerModal, 
     exitRecoveryMode, 
     toggleGoalProgress,
+    setGoalValue,
+    setGoalTarget,
     triggerPresetScenario 
   } = useRecovery();
 
@@ -213,78 +220,35 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
 
           {/* Safely Adjusted Daily Goals ("Restorative Baselines") */}
           <div className="bg-white/40 dark:bg-[#121418]/40 backdrop-blur-md rounded-3xl border border-white/30 dark:border-white/10 p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/50 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Nervous System Protection
+                  </span>
+                  <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Direct Type & Adjust
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-0.5">
                   Restorative Daily Targets
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Goals automatically scaled down to protect recovery without guilt or streak penalties
-                </p>
               </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Type directly into any number field or use quick adjust
+              </p>
             </div>
 
-            <div className="space-y-3">
-              {state.adjustedGoals.map((goal) => {
-                const isCompleted = goal.currentValue >= goal.adjustedTarget;
-                return (
-                  <div
-                    key={goal.id}
-                    className="p-4 rounded-2xl border border-slate-200/60 dark:border-white/10 bg-white/50 dark:bg-slate-900/40 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        {goal.category === 'movement' && <Footprints className="w-4 h-4 text-teal-500" />}
-                        {goal.category === 'exercise' && <Activity className="w-4 h-4 text-rose-500" />}
-                        {goal.category === 'sleep' && <Moon className="w-4 h-4 text-indigo-500" />}
-                        {goal.category === 'hydration' && <Droplets className="w-4 h-4 text-blue-500" />}
-                        {goal.category === 'focus' && <Tv className="w-4 h-4 text-amber-500" />}
-                        <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
-                          {goal.name}
-                        </span>
-                        {goal.isPausedOrReduced && (
-                          <span className="bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            Reduced for Recovery
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {goal.recoveryNote}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
-                      <div className="text-right">
-                        <div className="flex items-baseline gap-1 justify-end">
-                          <span className="text-sm font-black text-slate-900 dark:text-white">
-                            {goal.currentValue}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            / {goal.adjustedTarget} {goal.unit}
-                          </span>
-                        </div>
-                        {goal.normalTarget !== goal.adjustedTarget && (
-                          <span className="text-[9px] text-slate-400 line-through block">
-                            Normal: {goal.normalTarget} {goal.unit}
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={() => toggleGoalProgress(goal.id)}
-                        className={`p-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                          isCompleted
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-500 hover:text-white'
-                        }`}
-                        title="Add progress"
-                      >
-                        {isCompleted ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="space-y-3.5">
+              {state.adjustedGoals.map((goal) => (
+                <RecoveryGoalRow
+                  key={goal.id}
+                  goal={goal}
+                  onUpdateValue={(val) => setGoalValue(goal.id, val)}
+                  onUpdateTarget={(target) => setGoalTarget(goal.id, target)}
+                  onToggleStep={(delta) => toggleGoalProgress(goal.id, delta)}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -369,3 +333,214 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
     </div>
   );
 };
+
+interface RecoveryGoalRowProps {
+  goal: DailyGoal;
+  onUpdateValue: (val: number) => void;
+  onUpdateTarget: (target: number) => void;
+  onToggleStep: (delta?: number) => void;
+}
+
+const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
+  goal,
+  onUpdateValue,
+  onUpdateTarget,
+  onToggleStep
+}) => {
+  const [inputValue, setInputValue] = useState<string>(goal.currentValue.toString());
+  const [targetValue, setTargetValue] = useState<string>(goal.adjustedTarget.toString());
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+
+  useEffect(() => {
+    setInputValue(goal.currentValue.toString());
+  }, [goal.currentValue]);
+
+  useEffect(() => {
+    setTargetValue(goal.adjustedTarget.toString());
+  }, [goal.adjustedTarget]);
+
+  const isCompleted = goal.adjustedTarget > 0 ? goal.currentValue >= goal.adjustedTarget : true;
+  const progressPercent = goal.adjustedTarget > 0 
+    ? Math.min(100, Math.round((goal.currentValue / goal.adjustedTarget) * 100))
+    : 100;
+
+  const isDecimal = goal.category === 'sleep' || goal.category === 'focus';
+  const stepDelta = goal.category === 'movement' ? 500 : goal.category === 'hydration' ? 250 : isDecimal ? 0.5 : 15;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+    if (val !== '' && !isNaN(Number(val))) {
+      onUpdateValue(Number(val));
+    }
+  };
+
+  const handleInputBlur = () => {
+    if (inputValue === '' || isNaN(Number(inputValue))) {
+      setInputValue(goal.currentValue.toString());
+    } else {
+      onUpdateValue(Math.max(0, Number(inputValue)));
+    }
+  };
+
+  const handleTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setTargetValue(val);
+    if (val !== '' && !isNaN(Number(val))) {
+      onUpdateTarget(Number(val));
+    }
+  };
+
+  const handleTargetBlur = () => {
+    setIsEditingTarget(false);
+    if (targetValue === '' || isNaN(Number(targetValue))) {
+      setTargetValue(goal.adjustedTarget.toString());
+    } else {
+      onUpdateTarget(Math.max(0, Number(targetValue)));
+    }
+  };
+
+  const getCategoryIcon = () => {
+    switch (goal.category) {
+      case 'movement': return <Footprints className="w-4 h-4 text-teal-400" />;
+      case 'exercise': return <Activity className="w-4 h-4 text-rose-400" />;
+      case 'sleep': return <Moon className="w-4 h-4 text-indigo-400" />;
+      case 'hydration': return <Droplets className="w-4 h-4 text-blue-400" />;
+      case 'focus':
+      default: return <Tv className="w-4 h-4 text-amber-400" />;
+    }
+  };
+
+  return (
+    <div className={`p-4 rounded-2xl border backdrop-blur-sm transition-all space-y-3 ${
+      isCompleted 
+        ? 'bg-emerald-950/20 border-emerald-500/40 shadow-sm' 
+        : 'bg-white/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-white/10'
+    }`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-slate-800/80 border border-white/10 flex items-center justify-center">
+              {getCategoryIcon()}
+            </div>
+            <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+              {goal.name}
+            </span>
+            {goal.isPausedOrReduced ? (
+              <span className="bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-500/20">
+                Reduced for Recovery
+              </span>
+            ) : isCompleted ? (
+              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Check className="w-3 h-3" /> Met
+              </span>
+            ) : null}
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 pl-9">
+            {goal.recoveryNote}
+          </p>
+        </div>
+
+        {/* Normal target note */}
+        {goal.normalTarget !== goal.adjustedTarget && (
+          <div className="text-[10px] text-slate-400 sm:text-right pl-9 sm:pl-0">
+            <span className="line-through">Normal: {goal.normalTarget} {goal.unit}</span>
+            <span className="text-emerald-500 ml-1 font-semibold">({Math.round(((goal.normalTarget - goal.adjustedTarget)/goal.normalTarget)*100)}% load reduction)</span>
+          </div>
+        )}
+      </div>
+
+      {/* Progress Bar */}
+      <div className="space-y-1">
+        <div className="w-full h-2 bg-slate-200/70 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-300/40 dark:border-slate-700/40">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
+      </div>
+
+      {/* Typing Input & Quick Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+        {/* Type progress number directly */}
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+            Progress:
+          </label>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number"
+              step={isDecimal ? "0.1" : "1"}
+              min="0"
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              aria-label={`Type value for ${goal.name}`}
+              className="w-24 sm:w-28 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-center shadow-inner"
+              placeholder="0"
+            />
+            <span className="text-xs font-medium text-slate-400">/</span>
+            
+            {isEditingTarget ? (
+              <input
+                type="number"
+                step={isDecimal ? "0.1" : "1"}
+                min="0"
+                autoFocus
+                value={targetValue}
+                onChange={handleTargetChange}
+                onBlur={handleTargetBlur}
+                className="w-20 bg-white dark:bg-slate-950 border border-emerald-500 rounded-lg px-2 py-1 text-xs font-bold text-slate-900 dark:text-white text-center focus:outline-none"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditingTarget(true)}
+                title="Click to edit target"
+                className="font-bold text-slate-800 dark:text-slate-200 hover:text-emerald-500 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1 text-xs cursor-pointer"
+              >
+                {goal.adjustedTarget} {goal.unit}
+                <Edit2 className="w-2.5 h-2.5 opacity-40 hover:opacity-100" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Stepper + Preset Buttons */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onToggleStep(-stepDelta)}
+            title={`Decrease by ${stepDelta} ${goal.unit}`}
+            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition-all text-xs cursor-pointer flex items-center gap-1"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onToggleStep(stepDelta)}
+            title={`Increase by ${stepDelta} ${goal.unit}`}
+            className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all text-xs cursor-pointer flex items-center gap-1 shadow-sm shadow-emerald-500/20"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span className="text-[10px] hidden sm:inline">+{stepDelta}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onUpdateValue(goal.adjustedTarget)}
+            title="Mark target as reached"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 hover:bg-emerald-500 hover:text-white text-slate-600 dark:text-slate-300 font-bold transition-all text-[11px] cursor-pointer flex items-center gap-1"
+          >
+            <CheckCheck className="w-3 h-3" />
+            <span>Done</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+

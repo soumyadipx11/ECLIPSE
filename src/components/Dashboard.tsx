@@ -24,6 +24,7 @@ import {
 import { LabReport } from '../types';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { useRecovery } from '../context/RecoveryContext';
+import { DailyGoalsSection } from './DailyGoalsSection';
 
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 
@@ -255,6 +256,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Daily Restorative & Wellness Goals Tracker */}
+      <DailyGoalsSection onNavigateToRecovery={() => onNavigate('recovery')} />
 
       {/* Main Grid: Latest Report Card & Quick Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

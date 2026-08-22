@@ -128,6 +128,9 @@ interface RecoveryContextType {
   enterRecoveryMode: (plan?: RecoveryPlan, customGoals?: DailyGoal[], reason?: string) => void;
   exitRecoveryMode: (feedback?: { rating: 'much_better' | 'slightly_calmer' | 'still_drained'; notes?: string }) => void;
   toggleGoalProgress: (goalId: string, delta?: number) => void;
+  setGoalValue: (goalId: string, value: number) => void;
+  setGoalTarget: (goalId: string, target: number) => void;
+  updateGoal: (goalId: string, updates: Partial<DailyGoal>) => void;
   recordSessionCompleted: (planTitle: string, durationSeconds: number, rating?: 'much_better' | 'slightly_calmer' | 'still_drained') => void;
   updateCoachConfig: (newConfig: Partial<CoachTriggerConfig>) => void;
   restoreOriginalGoals: () => void;
@@ -528,13 +531,60 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
   };
 
+  const setGoalValue = (goalId: string, value: number) => {
+    const safeVal = Math.max(0, isNaN(value) ? 0 : Number(value));
+    setState(prev => ({
+      ...prev,
+      adjustedGoals: prev.adjustedGoals.map(g => {
+        if (g.id === goalId) {
+          return {
+            ...g,
+            currentValue: safeVal
+          };
+        }
+        return g;
+      })
+    }));
+  };
+
+  const setGoalTarget = (goalId: string, target: number) => {
+    const safeTarget = Math.max(0, isNaN(target) ? 0 : Number(target));
+    setState(prev => ({
+      ...prev,
+      adjustedGoals: prev.adjustedGoals.map(g => {
+        if (g.id === goalId) {
+          return {
+            ...g,
+            adjustedTarget: safeTarget
+          };
+        }
+        return g;
+      })
+    }));
+  };
+
+  const updateGoal = (goalId: string, updates: Partial<DailyGoal>) => {
+    setState(prev => ({
+      ...prev,
+      adjustedGoals: prev.adjustedGoals.map(g => {
+        if (g.id === goalId) {
+          return {
+            ...g,
+            ...updates
+          };
+        }
+        return g;
+      })
+    }));
+  };
+
   const toggleGoalProgress = (goalId: string, delta?: number) => {
     setState(prev => ({
       ...prev,
       adjustedGoals: prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
           const step = delta ?? (g.category === 'movement' ? 500 : g.category === 'hydration' ? 250 : 1);
-          const nextVal = g.currentValue + step;
+          const nextVal = Math.max(0, g.currentValue + step);
           return {
             ...g,
             currentValue: nextVal
@@ -595,6 +645,9 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       enterRecoveryMode,
       exitRecoveryMode,
       toggleGoalProgress,
+      setGoalValue,
+      setGoalTarget,
+      updateGoal,
       recordSessionCompleted,
       updateCoachConfig,
       restoreOriginalGoals,
