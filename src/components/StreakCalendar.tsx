@@ -204,9 +204,6 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                 Daily Habit & Recovery Streak Calendar
               </h3>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                GitHub-Style Grid
-              </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Live consecutive day activity matrix. Daily goals reset every midnight automatically.
