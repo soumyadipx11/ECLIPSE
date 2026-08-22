@@ -20,7 +20,8 @@ import {
   Smile, 
   Sun,
   Layers,
-  Clock
+  Clock,
+  Cloud
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -35,6 +36,7 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
 }) => {
   const { 
     state, 
+    isCloudSynced,
     openCheckInModal, 
     openPlayerModal, 
     exitRecoveryMode, 
@@ -57,13 +59,18 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
                 <HeartPulse className="w-6 h-6 animate-pulse" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-400">
                     LOW-EFFORT TRIAGE CANVAS
                   </span>
                   <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/30">
                     Active
                   </span>
+                  {isCloudSynced && (
+                    <span className="bg-teal-500/20 text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-teal-400/30 flex items-center gap-1">
+                      <Cloud className="w-3 h-3 text-teal-400" /> Synced across devices
+                    </span>
+                  )}
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
                   Recovery & Nervous System <span className="text-emerald-400 italic">Reset</span>

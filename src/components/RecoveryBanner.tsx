@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRecovery } from '../context/RecoveryContext';
-import { ShieldCheck, Sparkles, HeartPulse, Play, X, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Sparkles, HeartPulse, Play, X, ArrowRight, Cloud } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface RecoveryBannerProps {
@@ -8,7 +8,7 @@ interface RecoveryBannerProps {
 }
 
 export const RecoveryBanner: React.FC<RecoveryBannerProps> = ({ onNavigateToRecoveryView }) => {
-  const { state, openPlayerModal, exitRecoveryMode } = useRecovery();
+  const { state, isCloudSynced, openPlayerModal, exitRecoveryMode } = useRecovery();
 
   if (!state.isActive) return null;
 
@@ -32,6 +32,11 @@ export const RecoveryBanner: React.FC<RecoveryBannerProps> = ({ onNavigateToReco
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" /> AI Recovery Mode Active
               </span>
+              {isCloudSynced && (
+                <span className="bg-teal-500/20 border border-teal-400/30 text-teal-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Cloud className="w-3 h-3 text-teal-400" /> Synced across devices
+                </span>
+              )}
               {state.streakShieldActive && (
                 <span className="bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-amber-400" /> {state.currentStreakDays}-Day Streak Safeguarded

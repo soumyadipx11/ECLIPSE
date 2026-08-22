@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { 
   RecoveryState, 
   RecoveryPlan, 
@@ -10,6 +10,8 @@ import {
 } from '../types';
 import { useAuth } from './AuthContext';
 import { safeFetchJson } from '../lib/api';
+import { db, doc, setDoc, onSnapshot } from '../lib/firebase';
+import { cleanUndefined } from '../utils/sanitize';
 
 const DEFAULT_COACH_CONFIG: CoachTriggerConfig = {
   highStrainSensitivity: 'medium',
@@ -115,6 +117,7 @@ export const PRESET_SCENARIOS: Record<string, { title: string; prompt: string; l
 interface RecoveryContextType {
   state: RecoveryState;
   isAssessing: boolean;
+  isCloudSynced: boolean;
   activeCheckInModal: boolean;
   activePlayerModal: boolean;
   openCheckInModal: () => void;
@@ -159,15 +162,102 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [isAssessing, setIsAssessing] = useState<boolean>(false);
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
   const [activeCheckInModal, setActiveCheckInModal] = useState<boolean>(false);
   const [activePlayerModal, setActivePlayerModal] = useState<boolean>(false);
 
-  // Sync to localStorage
+  const isRemoteUpdateRef = useRef<boolean>(false);
+  const stateRef = useRef<RecoveryState>(state);
+  stateRef.current = state;
+
+  // Real-time Firestore synchronization for cross-device persistence
+  useEffect(() => {
+    if (!user?.uid) {
+      setIsCloudSynced(false);
+      return;
+    }
+
+    const recoveryDocRef = doc(db, 'recovery_states', user.uid);
+    const unsub = onSnapshot(recoveryDocRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data) {
+          isRemoteUpdateRef.current = true;
+          setState(prev => {
+            const nextState: RecoveryState = {
+              isActive: typeof data.isActive === 'boolean' ? data.isActive : prev.isActive,
+              strainLevel: data.strainLevel || prev.strainLevel,
+              energyScore: typeof data.energyScore === 'number' ? data.energyScore : prev.energyScore,
+              activatedAt: data.activatedAt ?? prev.activatedAt,
+              reason: data.reason ?? prev.reason,
+              currentPlan: data.currentPlan ?? prev.currentPlan,
+              adjustedGoals: Array.isArray(data.adjustedGoals) && data.adjustedGoals.length > 0 ? data.adjustedGoals : prev.adjustedGoals,
+              streakShieldActive: typeof data.streakShieldActive === 'boolean' ? data.streakShieldActive : prev.streakShieldActive,
+              currentStreakDays: typeof data.currentStreakDays === 'number' ? data.currentStreakDays : prev.currentStreakDays,
+              lastShieldUsedDate: data.lastShieldUsedDate ?? prev.lastShieldUsedDate,
+              checkInHistory: Array.isArray(data.checkInHistory) ? data.checkInHistory : prev.checkInHistory,
+              sessionLogs: Array.isArray(data.sessionLogs) ? data.sessionLogs : prev.sessionLogs,
+              coachConfig: data.coachConfig ? { ...DEFAULT_COACH_CONFIG, ...data.coachConfig } : prev.coachConfig,
+            };
+            try {
+              localStorage.setItem('aroveda_recovery_state', JSON.stringify(nextState));
+            } catch (e) {}
+            return nextState;
+          });
+          setIsCloudSynced(true);
+        }
+      } else {
+        // Doc doesn't exist on Firestore yet, seed with initial state
+        try {
+          const initPayload = cleanUndefined({
+            ...stateRef.current,
+            userId: user.uid,
+            updatedAt: new Date().toISOString()
+          });
+          setDoc(recoveryDocRef, initPayload)
+            .then(() => setIsCloudSynced(true))
+            .catch((err) => console.warn("Initial sync to Firestore recovery state failed:", err));
+        } catch (e) {
+          console.warn("Could not sanitize initial recovery state payload:", e);
+        }
+      }
+    }, (error) => {
+      console.warn("Firestore recovery state subscription error:", error);
+    });
+
+    return () => unsub();
+  }, [user?.uid]);
+
+  // Persist local state updates to Firestore & localStorage
+  const syncToCloud = useCallback(async (stateToSave: RecoveryState) => {
+    if (!user?.uid) return;
+    try {
+      const payload = cleanUndefined({
+        ...stateToSave,
+        userId: user.uid,
+        updatedAt: new Date().toISOString()
+      });
+      await setDoc(doc(db, 'recovery_states', user.uid), payload, { merge: true });
+      setIsCloudSynced(true);
+    } catch (err) {
+      console.warn("Error syncing recovery state to Firestore:", err);
+    }
+  }, [user?.uid]);
+
   useEffect(() => {
     try {
       localStorage.setItem('aroveda_recovery_state', JSON.stringify(state));
     } catch (e) {}
-  }, [state]);
+
+    if (isRemoteUpdateRef.current) {
+      isRemoteUpdateRef.current = false;
+      return;
+    }
+
+    if (user?.uid) {
+      syncToCloud(state);
+    }
+  }, [state, user?.uid, syncToCloud]);
 
   const openCheckInModal = () => setActiveCheckInModal(true);
   const closeCheckInModal = () => setActiveCheckInModal(false);
@@ -494,6 +584,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <RecoveryContext.Provider value={{
       state,
       isAssessing,
+      isCloudSynced,
       activeCheckInModal,
       activePlayerModal,
       openCheckInModal,

@@ -335,6 +335,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // AI insights & doctor summaries keyed by userId
       await deleteDoc(doc(db, 'ai_insights', uid)).catch((e) => console.warn("Could not delete ai_insights doc:", e));
       await deleteDoc(doc(db, 'doctor_summaries', uid)).catch((e) => console.warn("Could not delete doctor_summaries doc:", e));
+      await deleteDoc(doc(db, 'recovery_states', uid)).catch((e) => console.warn("Could not delete recovery_states doc:", e));
     } catch (e) {
       console.error("Error deleting core user docs:", e);
     }

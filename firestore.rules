@@ -46,5 +46,10 @@ service cloud.firestore {
     match /doctor_summaries/{userId} {
       allow read, write: if isOwner(userId);
     }
+
+    // Recovery States - keyed by userId for cross-device synchronization
+    match /recovery_states/{userId} {
+      allow read, write: if isOwner(userId);
+    }
   }
 }

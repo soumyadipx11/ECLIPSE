@@ -86,6 +86,28 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["userId"]
+    },
+    "recovery_states": {
+      "title": "Recovery States",
+      "description": "User recovery mode status, active plan, adjusted goals, strain level, check-in history and session logs synced across devices",
+      "properties": {
+        "userId": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "strainLevel": { "type": "string" },
+        "energyScore": { "type": "number" },
+        "activatedAt": { "type": "string" },
+        "reason": { "type": "string" },
+        "currentPlan": { "type": "object" },
+        "adjustedGoals": { "type": "array" },
+        "streakShieldActive": { "type": "boolean" },
+        "currentStreakDays": { "type": "number" },
+        "lastShieldUsedDate": { "type": "string" },
+        "checkInHistory": { "type": "array" },
+        "sessionLogs": { "type": "array" },
+        "coachConfig": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "isActive", "strainLevel", "energyScore"]
     }
   }
 }

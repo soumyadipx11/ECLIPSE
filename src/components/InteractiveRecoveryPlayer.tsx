@@ -324,6 +324,23 @@ export const InteractiveRecoveryPlayer: React.FC = () => {
     recordSessionCompleted(plan?.title || '3-Minute Recovery Activity', 180, undefined);
   };
 
+  const handleRestartExercise = () => {
+    if (!plan) return;
+    setIsPlaying(false);
+    recoveryAudio.stopSpeaking();
+    setCurrentStepIndex(0);
+    const firstStepDuration = plan.steps[0]?.durationSeconds || 60;
+    setStepTimeRemaining(firstStepDuration);
+    const totalDuration = plan.steps.reduce((acc, s) => acc + (s.durationSeconds || 60), 0);
+    setTotalTimeRemaining(totalDuration);
+    setCompletedCycles(0);
+    setStepMode('step_prep');
+    setFeedbackRating(null);
+    setFeedbackNotes('');
+    recoveryAudio.playBowlChime(432);
+    recoveryAudio.speakGuidance("Starting fresh recovery cycle. Settle in and follow the cadence.");
+  };
+
   const handleFinishFeedback = () => {
     if (feedbackRating) {
       exitRecoveryMode({ rating: feedbackRating, notes: feedbackNotes });
@@ -1026,15 +1043,94 @@ export const InteractiveRecoveryPlayer: React.FC = () => {
               />
             </div>
 
-            {/* Action Buttons */}
-            <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={handleFinishFeedback}
-                className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer border-2 border-emerald-300"
+            {/* Conditional Repeat Exercise Prompt based on user feedback */}
+            {feedbackRating === 'still_drained' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-gradient-to-r from-rose-950/50 via-slate-900/90 to-rose-950/50 border-2 border-rose-500/40 rounded-2xl p-3.5 sm:p-4 max-w-md mx-auto text-left shadow-lg shadow-rose-950/30 space-y-3"
               >
-                Log Feedback & Return <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-rose-400 shrink-0">
+                    <RotateCcw className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-rose-200">
+                      Still feeling drained?
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                      Your nervous system may need an extra 3-minute sequence of somatic pressure and vagal breathing to fully decompress.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                  <button
+                    onClick={handleRestartExercise}
+                    className="w-full sm:flex-1 bg-rose-500 hover:bg-rose-400 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-rose-500/25 cursor-pointer border border-rose-300"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Repeat 3-Min Exercise
+                  </button>
+                  <button
+                    onClick={handleFinishFeedback}
+                    className="w-full sm:w-auto bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all border border-white/10 cursor-pointer"
+                  >
+                    Complete & Rest
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {feedbackRating === 'much_better' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-gradient-to-r from-emerald-950/50 via-slate-900/90 to-emerald-950/50 border-2 border-emerald-500/40 rounded-2xl p-3.5 sm:p-4 max-w-md mx-auto text-left shadow-lg shadow-emerald-950/30 space-y-3"
+              >
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-emerald-300">
+                      Great to hear you feel much better!
+                    </h4>
+                    <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                      Would you like to do another 3-minute round to consolidate this calm and energized state, or save your progress?
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                  <button
+                    onClick={handleRestartExercise}
+                    className="w-full sm:flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-500/25 cursor-pointer border border-emerald-300"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Do Another Round
+                  </button>
+                  <button
+                    onClick={handleFinishFeedback}
+                    className="w-full sm:w-auto bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all border border-white/10 cursor-pointer"
+                  >
+                    Log & Return
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Standard Return Action Button (when not prompting or for slightly calmer) */}
+            {(!feedbackRating || feedbackRating === 'slightly_calmer') && (
+              <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={handleFinishFeedback}
+                  className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-2xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer border-2 border-emerald-300"
+                >
+                  Log Feedback & Return <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
 
