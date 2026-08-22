@@ -270,6 +270,24 @@ export const normalizeGoalList = (goals: any[]): DailyGoal[] => {
   return goals.map(normalizeGoal);
 };
 
+export const preserveLoggedGoalValues = (
+  newOrRestoredGoals: DailyGoal[],
+  existingGoals: DailyGoal[]
+): DailyGoal[] => {
+  if (!Array.isArray(existingGoals) || existingGoals.length === 0) {
+    return newOrRestoredGoals;
+  }
+  return newOrRestoredGoals.map(ng => {
+    const matched = existingGoals.find(
+      eg => eg.id === ng.id || (eg.category && eg.category === ng.category) || eg.title === ng.title
+    );
+    return {
+      ...ng,
+      currentValue: matched ? matched.currentValue : (ng.currentValue || 0)
+    };
+  });
+};
+
 export const PRESET_SCENARIOS: Record<string, { title: string; prompt: string; label: string; strain: StrainLevel }> = {
   exam_stress: {
     title: 'Pre-Exam Panic & Severe Headache',
@@ -709,19 +727,25 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ? (data.isHighStrain || data.strainLevel === 'high' || data.strainLevel === 'moderate')
         : (data.isHighStrain || data.strainLevel === 'high');
 
-      setState(prev => ({
-        ...prev,
-        isActive: shouldActivate ? true : prev.isActive,
-        activatedAt: shouldActivate ? new Date().toISOString() : prev.activatedAt,
-        reason: shouldActivate ? (data.primaryFactors?.[0] || 'High strain detected') : prev.reason,
-        strainLevel: data.strainLevel,
-        energyScore: data.energyScore,
-        currentPlan: data.recoveryPlan || prev.currentPlan,
-        adjustedGoals: data.adjustedGoals && data.adjustedGoals.length > 0 ? data.adjustedGoals : prev.adjustedGoals,
-        streakShieldActive: state.coachConfig.enableStreakProtection && (shouldActivate || data.strainLevel === 'high'),
-        lastShieldUsedDate: shouldActivate ? new Date().toISOString() : prev.lastShieldUsedDate,
-        checkInHistory: [newCheckIn, ...prev.checkInHistory]
-      }));
+      setState(prev => {
+        const nextGoals = data.adjustedGoals && data.adjustedGoals.length > 0 
+          ? preserveLoggedGoalValues(data.adjustedGoals, prev.adjustedGoals)
+          : prev.adjustedGoals;
+        return {
+          ...prev,
+          isActive: shouldActivate ? true : prev.isActive,
+          activatedAt: shouldActivate ? new Date().toISOString() : prev.activatedAt,
+          reason: shouldActivate ? (data.primaryFactors?.[0] || 'High strain detected') : prev.reason,
+          strainLevel: data.strainLevel,
+          energyScore: data.energyScore,
+          currentPlan: data.recoveryPlan || prev.currentPlan,
+          adjustedGoals: nextGoals,
+          streakShieldActive: state.coachConfig.enableStreakProtection && (shouldActivate || data.strainLevel === 'high'),
+          lastShieldUsedDate: shouldActivate ? new Date().toISOString() : prev.lastShieldUsedDate,
+          checkInHistory: [newCheckIn, ...prev.checkInHistory],
+          lastActiveDate: getLocalDateString()
+        };
+      });
 
       setIsAssessing(false);
       return newCheckIn;
@@ -862,18 +886,32 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         adjustedGoals: fallbackGoals
       };
 
-      setState(prev => ({
-        ...prev,
-        isActive: isHigh,
-        activatedAt: isHigh ? new Date().toISOString() : prev.activatedAt,
-        reason: isHigh ? fallbackCheckIn.primaryFactors[0] : prev.reason,
-        strainLevel: strain,
-        energyScore: energy,
-        currentPlan: fallbackPlan,
-        adjustedGoals: isHigh ? fallbackGoals : DEFAULT_GOALS,
-        streakShieldActive: isHigh && prev.coachConfig.enableStreakProtection,
-        checkInHistory: [fallbackCheckIn, ...prev.checkInHistory]
-      }));
+      setState(prev => {
+        const rawFallback = isHigh
+          ? fallbackGoals
+          : prev.adjustedGoals.map(g => ({
+              ...g,
+              adjustedTarget: g.normalTarget || g.adjustedTarget,
+              isPausedOrReduced: false,
+              recoveryNote: undefined,
+              recoveryAdjustmentReason: undefined
+            }));
+        const mergedGoals = preserveLoggedGoalValues(rawFallback, prev.adjustedGoals);
+
+        return {
+          ...prev,
+          isActive: isHigh,
+          activatedAt: isHigh ? new Date().toISOString() : prev.activatedAt,
+          reason: isHigh ? fallbackCheckIn.primaryFactors[0] : prev.reason,
+          strainLevel: strain,
+          energyScore: energy,
+          currentPlan: fallbackPlan,
+          adjustedGoals: mergedGoals,
+          streakShieldActive: isHigh && prev.coachConfig.enableStreakProtection,
+          checkInHistory: [fallbackCheckIn, ...prev.checkInHistory],
+          lastActiveDate: getLocalDateString()
+        };
+      });
 
       return fallbackCheckIn;
     }
@@ -881,18 +919,22 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const enterRecoveryMode = (plan?: RecoveryPlan, customGoals?: DailyGoal[], reason?: string) => {
     const today = getLocalDateString();
-    setState(prev => ({
-      ...prev,
-      isActive: true,
-      activatedAt: new Date().toISOString(),
-      reason: reason || 'User requested low-effort recovery mode',
-      strainLevel: 'high',
-      energyScore: Math.min(prev.energyScore, 40),
-      currentPlan: plan || prev.currentPlan,
-      adjustedGoals: customGoals || prev.adjustedGoals,
-      streakShieldActive: prev.coachConfig.enableStreakProtection,
-      lastActiveDate: today
-    }));
+    setState(prev => {
+      const targetGoals = customGoals || prev.adjustedGoals;
+      const mergedGoals = preserveLoggedGoalValues(targetGoals, prev.adjustedGoals);
+      return {
+        ...prev,
+        isActive: true,
+        activatedAt: new Date().toISOString(),
+        reason: reason || 'User requested low-effort recovery mode',
+        strainLevel: 'high',
+        energyScore: Math.min(prev.energyScore, 40),
+        currentPlan: plan || prev.currentPlan,
+        adjustedGoals: mergedGoals,
+        streakShieldActive: prev.coachConfig.enableStreakProtection,
+        lastActiveDate: today
+      };
+    });
   };
 
   const exitRecoveryMode = (feedback?: { rating: 'much_better' | 'slightly_calmer' | 'still_drained'; notes?: string }) => {
@@ -910,14 +952,47 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         };
       }
 
+      // Restore baseline daily targets while PRESERVING currentValue (logged progress)
+      const restoredGoals = prev.adjustedGoals.map(g => ({
+        ...g,
+        adjustedTarget: g.normalTarget || g.adjustedTarget,
+        currentValue: g.currentValue, // Keep logged goal progress!
+        isPausedOrReduced: false,
+        recoveryNote: undefined,
+        recoveryAdjustmentReason: undefined
+      }));
+
+      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const updatedStreakHistory = { ...(prev.streakHistory || {}) };
+      const { currentStreak, longestStreak, todayStatus } = calculateStreakFromHistory(
+        updatedStreakHistory,
+        restoredGoals,
+        false, // isActive is now false
+        false, // streakShieldActive is now false
+        isPeriod
+      );
+
+      if (todayStatus !== 'inactive') {
+        const completedCount = restoredGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
+        updatedStreakHistory[today] = {
+          date: today,
+          status: todayStatus,
+          completedCount,
+          totalGoals: restoredGoals.length
+        };
+      }
+
       return {
         ...prev,
         isActive: false,
         strainLevel: 'normal',
         energyScore: feedback?.rating === 'much_better' ? 75 : feedback?.rating === 'slightly_calmer' ? 62 : 48,
-        adjustedGoals: DEFAULT_GOALS,
+        adjustedGoals: restoredGoals,
         streakShieldActive: false,
         checkInHistory: updatedHistory,
+        streakHistory: updatedStreakHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
         lastActiveDate: today
       };
     });
@@ -925,11 +1000,35 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const restoreOriginalGoals = () => {
     const today = getLocalDateString();
-    setState(prev => ({
-      ...prev,
-      adjustedGoals: DEFAULT_GOALS,
-      lastActiveDate: today
-    }));
+    setState(prev => {
+      const restoredGoals = prev.adjustedGoals.map(g => ({
+        ...g,
+        adjustedTarget: g.normalTarget || g.adjustedTarget,
+        currentValue: g.currentValue, // Keep logged goal progress!
+        isPausedOrReduced: false,
+        recoveryNote: undefined,
+        recoveryAdjustmentReason: undefined
+      }));
+
+      const isPeriod = Boolean(prev.menstrualState?.isPeriodActive);
+      const updatedStreakHistory = { ...(prev.streakHistory || {}) };
+      const { currentStreak, longestStreak } = calculateStreakFromHistory(
+        updatedStreakHistory,
+        restoredGoals,
+        prev.isActive,
+        prev.streakShieldActive,
+        isPeriod
+      );
+
+      return {
+        ...prev,
+        adjustedGoals: restoredGoals,
+        streakHistory: updatedStreakHistory,
+        currentStreakDays: currentStreak,
+        longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak),
+        lastActiveDate: today
+      };
+    });
   };
 
   const setGoalValue = (goalId: string, value: number) => {
