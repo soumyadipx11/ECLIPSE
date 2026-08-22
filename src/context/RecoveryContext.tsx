@@ -707,40 +707,86 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
 
       const data = result.data;
+      const sensitivity = state.coachConfig.highStrainSensitivity || 'medium';
+      const autoActivate = state.coachConfig.autoActivateRecovery;
+      const reductionPct = state.coachConfig.goalReductionPercentage ?? 70;
+      const reductionFactor = reductionPct / 100;
+
+      const strainLevel = data.strainLevel || 'normal';
+      const isHighStrain = data.isHighStrain || strainLevel === 'high';
+      const isModerateStrain = strainLevel === 'moderate';
+
+      // Evaluate strain sensitivity threshold
+      let meetsSensitivityThreshold = false;
+      if (sensitivity === 'high') {
+        meetsSensitivityThreshold = isHighStrain || isModerateStrain || (data.energyScore !== undefined && data.energyScore < 65);
+      } else if (sensitivity === 'medium') {
+        meetsSensitivityThreshold = isHighStrain || (isModerateStrain && (data.energyScore === undefined || data.energyScore < 55));
+      } else {
+        meetsSensitivityThreshold = isHighStrain || (data.energyScore !== undefined && data.energyScore < 35);
+      }
+
+      const shouldActivate = autoActivate ? meetsSensitivityThreshold : false;
+
+      // Calculate adjusted daily goals strictly applying the user's Goal Reduction Percentage
+      const rawGoals = data.adjustedGoals && data.adjustedGoals.length > 0 ? data.adjustedGoals : state.adjustedGoals;
+      const calculatedGoals = rawGoals.map(g => {
+        const isStrenuous = g.category === 'movement' || g.category === 'exercise' || g.category === 'focus';
+        if (meetsSensitivityThreshold && isStrenuous) {
+          const normal = g.normalTarget || (g.category === 'movement' ? 10000 : g.category === 'exercise' ? 45 : 6.0);
+          if (g.category === 'exercise' && (g.adjustedTarget === 0 || strainLevel === 'high')) {
+            return {
+              ...g,
+              normalTarget: normal,
+              adjustedTarget: 0,
+              isPausedOrReduced: true,
+              recoveryNote: g.recoveryNote || `Workout paused (${reductionPct}% reduction policy active).`
+            };
+          }
+          const target = g.category === 'focus'
+            ? Math.max(1, Math.round(normal * (1 - reductionFactor) * 10) / 10)
+            : Math.max(1000, Math.round(normal * (1 - reductionFactor)));
+          return {
+            ...g,
+            normalTarget: normal,
+            adjustedTarget: target,
+            isPausedOrReduced: true,
+            recoveryNote: g.recoveryNote || `Target reduced by ${reductionPct}% (${sensitivity} strain sensitivity).`
+          };
+        }
+        return g;
+      });
+
       const newCheckIn: EnergyCheckIn = {
         id: 'chk_' + Date.now(),
         userId: user?.uid || 'guest',
         timestamp: new Date().toISOString(),
         inputMode: mode,
         rawInput: input,
-        strainLevel: data.strainLevel,
+        strainLevel: meetsSensitivityThreshold ? (data.strainLevel || 'high') : 'normal',
         energyScore: data.energyScore,
         primaryFactors: data.primaryFactors || ['Physical & Mental Fatigue'],
         emotionalState: data.emotionalState || 'High strain response',
         aiAssessment: data.aiAssessment || 'Nervous system strain detected.',
         aiEmpathyMessage: data.aiEmpathyMessage || 'Taking rest right now is vital biological protection.',
         recoveryPlan: data.recoveryPlan,
-        adjustedGoals: data.adjustedGoals
+        adjustedGoals: calculatedGoals
       };
 
-      const shouldActivate = state.coachConfig.autoActivateRecovery
-        ? (data.isHighStrain || data.strainLevel === 'high' || data.strainLevel === 'moderate')
-        : (data.isHighStrain || data.strainLevel === 'high');
-
       setState(prev => {
-        const nextGoals = data.adjustedGoals && data.adjustedGoals.length > 0 
-          ? preserveLoggedGoalValues(data.adjustedGoals, prev.adjustedGoals)
+        const nextGoals = calculatedGoals && calculatedGoals.length > 0 
+          ? preserveLoggedGoalValues(calculatedGoals, prev.adjustedGoals)
           : prev.adjustedGoals;
         return {
           ...prev,
           isActive: shouldActivate ? true : prev.isActive,
           activatedAt: shouldActivate ? new Date().toISOString() : prev.activatedAt,
           reason: shouldActivate ? (data.primaryFactors?.[0] || 'High strain detected') : prev.reason,
-          strainLevel: data.strainLevel,
+          strainLevel: meetsSensitivityThreshold ? (data.strainLevel || 'high') : 'normal',
           energyScore: data.energyScore,
           currentPlan: data.recoveryPlan || prev.currentPlan,
           adjustedGoals: nextGoals,
-          streakShieldActive: state.coachConfig.enableStreakProtection && (shouldActivate || data.strainLevel === 'high'),
+          streakShieldActive: state.coachConfig.enableStreakProtection && (shouldActivate || meetsSensitivityThreshold),
           lastShieldUsedDate: shouldActivate ? new Date().toISOString() : prev.lastShieldUsedDate,
           checkInHistory: [newCheckIn, ...prev.checkInHistory],
           lastActiveDate: getLocalDateString()
@@ -753,14 +799,28 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsAssessing(false);
       console.warn("Falling back to local heuristic analysis:", err);
       
-      // Resilient local fallback
+      const sensitivity = state.coachConfig.highStrainSensitivity || 'medium';
+      const autoActivate = state.coachConfig.autoActivateRecovery;
+      const reductionPct = state.coachConfig.goalReductionPercentage ?? 70;
+      const reductionFactor = reductionPct / 100;
+
+      // Resilient local fallback using configured strain sensitivity
       const lower = input.toLowerCase();
       const isExam = lower.includes('exam') || lower.includes('test') || lower.includes('deadline');
       const isHeadache = lower.includes('headache') || lower.includes('migraine') || lower.includes('temple');
       const isSleepDeprived = lower.includes('sleep') || lower.includes('tired') || lower.includes('exhausted') || lower.includes('3 hour') || lower.includes('2 hour');
       const isSick = lower.includes('sick') || lower.includes('fever') || lower.includes('nausea') || lower.includes('dizzy');
-      
-      const isHigh = isExam || isHeadache || isSleepDeprived || isSick;
+      const isMildFatigue = lower.includes('tired') || lower.includes('fatigue') || lower.includes('stress');
+
+      let isHigh = false;
+      if (sensitivity === 'high') {
+        isHigh = isExam || isHeadache || isSleepDeprived || isSick || isMildFatigue;
+      } else if (sensitivity === 'medium') {
+        isHigh = isExam || isHeadache || isSleepDeprived || isSick;
+      } else { // low sensitivity
+        isHigh = isSick || (isHeadache && isSleepDeprived) || lower.includes('fever') || lower.includes('severe');
+      }
+
       const strain: StrainLevel = isHigh ? 'high' : 'normal';
       const energy = isHigh ? 28 : 82;
 
@@ -807,68 +867,26 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         ]
       };
 
-      const fallbackGoals: DailyGoal[] = [
-        {
-          id: 'goal-movement',
-          title: 'Daily Movement',
-          name: 'Daily Movement',
-          category: 'movement',
-          normalTarget: 10000,
-          adjustedTarget: 2000,
-          currentValue: 850,
-          unit: 'steps',
-          isPausedOrReduced: true,
-          recoveryNote: 'Reduced to gentle restorative steps. No cardio strain.'
-        },
-        {
-          id: 'goal-exercise',
-          title: 'Cardio / Workout',
-          name: 'Cardio / Workout',
-          category: 'exercise',
-          normalTarget: 45,
-          adjustedTarget: 0,
-          currentValue: 0,
-          unit: 'mins',
-          isPausedOrReduced: true,
-          recoveryNote: 'Paused. Protects cardiovascular and immune system.'
-        },
-        {
-          id: 'goal-sleep',
-          title: 'Sleep Duration',
-          name: 'Sleep Duration',
-          category: 'sleep',
-          normalTarget: 7.5,
-          adjustedTarget: 9.0,
-          currentValue: 3.0,
-          unit: 'hours',
-          isPausedOrReduced: false,
-          recoveryNote: 'Increased target to pay back sleep debt.'
-        },
-        {
-          id: 'goal-hydration',
-          title: 'Hydration Intake',
-          name: 'Hydration Intake',
-          category: 'hydration',
-          normalTarget: 2000,
-          adjustedTarget: 2500,
-          currentValue: 800,
-          unit: 'ml',
-          isPausedOrReduced: false,
-          recoveryNote: 'Increased fluids to relieve tension headache.'
-        },
-        {
-          id: 'goal-focus',
-          title: 'Screen & Deep Focus',
-          name: 'Screen & Deep Focus',
-          category: 'focus',
-          normalTarget: 6.0,
-          adjustedTarget: 2.0,
-          currentValue: 1.5,
-          unit: 'hours',
-          isPausedOrReduced: true,
-          recoveryNote: 'Capped to prevent migraine & visual exhaustion.'
+      const baseGoals = state.adjustedGoals && state.adjustedGoals.length > 0 ? state.adjustedGoals : DEFAULT_GOALS;
+      const fallbackGoals: DailyGoal[] = baseGoals.map(g => {
+        const isStrenuous = g.category === 'movement' || g.category === 'exercise' || g.category === 'focus';
+        if (isHigh && isStrenuous) {
+          const normal = g.normalTarget || (g.category === 'movement' ? 10000 : g.category === 'exercise' ? 45 : 6.0);
+          const target = g.category === 'exercise' && isSick
+            ? 0
+            : g.category === 'focus'
+            ? Math.max(1, Math.round(normal * (1 - reductionFactor) * 10) / 10)
+            : Math.max(1000, Math.round(normal * (1 - reductionFactor)));
+          return {
+            ...g,
+            normalTarget: normal,
+            adjustedTarget: target,
+            isPausedOrReduced: true,
+            recoveryNote: `Reduced by ${reductionPct}% according to your strain policy.`
+          };
         }
-      ];
+        return g;
+      });
 
       const fallbackCheckIn: EnergyCheckIn = {
         id: 'chk_' + Date.now(),
@@ -1569,13 +1587,46 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const updateCoachConfig = (newConfig: Partial<CoachTriggerConfig>) => {
-    setState(prev => ({
-      ...prev,
-      coachConfig: {
+    setState(prev => {
+      const mergedConfig = {
         ...prev.coachConfig,
         ...newConfig
+      };
+
+      let updatedGoals = prev.adjustedGoals;
+      if (prev.isActive && newConfig.goalReductionPercentage !== undefined) {
+        const factor = newConfig.goalReductionPercentage / 100;
+        updatedGoals = prev.adjustedGoals.map(g => {
+          const isStrenuous = g.category === 'movement' || g.category === 'exercise' || g.category === 'focus';
+          if (isStrenuous && g.isPausedOrReduced) {
+            const normal = g.normalTarget || (g.category === 'movement' ? 10000 : g.category === 'exercise' ? 45 : 6.0);
+            if (g.category === 'exercise' && g.adjustedTarget === 0) {
+              return {
+                ...g,
+                recoveryNote: `Workout paused (${newConfig.goalReductionPercentage}% policy active).`
+              };
+            }
+            const target = g.category === 'focus'
+              ? Math.max(1, Math.round(normal * (1 - factor) * 10) / 10)
+              : Math.max(1000, Math.round(normal * (1 - factor)));
+            return {
+              ...g,
+              normalTarget: normal,
+              adjustedTarget: target,
+              isPausedOrReduced: true,
+              recoveryNote: `Target reduced by ${newConfig.goalReductionPercentage}% to protect energy.`
+            };
+          }
+          return g;
+        });
       }
-    }));
+
+      return {
+        ...prev,
+        coachConfig: mergedConfig,
+        adjustedGoals: updatedGoals
+      };
+    });
   };
 
   const triggerPresetScenario = async (scenarioKey: string): Promise<EnergyCheckIn> => {

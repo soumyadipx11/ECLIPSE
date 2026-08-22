@@ -1204,8 +1204,19 @@ apiRouter.post("/recovery/assess-checkin", authedRateLimitMiddleware, async (req
     const prompt = `You are the lead clinical wellness & triage AI for ArovedaAI.
 Evaluate the user's quick health/energy check-in. Detect whether they are experiencing high strain, acute exhaustion, sleep deprivation, stress, illness, or normal baseline energy.
 ${userContext}
-Strain Sensitivity Setting: ${sensitivity}
-Goal Reduction Percentage Setting: ${goalReductionFactor}%
+
+TRIAGE POLICY RULES TO STRICTLY ENFORCE:
+1. Strain Sensitivity Setting: "${sensitivity}"
+   - "high" sensitivity: Trigger HIGH or MODERATE strain for even MILD fatigue, light stress, minor sleep deficit (5-6h), or light tension. Set isHighStrain = true, recommendedMode = "recovery", energyScore < 65.
+   - "medium" sensitivity: Trigger HIGH or MODERATE strain for MODERATE fatigue, acute headaches, sleep deficit (<5h), exam anxiety, or illness. Set isHighStrain = true, recommendedMode = "recovery", energyScore < 50.
+   - "low" sensitivity: Trigger HIGH strain ONLY for SEVERE physical exhaustion, acute fever, or intense illness. Mild/moderate fatigue MUST be classified as NORMAL strain (isHighStrain = false, recommendedMode = "normal", energyScore >= 70).
+
+2. Goal Reduction Factor Setting: ${goalReductionFactor}%
+   - When strain is HIGH or MODERATE, reduce strenuous daily targets (movement steps, workout minutes, deep focus hours) by EXACTLY ${goalReductionFactor}%.
+   - Mathematical formula: adjustedTarget = Math.round(normalTarget * (1 - ${goalReductionFactor} / 100)).
+   - Exception: For workouts under acute fever/severe strain, adjustedTarget can be 0 (paused).
+   - For restorative goals (sleep, hydration), maintain or increase normalTarget.
+   - Set isPausedOrReduced = true for reduced goals, with a brief recoveryNote citing the ${goalReductionFactor}% reduction policy.
 
 User Check-in:
 "${scrubPiiFromText(checkInText)}"
@@ -1213,10 +1224,10 @@ User Check-in:
 ${goalsContext}
 
 Instructions:
-1. Identify if this indicates HIGH STRAIN (e.g. headaches, poor sleep, exam anxiety, nausea, fever, burnout, acute stress), MODERATE STRAIN, or NORMAL.
-2. Formulate a concise, compassionate AI assessment (2 sentences max) reassuring the user that pausing is essential biology.
-3. Design a 3-step, 3-minute guided recovery activity (60s per step) tailored specifically to their symptoms.
-4. Adjust their daily goals (reduce strenuous workout targets, lower movement steps, increase hydration/sleep goals) with brief recovery notes.
+1. Evaluate strain according to Strain Sensitivity Setting "${sensitivity}".
+2. Calculate adjusted goal targets strictly applying the ${goalReductionFactor}% Goal Reduction Factor.
+3. Formulate a concise, compassionate AI assessment (2 sentences max) reassuring the user that pausing is essential biology.
+4. Design a 3-step, 3-minute guided recovery activity (60s per step) tailored specifically to their symptoms.
 
 Return ONLY a JSON object matching this structure:
 {
