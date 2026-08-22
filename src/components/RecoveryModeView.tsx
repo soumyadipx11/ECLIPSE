@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRecovery } from '../context/RecoveryContext';
+import { useRecovery, GOAL_LIMITS } from '../context/RecoveryContext';
 import { DailyGoal } from '../types';
 import { 
   HeartPulse, 
@@ -14,21 +14,21 @@ import {
   Tv, 
   Check, 
   Plus, 
-  Minus,
-  Edit2,
+  Minus, 
+  Edit2, 
   ArrowLeft, 
   RefreshCw, 
   AlertCircle, 
   Coffee, 
   Smile, 
-  Sun,
-  Layers,
-  Clock,
-  Cloud,
-  CheckCheck,
-  RotateCcw
+  Sun, 
+  Layers, 
+  Clock, 
+  Cloud, 
+  CheckCheck, 
+  RotateCcw 
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface RecoveryModeViewProps {
   onNavigateToDashboard: () => void;
@@ -350,6 +350,9 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
   const [inputValue, setInputValue] = useState<string>(goal.currentValue.toString());
   const [targetValue, setTargetValue] = useState<string>(goal.adjustedTarget.toString());
   const [isEditingTarget, setIsEditingTarget] = useState(false);
+  const [limitWarning, setLimitWarning] = useState<string | null>(null);
+
+  const limits = GOAL_LIMITS[goal.category] || { maxTarget: 10000, minTarget: 1, stepDelta: 1, isDecimal: false };
 
   useEffect(() => {
     setInputValue(goal.currentValue.toString());
@@ -368,27 +371,65 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
   const stepDelta = goal.category === 'movement' ? 500 : goal.category === 'hydration' ? 250 : isDecimal ? 0.5 : 15;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setInputValue(val);
-    if (val !== '' && !isNaN(Number(val))) {
-      onUpdateValue(Number(val));
+    const raw = e.target.value;
+    if (raw === '') {
+      setInputValue('');
+      return;
     }
+    const num = Number(raw);
+    if (isNaN(num)) return;
+
+    // Prevent entering value larger than target limit
+    if (num > goal.adjustedTarget) {
+      setInputValue(goal.adjustedTarget.toString());
+      onUpdateValue(goal.adjustedTarget);
+      setLimitWarning(`Capped at target limit (${goal.adjustedTarget} ${goal.unit})`);
+      setTimeout(() => setLimitWarning(null), 2500);
+      return;
+    }
+
+    if (num < 0) {
+      setInputValue('0');
+      onUpdateValue(0);
+      return;
+    }
+
+    setLimitWarning(null);
+    setInputValue(raw);
+    onUpdateValue(num);
   };
 
   const handleInputBlur = () => {
     if (inputValue === '' || isNaN(Number(inputValue))) {
       setInputValue(goal.currentValue.toString());
     } else {
-      onUpdateValue(Math.max(0, Number(inputValue)));
+      const num = Number(inputValue);
+      const clamped = Math.min(goal.adjustedTarget, Math.max(0, num));
+      setInputValue(clamped.toString());
+      onUpdateValue(clamped);
     }
   };
 
   const handleTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setTargetValue(val);
-    if (val !== '' && !isNaN(Number(val))) {
-      onUpdateTarget(Number(val));
+    const raw = e.target.value;
+    if (raw === '') {
+      setTargetValue('');
+      return;
     }
+    const num = Number(raw);
+    if (isNaN(num)) return;
+
+    if (num > limits.maxTarget) {
+      setTargetValue(limits.maxTarget.toString());
+      onUpdateTarget(limits.maxTarget);
+      setLimitWarning(`Max limit is ${limits.maxTarget} ${goal.unit}`);
+      setTimeout(() => setLimitWarning(null), 2500);
+      return;
+    }
+
+    setLimitWarning(null);
+    setTargetValue(raw);
+    onUpdateTarget(num);
   };
 
   const handleTargetBlur = () => {
@@ -396,7 +437,10 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
     if (targetValue === '' || isNaN(Number(targetValue))) {
       setTargetValue(goal.adjustedTarget.toString());
     } else {
-      onUpdateTarget(Math.max(0, Number(targetValue)));
+      const num = Number(targetValue);
+      const clamped = Math.min(limits.maxTarget, Math.max(limits.minTarget, num));
+      setTargetValue(clamped.toString());
+      onUpdateTarget(clamped);
     }
   };
 
@@ -462,6 +506,21 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
         </div>
       </div>
 
+      {/* Transient Limit Warning */}
+      <AnimatePresence>
+        {limitWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-lg px-2 py-1 flex items-center gap-1"
+          >
+            <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+            <span>{limitWarning}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Typing Input & Quick Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
         {/* Type progress number directly */}
@@ -474,6 +533,7 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
               type="number"
               step={isDecimal ? "0.1" : "1"}
               min="0"
+              max={goal.adjustedTarget}
               value={inputValue}
               onChange={handleInputChange}
               onBlur={handleInputBlur}
@@ -487,7 +547,8 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
               <input
                 type="number"
                 step={isDecimal ? "0.1" : "1"}
-                min="0"
+                min={limits.minTarget}
+                max={limits.maxTarget}
                 autoFocus
                 value={targetValue}
                 onChange={handleTargetChange}
@@ -513,8 +574,9 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
           <button
             type="button"
             onClick={() => onToggleStep(-stepDelta)}
+            disabled={goal.currentValue <= 0}
             title={`Decrease by ${stepDelta} ${goal.unit}`}
-            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition-all text-xs cursor-pointer flex items-center gap-1"
+            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-300 font-bold transition-all text-xs cursor-pointer flex items-center gap-1"
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
@@ -522,8 +584,9 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
           <button
             type="button"
             onClick={() => onToggleStep(stepDelta)}
-            title={`Increase by ${stepDelta} ${goal.unit}`}
-            className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-all text-xs cursor-pointer flex items-center gap-1 shadow-sm shadow-emerald-500/20"
+            disabled={goal.currentValue >= goal.adjustedTarget}
+            title={goal.currentValue >= goal.adjustedTarget ? `Target limit reached (${goal.adjustedTarget} ${goal.unit})` : `Increase by ${stepDelta} ${goal.unit}`}
+            className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed text-slate-950 font-bold transition-all text-xs cursor-pointer flex items-center gap-1 shadow-sm shadow-emerald-500/20"
           >
             <Plus className="w-3.5 h-3.5" />
             <span className="text-[10px] hidden sm:inline">+{stepDelta}</span>

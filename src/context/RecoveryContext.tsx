@@ -23,6 +23,14 @@ const DEFAULT_COACH_CONFIG: CoachTriggerConfig = {
   customSupportMessage: 'Self-compassion is a high-performance skill. When your physiological markers indicate strain, lowering output protects longevity.'
 };
 
+export const GOAL_LIMITS: Record<string, { maxTarget: number; minTarget: number; stepDelta: number; isDecimal: boolean; label: string }> = {
+  movement: { maxTarget: 100000, minTarget: 500, stepDelta: 500, isDecimal: false, label: 'Steps (Max 100k)' },
+  exercise: { maxTarget: 720, minTarget: 5, stepDelta: 15, isDecimal: false, label: 'Minutes (Max 12h / 720m)' },
+  sleep: { maxTarget: 24, minTarget: 1, stepDelta: 0.5, isDecimal: true, label: 'Hours (Max 24h)' },
+  hydration: { maxTarget: 10000, minTarget: 250, stepDelta: 250, isDecimal: false, label: 'Milliliters (Max 10L / 10k ml)' },
+  focus: { maxTarget: 24, minTarget: 0.5, stepDelta: 0.5, isDecimal: true, label: 'Hours (Max 24h)' },
+};
+
 const DEFAULT_GOALS: DailyGoal[] = [
   {
     id: 'goal-movement',
@@ -232,6 +240,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [user?.uid]);
 
   // Persist local state updates to Firestore & localStorage
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const syncToCloud = useCallback(async (stateToSave: RecoveryState) => {
     if (!user?.uid) return;
     try {
@@ -258,8 +268,19 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     if (user?.uid) {
-      syncToCloud(state);
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+      syncTimeoutRef.current = setTimeout(() => {
+        syncToCloud(state);
+      }, 300);
     }
+
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
   }, [state, user?.uid, syncToCloud]);
 
   const openCheckInModal = () => setActiveCheckInModal(true);
@@ -532,14 +553,20 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const setGoalValue = (goalId: string, value: number) => {
-    const safeVal = Math.max(0, isNaN(value) ? 0 : Number(value));
+    const rawVal = isNaN(value) ? 0 : Number(value);
     setState(prev => ({
       ...prev,
       adjustedGoals: prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
+          // Progress value cannot be less than 0 or greater than the goal's target limit
+          const maxLimit = Math.max(0, g.adjustedTarget);
+          const clampedVal = Math.min(maxLimit, Math.max(0, rawVal));
+          // Precision round if decimal (sleep / focus)
+          const isDecimal = g.category === 'sleep' || g.category === 'focus';
+          const finalVal = isDecimal ? Math.round(clampedVal * 10) / 10 : Math.round(clampedVal);
           return {
             ...g,
-            currentValue: safeVal
+            currentValue: finalVal
           };
         }
         return g;
@@ -548,14 +575,21 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const setGoalTarget = (goalId: string, target: number) => {
-    const safeTarget = Math.max(0, isNaN(target) ? 0 : Number(target));
+    const rawTarget = isNaN(target) ? 0 : Number(target);
     setState(prev => ({
       ...prev,
       adjustedGoals: prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
+          const limits = GOAL_LIMITS[g.category] || { maxTarget: 10000, minTarget: 1 };
+          const clampedTarget = Math.min(limits.maxTarget, Math.max(limits.minTarget, rawTarget));
+          const isDecimal = g.category === 'sleep' || g.category === 'focus';
+          const finalTarget = isDecimal ? Math.round(clampedTarget * 10) / 10 : Math.round(clampedTarget);
+          // If current progress value exceeds the newly adjusted target limit, clamp currentValue to target
+          const clampedCurrent = Math.min(finalTarget, g.currentValue);
           return {
             ...g,
-            adjustedTarget: safeTarget
+            adjustedTarget: finalTarget,
+            currentValue: clampedCurrent
           };
         }
         return g;
@@ -568,10 +602,15 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       adjustedGoals: prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
-          return {
-            ...g,
-            ...updates
-          };
+          const updated = { ...g, ...updates };
+          if (typeof updated.adjustedTarget === 'number') {
+            const limits = GOAL_LIMITS[updated.category] || { maxTarget: 10000, minTarget: 1 };
+            updated.adjustedTarget = Math.min(limits.maxTarget, Math.max(limits.minTarget, updated.adjustedTarget));
+          }
+          if (typeof updated.currentValue === 'number') {
+            updated.currentValue = Math.min(updated.adjustedTarget, Math.max(0, updated.currentValue));
+          }
+          return updated;
         }
         return g;
       })
@@ -584,10 +623,14 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       adjustedGoals: prev.adjustedGoals.map(g => {
         if (g.id === goalId) {
           const step = delta ?? (g.category === 'movement' ? 500 : g.category === 'hydration' ? 250 : 1);
-          const nextVal = Math.max(0, g.currentValue + step);
+          const rawNext = g.currentValue + step;
+          // Clamp progress value between 0 and adjustedTarget limit
+          const nextVal = Math.min(g.adjustedTarget, Math.max(0, rawNext));
+          const isDecimal = g.category === 'sleep' || g.category === 'focus';
+          const finalVal = isDecimal ? Math.round(nextVal * 10) / 10 : Math.round(nextVal);
           return {
             ...g,
-            currentValue: nextVal
+            currentValue: finalVal
           };
         }
         return g;

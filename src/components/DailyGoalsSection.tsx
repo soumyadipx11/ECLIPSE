@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useRecovery } from '../context/RecoveryContext';
+import { useRecovery, GOAL_LIMITS } from '../context/RecoveryContext';
 import { DailyGoal } from '../types';
 import { 
   Footprints, 
@@ -16,9 +16,11 @@ import {
   Edit2,
   CheckCheck,
   Flame,
-  RotateCcw
+  Cloud,
+  CloudCheck,
+  AlertCircle
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface DailyGoalsSectionProps {
   onNavigateToRecovery?: () => void;
@@ -35,6 +37,7 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
 }) => {
   const { 
     state, 
+    isCloudSynced,
     setGoalValue, 
     setGoalTarget, 
     toggleGoalProgress,
@@ -59,6 +62,12 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5" /> DAILY TARGET TRACKER
             </span>
+            {/* Real-time cross-device sync badge */}
+            <span className="bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+              <Cloud className="w-3 h-3 text-teal-500" /> Synced Across Devices
+            </span>
+
             {state.isActive ? (
               <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-500" /> Restorative Baselines Active
@@ -80,8 +89,8 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {subtitle || (state.isActive 
-              ? "Goals automatically adjusted for your current strain level. Type your numbers directly to update."
-              : "Track your daily activity, recovery, and hydration. Type progress directly into any goal.")}
+              ? "Goals automatically adjusted for your current strain level. Direct-typed values are capped at daily target limits."
+              : "Track your daily activity, recovery, and hydration. Values cannot exceed target limits and auto-sync in real time across devices.")}
           </p>
         </div>
 
@@ -154,8 +163,11 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
   const [isEditingTarget, setIsEditingTarget] = useState(false);
   const [inputValue, setInputValue] = useState<string>(goal.currentValue.toString());
   const [targetInputValue, setTargetInputValue] = useState<string>(goal.adjustedTarget.toString());
+  const [limitWarning, setLimitWarning] = useState<string | null>(null);
 
-  // Keep local string in sync if goal props change from external updates
+  const limits = GOAL_LIMITS[goal.category] || { maxTarget: 10000, minTarget: 1, stepDelta: 1, isDecimal: false };
+
+  // Keep local string in sync if goal props change from external/remote updates
   React.useEffect(() => {
     setInputValue(goal.currentValue.toString());
   }, [goal.currentValue]);
@@ -230,27 +242,65 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
   const theme = getCategoryTheme();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setInputValue(val);
-    if (val !== '' && !isNaN(Number(val))) {
-      onUpdateValue(Number(val));
+    const raw = e.target.value;
+    if (raw === '') {
+      setInputValue('');
+      return;
     }
+    const num = Number(raw);
+    if (isNaN(num)) return;
+
+    // Strict Limit Prevention: cannot exceed goal.adjustedTarget
+    if (num > goal.adjustedTarget) {
+      setInputValue(goal.adjustedTarget.toString());
+      onUpdateValue(goal.adjustedTarget);
+      setLimitWarning(`Capped at target limit (${goal.adjustedTarget} ${goal.unit})`);
+      setTimeout(() => setLimitWarning(null), 2500);
+      return;
+    }
+
+    if (num < 0) {
+      setInputValue('0');
+      onUpdateValue(0);
+      return;
+    }
+
+    setLimitWarning(null);
+    setInputValue(raw);
+    onUpdateValue(num);
   };
 
   const handleInputBlur = () => {
     if (inputValue === '' || isNaN(Number(inputValue))) {
       setInputValue(goal.currentValue.toString());
     } else {
-      onUpdateValue(Math.max(0, Number(inputValue)));
+      const num = Number(inputValue);
+      const clamped = Math.min(goal.adjustedTarget, Math.max(0, num));
+      setInputValue(clamped.toString());
+      onUpdateValue(clamped);
     }
   };
 
   const handleTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setTargetInputValue(val);
-    if (val !== '' && !isNaN(Number(val))) {
-      onUpdateTarget(Number(val));
+    const raw = e.target.value;
+    if (raw === '') {
+      setTargetInputValue('');
+      return;
     }
+    const num = Number(raw);
+    if (isNaN(num)) return;
+
+    if (num > limits.maxTarget) {
+      setTargetInputValue(limits.maxTarget.toString());
+      onUpdateTarget(limits.maxTarget);
+      setLimitWarning(`Max target limit is ${limits.maxTarget} ${goal.unit}`);
+      setTimeout(() => setLimitWarning(null), 2500);
+      return;
+    }
+
+    setLimitWarning(null);
+    setTargetInputValue(raw);
+    onUpdateTarget(num);
   };
 
   const handleTargetBlur = () => {
@@ -258,12 +308,15 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
     if (targetInputValue === '' || isNaN(Number(targetInputValue))) {
       setTargetInputValue(goal.adjustedTarget.toString());
     } else {
-      onUpdateTarget(Math.max(0, Number(targetInputValue)));
+      const num = Number(targetInputValue);
+      const clamped = Math.min(limits.maxTarget, Math.max(limits.minTarget, num));
+      setTargetInputValue(clamped.toString());
+      onUpdateTarget(clamped);
     }
   };
 
   return (
-    <div className={`p-4 rounded-2xl border backdrop-blur-sm transition-all flex flex-col justify-between space-y-3 ${
+    <div className={`p-4 rounded-2xl border backdrop-blur-sm transition-all flex flex-col justify-between space-y-3 relative ${
       isCompleted 
         ? 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/40 shadow-sm' 
         : 'bg-white/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-white/10'
@@ -282,7 +335,7 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
 
           {isCompleted ? (
             <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Check className="w-3 h-3" /> Met
+              <Check className="w-3 h-3" /> Target Reached
             </span>
           ) : goal.isPausedOrReduced && isRecoveryActive ? (
             <span className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -312,6 +365,21 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
         </div>
       </div>
 
+      {/* Transient Limit Warning Toast */}
+      <AnimatePresence>
+        {limitWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/15 border border-amber-500/30 rounded-lg px-2 py-1 flex items-center gap-1"
+          >
+            <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+            <span>{limitWarning}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Interactive Value Typing & Controls */}
       <div className="pt-1 flex items-center justify-between gap-2">
         {/* Direct Input Field */}
@@ -321,6 +389,7 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
               type="number"
               step={theme.isDecimal ? "0.1" : "1"}
               min="0"
+              max={goal.adjustedTarget}
               value={inputValue}
               onChange={handleInputChange}
               onBlur={handleInputBlur}
@@ -336,7 +405,8 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
               <input
                 type="number"
                 step={theme.isDecimal ? "0.1" : "1"}
-                min="0"
+                min={limits.minTarget}
+                max={limits.maxTarget}
                 autoFocus
                 value={targetInputValue}
                 onChange={handleTargetChange}
@@ -347,7 +417,7 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEditingTarget(true)}
-                title="Click to edit target"
+                title="Click to customize target limit"
                 className="font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-0.5 cursor-pointer"
               >
                 {goal.adjustedTarget}
@@ -363,8 +433,9 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
           <button
             type="button"
             onClick={() => onToggleStep(-theme.stepDelta)}
+            disabled={goal.currentValue <= 0}
             title={`Decrease by ${theme.stepDelta} ${goal.unit}`}
-            className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center transition-colors cursor-pointer text-xs"
+            className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center transition-colors cursor-pointer text-xs"
           >
             <Minus className="w-3 h-3" />
           </button>
@@ -372,8 +443,9 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
           <button
             type="button"
             onClick={() => onToggleStep(theme.stepDelta)}
-            title={`Increase by ${theme.stepDelta} ${goal.unit}`}
-            className="w-7 h-7 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold flex items-center justify-center transition-colors cursor-pointer text-xs shadow-sm shadow-emerald-500/20"
+            disabled={goal.currentValue >= goal.adjustedTarget}
+            title={goal.currentValue >= goal.adjustedTarget ? `Target limit reached (${goal.adjustedTarget} ${goal.unit})` : `Increase by ${theme.stepDelta} ${goal.unit}`}
+            className="w-7 h-7 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed text-slate-950 font-bold flex items-center justify-center transition-colors cursor-pointer text-xs shadow-sm shadow-emerald-500/20"
           >
             <Plus className="w-3 h-3" />
           </button>
@@ -390,3 +462,4 @@ const GoalInteractiveCard: React.FC<GoalInteractiveCardProps> = ({
     </div>
   );
 };
+

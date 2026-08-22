@@ -38,7 +38,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 // Safely attempt to load local firebase-applet-config.json if present (AI Studio runtime)
-const configModules = import.meta.glob('../../firebase-applet-config.json', { eager: true });
+const configModules = import.meta.glob(['/firebase-applet-config.json', '../../firebase-applet-config.json', '../../*firebase*.json'], { eager: true });
 const rawConfig = Object.values(configModules)[0] as Record<string, unknown> | undefined;
 const configJson: Record<string, string> = (rawConfig?.default || rawConfig || {}) as Record<string, string>;
 
