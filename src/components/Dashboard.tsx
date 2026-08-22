@@ -26,6 +26,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceL
 import { useRecovery } from '../context/RecoveryContext';
 import { DailyGoalsSection } from './DailyGoalsSection';
 import { StreakCalendar } from './StreakCalendar';
+import { MenstrualCycleTracker } from './MenstrualCycleTracker';
 
 import { normalizeBiomarkerName } from '../utils/biomarkerNormalizer';
 
@@ -260,6 +261,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Daily Restorative & Wellness Goals Tracker */}
       <DailyGoalsSection onNavigateToRecovery={() => onNavigate('recovery')} />
+
+      {/* Menstrual Cycle & Wellness Tracker (Female Patients) */}
+      <MenstrualCycleTracker />
 
       {/* Daily Streak & GitHub-Style Heatmap Calendar */}
       <StreakCalendar onNavigateToRecovery={() => onNavigate('recovery')} />

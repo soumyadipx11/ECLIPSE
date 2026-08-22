@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StreakCalendar } from './StreakCalendar';
+import { MenstrualCycleTracker } from './MenstrualCycleTracker';
+import { MenstrualCycleTracker } from './MenstrualCycleTracker';
 
 interface RecoveryModeViewProps {
   onNavigateToDashboard: () => void;
@@ -460,6 +462,9 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Menstrual Period Tracking & Goal Adjustments */}
+      <MenstrualCycleTracker />
 
       {/* GitHub-style Streak Calendar Heatmap */}
       <StreakCalendar />

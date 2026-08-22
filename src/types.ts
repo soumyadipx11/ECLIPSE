@@ -247,9 +247,55 @@ export interface RecoverySessionLog {
   streakProtected: boolean;
 }
 
+export type MenstrualFlowLevel = 'spotting' | 'light' | 'medium' | 'heavy';
+
+export interface MenstrualPeriodEntry {
+  id: string;
+  onsetDate: string; // YYYY-MM-DD
+  offsetDate?: string; // YYYY-MM-DD (undefined if active)
+  durationDays?: number;
+  cycleLengthDays?: number; // Days from previous onset to this onset
+  flowLevel: MenstrualFlowLevel;
+  symptoms: string[];
+  notes?: string;
+  isOngoing: boolean;
+}
+
+export type MenstrualCycleRegularityStatus = 
+  | 'regular' 
+  | 'irregular_delayed' 
+  | 'irregular_short' 
+  | 'prolonged_bleeding' 
+  | 'variable' 
+  | 'insufficient_data';
+
+export interface MenstrualCycleAnalysis {
+  averageCycleLength: number; // e.g. 28 days
+  averagePeriodDuration: number; // e.g. 5 days
+  regularityStatus: MenstrualCycleRegularityStatus;
+  regularityScore: number; // 0 - 100
+  isRegular: boolean;
+  nextPredictedOnset?: string;
+  currentCycleDay?: number;
+  currentCyclePhase?: 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
+  irregularityReason?: string;
+  clinicalInsights: string[];
+  suggestedCarePlan: string[];
+}
+
+export interface MenstrualState {
+  isEnabled: boolean;
+  isPeriodActive: boolean;
+  activePeriodOnset?: string;
+  activePeriodFlow?: MenstrualFlowLevel;
+  activeSymptoms?: string[];
+  periodHistory: MenstrualPeriodEntry[];
+  lastUpdated?: string;
+}
+
 export interface StreakDayRecord {
   date: string; // YYYY-MM-DD
-  status: 'completed' | 'recovery' | 'inactive';
+  status: 'completed' | 'recovery' | 'period' | 'inactive';
   completedCount: number;
   totalGoals: number;
   strainLevel?: StrainLevel;
@@ -274,5 +320,6 @@ export interface RecoveryState {
   checkInHistory: EnergyCheckIn[];
   sessionLogs: RecoverySessionLog[];
   coachConfig: CoachTriggerConfig;
+  menstrualState?: MenstrualState;
 }
 

@@ -33,7 +33,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
   const [hoveredDay, setHoveredDay] = useState<{
     dateStr: string;
     formattedDate: string;
-    status: 'completed' | 'recovery' | 'inactive';
+    status: 'completed' | 'recovery' | 'period' | 'inactive';
     completedCount: number;
     totalGoals: number;
     note?: string;
@@ -47,14 +47,21 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
     const today = new Date();
     const todayStr = getLocalDateString(today);
     const history = state.streakHistory || {};
+    const isPeriod = Boolean(state.menstrualState?.isPeriodActive);
 
     // Determine today's live completion status
     const todayGoals = state.adjustedGoals || [];
     const todayCompletedCount = todayGoals.filter(g => g.currentValue >= g.adjustedTarget).length;
     const todayTotal = todayGoals.length;
-    let todayStatus: 'completed' | 'recovery' | 'inactive' = 'inactive';
+    let todayStatus: 'completed' | 'recovery' | 'period' | 'inactive' = 'inactive';
     if (todayCompletedCount === todayTotal && todayTotal > 0) {
-      todayStatus = state.isActive || state.streakShieldActive ? 'recovery' : 'completed';
+      if (isPeriod) {
+        todayStatus = 'period';
+      } else {
+        todayStatus = state.isActive || state.streakShieldActive ? 'recovery' : 'completed';
+      }
+    } else if (todayCompletedCount > 0 && isPeriod) {
+      todayStatus = 'period';
     } else if (todayCompletedCount > 0 && (state.isActive || state.streakShieldActive)) {
       todayStatus = 'recovery';
     }
@@ -79,7 +86,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
       dateStr: string;
       formattedDate: string;
       dayOfWeek: number;
-      status: 'completed' | 'recovery' | 'inactive';
+      status: 'completed' | 'recovery' | 'period' | 'inactive';
       completedCount: number;
       totalGoals: number;
       isToday: boolean;
@@ -95,6 +102,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
 
     let completedDaysCount = 0;
     let recoveryDaysCount = 0;
+    let periodDaysCount = 0;
 
     for (let i = 0; i < daysToShow; i++) {
       const dateStr = getLocalDateString(cursor);
@@ -102,7 +110,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
       const isFuture = cursor > today;
 
       const record = history[dateStr];
-      let status: 'completed' | 'recovery' | 'inactive' = 'inactive';
+      let status: 'completed' | 'recovery' | 'period' | 'inactive' = 'inactive';
       let completedCount = 0;
       let totalGoals = 5;
       let note = '';
@@ -111,7 +119,9 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
         status = todayStatus;
         completedCount = todayCompletedCount;
         totalGoals = todayTotal;
-        note = status === 'completed' 
+        note = status === 'period'
+          ? '🌸 Period Mode Active • Restorative Targets Met'
+          : status === 'completed' 
           ? 'All 5 Daily Goals Completed Today!' 
           : status === 'recovery'
           ? 'Recovery Mode Active • Grace Shield Protected'
@@ -120,12 +130,13 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
         status = record.status;
         completedCount = record.completedCount;
         totalGoals = record.totalGoals || 5;
-        note = record.note || (status === 'completed' ? 'All goals completed' : status === 'recovery' ? 'Restorative recovery day' : 'Rest day');
+        note = record.note || (status === 'period' ? '🌸 Menstrual restorative period day' : status === 'completed' ? 'All goals completed' : status === 'recovery' ? 'Restorative recovery day' : 'Rest day');
       }
 
       if (!isFuture) {
         if (status === 'completed') completedDaysCount++;
         if (status === 'recovery') recoveryDaysCount++;
+        if (status === 'period') periodDaysCount++;
       }
 
       const formattedDate = cursor.toLocaleDateString('en-US', {
@@ -177,12 +188,13 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
       stats: {
         currentStreak: state.currentStreakDays || 0,
         longestStreak: Math.max(state.longestStreakDays || 0, state.currentStreakDays || 0),
-        totalActiveDays: completedDaysCount + recoveryDaysCount,
+        totalActiveDays: completedDaysCount + recoveryDaysCount + periodDaysCount,
         completedDaysCount,
-        recoveryDaysCount
+        recoveryDaysCount,
+        periodDaysCount
       }
     };
-  }, [state.streakHistory, state.currentStreakDays, state.longestStreakDays, state.adjustedGoals, state.isActive, state.streakShieldActive, compact]);
+  }, [state.streakHistory, state.currentStreakDays, state.longestStreakDays, state.adjustedGoals, state.isActive, state.streakShieldActive, state.menstrualState?.isPeriodActive, compact]);
 
   const handleResetConfirm = () => {
     resetGoalsToday();
@@ -225,7 +237,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
           <button
             onClick={setAllGoalsMet}
             className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
-            title="Mark all 5 goals as completed for today"
+            title="Mark all goals as completed for today"
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
             <span>Complete Today</span>
@@ -252,7 +264,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Completed Days</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Completed</span>
             <span className="text-base font-black text-emerald-600 dark:text-emerald-400 leading-tight">
               {stats.completedDaysCount} Days
             </span>
@@ -264,9 +276,9 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
             <ShieldCheck className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Recovery Days</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Recovery & Period</span>
             <span className="text-base font-black text-yellow-600 dark:text-yellow-400 leading-tight">
-              {stats.recoveryDaysCount} Days
+              {stats.recoveryDaysCount + (stats.periodDaysCount || 0)} Days
             </span>
           </div>
         </div>
@@ -284,7 +296,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
         </div>
       </div>
 
-      {/* GitHub Style Heatmap Grid Container */}
+      {/* Grid Matrix Container */}
       <div className="relative overflow-x-auto pb-2 pt-1">
         <div className="min-w-[620px]">
           {/* Month Header Row */}
@@ -319,6 +331,8 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
                       cellBg = 'bg-emerald-500 dark:bg-emerald-500 border border-emerald-400/80 shadow-xs shadow-emerald-500/30';
                     } else if (day.status === 'recovery') {
                       cellBg = 'bg-yellow-400 dark:bg-yellow-400 border border-yellow-300/80 shadow-xs shadow-yellow-500/30';
+                    } else if (day.status === 'period') {
+                      cellBg = 'bg-rose-500 dark:bg-rose-500 border border-rose-400/80 shadow-xs shadow-rose-500/30';
                     }
 
                     if (day.isFuture) {
@@ -331,7 +345,11 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
                         onMouseEnter={() => !day.isFuture && setHoveredDay(day)}
                         onMouseLeave={() => setHoveredDay(null)}
                         className={`w-[14px] h-[14px] sm:w-[15px] sm:h-[15px] rounded-[3px] transition-all cursor-pointer relative ${cellBg} ${
-                          day.isToday ? 'ring-2 ring-emerald-500 dark:ring-emerald-400 ring-offset-1 dark:ring-offset-slate-900 scale-105' : 'hover:scale-115'
+                          day.isToday 
+                            ? day.status === 'period'
+                              ? 'ring-2 ring-rose-500 dark:ring-rose-400 ring-offset-1 dark:ring-offset-slate-900 scale-105'
+                              : 'ring-2 ring-emerald-500 dark:ring-emerald-400 ring-offset-1 dark:ring-offset-slate-900 scale-105' 
+                            : 'hover:scale-115'
                         }`}
                       />
                     );
@@ -355,11 +373,14 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
               <span className={`font-semibold ${
                 hoveredDay.status === 'completed'
                   ? 'text-emerald-600 dark:text-emerald-400'
+                  : hoveredDay.status === 'period'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : hoveredDay.status === 'recovery'
                   ? 'text-amber-600 dark:text-amber-400'
                   : 'text-slate-500 dark:text-slate-400'
               }`}>
-                {hoveredDay.status === 'completed' && '✅ Completed Goal Streak (5/5 Met)'}
+                {hoveredDay.status === 'completed' && '✅ Completed Goal Streak (All Met)'}
+                {hoveredDay.status === 'period' && '🌸 Menstrual Cycle Streak (Period Goals Maintained)'}
                 {hoveredDay.status === 'recovery' && '🛡️ Recovery Day Streak (Grace Shield Active)'}
                 {hoveredDay.status === 'inactive' && '⚪ Rest / Inactive Day'}
               </span>
@@ -385,7 +406,11 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
           </div>
           <div className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-[2px] bg-yellow-400 dark:bg-yellow-400 block shadow-xs shadow-yellow-500/20"></span>
-            <span className="text-yellow-700 dark:text-yellow-400 font-bold">Recovery Day</span>
+            <span className="text-yellow-700 dark:text-yellow-400 font-bold">Recovery</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-[2px] bg-rose-500 dark:bg-rose-500 block shadow-xs shadow-rose-500/20"></span>
+            <span className="text-rose-700 dark:text-rose-400 font-bold">Period Day</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-[2px] bg-emerald-500 dark:bg-emerald-500 block shadow-xs shadow-emerald-500/20"></span>
