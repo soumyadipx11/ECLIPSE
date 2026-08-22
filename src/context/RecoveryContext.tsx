@@ -1586,11 +1586,76 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Female user detection & cycle analysis
   const isFemaleUser = useMemo(() => {
-    if (userProfile?.gender?.toLowerCase() === 'male' && state.menstrualState?.isEnabled === false) {
+    const gender = userProfile?.gender?.toLowerCase().trim();
+    if (gender === 'male' || gender === 'man' || gender === 'm') {
       return false;
     }
-    return true;
+    if (gender === 'female' || gender === 'woman' || gender === 'f') {
+      return true;
+    }
+    return state.menstrualState?.isEnabled ?? true;
   }, [userProfile?.gender, state.menstrualState?.isEnabled]);
+
+  // Clean up menstrual state & period mode adjustments if gender is changed to non-female
+  useEffect(() => {
+    if (!isFemaleUser) {
+      setState(prev => {
+        const activePeriod = prev.menstrualState?.isPeriodActive;
+        const isEnabled = prev.menstrualState?.isEnabled;
+        const hasMenstrualNote = prev.adjustedGoals.some(
+          g => g.recoveryNote?.includes('Menstrual') || g.recoveryNote?.includes('🌸')
+        );
+
+        if (!activePeriod && !isEnabled && !hasMenstrualNote) {
+          return prev;
+        }
+
+        const restoredGoals = prev.adjustedGoals.map(g => ({
+          ...g,
+          adjustedTarget: g.normalTarget || g.adjustedTarget,
+          isPausedOrReduced: false,
+          recoveryNote: g.recoveryNote?.includes('Menstrual') || g.recoveryNote?.includes('🌸') ? undefined : g.recoveryNote,
+          recoveryAdjustmentReason: undefined
+        }));
+
+        const updatedMenstrual: MenstrualState = {
+          ...(prev.menstrualState || DEFAULT_MENSTRUAL_STATE),
+          isPeriodActive: false,
+          isEnabled: false,
+          activePeriodOnset: undefined,
+          activePeriodFlow: undefined,
+          activeSymptoms: []
+        };
+
+        const today = getLocalDateString();
+        const updatedHistory = { ...(prev.streakHistory || {}) };
+        if (updatedHistory[today]?.status === 'period') {
+          updatedHistory[today] = {
+            ...updatedHistory[today],
+            status: 'completed',
+            note: 'All daily targets met'
+          };
+        }
+
+        const { currentStreak, longestStreak } = calculateStreakFromHistory(
+          updatedHistory,
+          restoredGoals,
+          prev.isActive,
+          prev.streakShieldActive,
+          false
+        );
+
+        return {
+          ...prev,
+          menstrualState: updatedMenstrual,
+          adjustedGoals: restoredGoals,
+          streakHistory: updatedHistory,
+          currentStreakDays: currentStreak,
+          longestStreakDays: Math.max(prev.longestStreakDays || 0, longestStreak)
+        };
+      });
+    }
+  }, [isFemaleUser]);
 
   const menstrualState = state.menstrualState || DEFAULT_MENSTRUAL_STATE;
   const isPeriodActive = Boolean(menstrualState.isPeriodActive);
