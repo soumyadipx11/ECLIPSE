@@ -28,7 +28,8 @@ import {
   RotateCcw,
   Save,
   CheckCircle2,
-  Sliders
+  Sliders,
+  Power
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StreakCalendar } from './StreakCalendar';
@@ -120,6 +121,17 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              {state.isActive && (
+                <button
+                  onClick={() => exitRecoveryMode()}
+                  className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 hover:text-white font-bold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 transition-all border border-rose-400/40 cursor-pointer shadow-md shadow-rose-950/20"
+                  title="Turn off recovery mode and restore original daily goal targets"
+                >
+                  <Power className="w-3.5 h-3.5 text-rose-400" />
+                  Turn Off Recovery Mode
+                </button>
+              )}
+
               <button
                 onClick={openCheckInModal}
                 className="bg-white/15 hover:bg-white/25 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 transition-all border border-white/20 cursor-pointer"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRecovery } from '../context/RecoveryContext';
-import { ShieldCheck, Sparkles, HeartPulse, Play, X, ArrowRight, Cloud } from 'lucide-react';
+import { ShieldCheck, Sparkles, HeartPulse, Play, Power, ArrowRight, Cloud } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface RecoveryBannerProps {
@@ -72,10 +72,11 @@ export const RecoveryBanner: React.FC<RecoveryBannerProps> = ({ onNavigateToReco
 
           <button
             onClick={() => exitRecoveryMode()}
-            className="text-slate-300 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-colors text-xs flex items-center gap-1"
-            title="Exit Recovery Mode"
+            className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 hover:text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all border border-rose-400/40 cursor-pointer"
+            title="Turn Off Recovery Mode & restore normal targets"
           >
-            <X className="w-4 h-4" />
+            <Power className="w-3.5 h-3.5 text-rose-400" />
+            Turn Off Recovery Mode
           </button>
         </div>
       </div>
