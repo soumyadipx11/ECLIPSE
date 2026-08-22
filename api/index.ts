@@ -1271,6 +1271,7 @@ Return ONLY a valid JSON object matching this schema:
   "adjustedGoals": [
     {
       "id": "goal-movement",
+      "title": "Daily Movement",
       "name": "Daily Movement",
       "category": "movement",
       "normalTarget": 10000,
@@ -1282,7 +1283,8 @@ Return ONLY a valid JSON object matching this schema:
     },
     {
       "id": "goal-exercise",
-      "name": "Strenuous Workout",
+      "title": "Cardio / Workout",
+      "name": "Cardio / Workout",
       "category": "exercise",
       "normalTarget": 45,
       "adjustedTarget": 0,
@@ -1293,7 +1295,8 @@ Return ONLY a valid JSON object matching this schema:
     },
     {
       "id": "goal-sleep",
-      "name": "Recovery & Sleep",
+      "title": "Sleep Duration",
+      "name": "Sleep Duration",
       "category": "sleep",
       "normalTarget": 7.5,
       "adjustedTarget": 9.0,
@@ -1304,7 +1307,8 @@ Return ONLY a valid JSON object matching this schema:
     },
     {
       "id": "goal-hydration",
-      "name": "Hydration & Electrolytes",
+      "title": "Hydration Intake",
+      "name": "Hydration Intake",
       "category": "hydration",
       "normalTarget": 2000,
       "adjustedTarget": 2500,
@@ -1315,7 +1319,8 @@ Return ONLY a valid JSON object matching this schema:
     },
     {
       "id": "goal-focus",
-      "name": "Deep Screen Focus",
+      "title": "Screen & Deep Focus",
+      "name": "Screen & Deep Focus",
       "category": "focus",
       "normalTarget": 6.0,
       "adjustedTarget": 2.0,

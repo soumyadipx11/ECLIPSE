@@ -34,6 +34,7 @@ export const GOAL_LIMITS: Record<string, { maxTarget: number; minTarget: number;
 const DEFAULT_GOALS: DailyGoal[] = [
   {
     id: 'goal-movement',
+    title: 'Daily Movement',
     name: 'Daily Movement',
     category: 'movement',
     normalTarget: 10000,
@@ -45,6 +46,7 @@ const DEFAULT_GOALS: DailyGoal[] = [
   },
   {
     id: 'goal-exercise',
+    title: 'Cardio / Workout',
     name: 'Cardio / Workout',
     category: 'exercise',
     normalTarget: 45,
@@ -56,6 +58,7 @@ const DEFAULT_GOALS: DailyGoal[] = [
   },
   {
     id: 'goal-sleep',
+    title: 'Sleep Duration',
     name: 'Sleep Duration',
     category: 'sleep',
     normalTarget: 7.5,
@@ -67,6 +70,7 @@ const DEFAULT_GOALS: DailyGoal[] = [
   },
   {
     id: 'goal-hydration',
+    title: 'Hydration Intake',
     name: 'Hydration Intake',
     category: 'hydration',
     normalTarget: 2000,
@@ -78,6 +82,7 @@ const DEFAULT_GOALS: DailyGoal[] = [
   },
   {
     id: 'goal-focus',
+    title: 'Screen & Deep Focus',
     name: 'Screen & Deep Focus',
     category: 'focus',
     normalTarget: 6.0,
@@ -88,6 +93,47 @@ const DEFAULT_GOALS: DailyGoal[] = [
     recoveryNote: 'Standard work focus block.'
   }
 ];
+
+export const getGoalDisplayTitle = (goal: { category: string; title?: string; name?: string }): string => {
+  if (goal.title && goal.title.trim().length > 0) return goal.title;
+  if (goal.name && goal.name.trim().length > 0) return goal.name;
+  switch (goal.category) {
+    case 'movement':
+      return 'Daily Movement';
+    case 'exercise':
+      return 'Cardio / Workout';
+    case 'sleep':
+      return 'Sleep Duration';
+    case 'hydration':
+      return 'Hydration Intake';
+    case 'focus':
+    case 'mindfulness':
+    default:
+      return 'Screen & Deep Focus';
+  }
+};
+
+export const normalizeGoal = (goal: any): DailyGoal => {
+  const category = goal.category || 'focus';
+  let title = goal.title || goal.name;
+  if (!title) {
+    if (category === 'movement') title = 'Daily Movement';
+    else if (category === 'exercise') title = 'Cardio / Workout';
+    else if (category === 'sleep') title = 'Sleep Duration';
+    else if (category === 'hydration') title = 'Hydration Intake';
+    else title = 'Screen & Deep Focus';
+  }
+  return {
+    ...goal,
+    title,
+    name: goal.name || title
+  };
+};
+
+export const normalizeGoalList = (goals: any[]): DailyGoal[] => {
+  if (!Array.isArray(goals) || goals.length === 0) return DEFAULT_GOALS;
+  return goals.map(normalizeGoal);
+};
 
 export const PRESET_SCENARIOS: Record<string, { title: string; prompt: string; label: string; strain: StrainLevel }> = {
   exam_stress: {
@@ -158,7 +204,11 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const saved = localStorage.getItem('aroveda_recovery_state');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          return {
+            ...parsed,
+            adjustedGoals: normalizeGoalList(parsed.adjustedGoals)
+          };
         } catch (e) {}
       }
     }
@@ -207,7 +257,9 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               activatedAt: data.activatedAt ?? prev.activatedAt,
               reason: data.reason ?? prev.reason,
               currentPlan: data.currentPlan ?? prev.currentPlan,
-              adjustedGoals: Array.isArray(data.adjustedGoals) && data.adjustedGoals.length > 0 ? data.adjustedGoals : prev.adjustedGoals,
+              adjustedGoals: Array.isArray(data.adjustedGoals) && data.adjustedGoals.length > 0 
+                ? normalizeGoalList(data.adjustedGoals) 
+                : prev.adjustedGoals,
               streakShieldActive: typeof data.streakShieldActive === 'boolean' ? data.streakShieldActive : prev.streakShieldActive,
               currentStreakDays: typeof data.currentStreakDays === 'number' ? data.currentStreakDays : prev.currentStreakDays,
               lastShieldUsedDate: data.lastShieldUsedDate ?? prev.lastShieldUsedDate,
@@ -422,6 +474,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const fallbackGoals: DailyGoal[] = [
         {
           id: 'goal-movement',
+          title: 'Daily Movement',
           name: 'Daily Movement',
           category: 'movement',
           normalTarget: 10000,
@@ -433,7 +486,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         {
           id: 'goal-exercise',
-          name: 'Strenuous Workout',
+          title: 'Cardio / Workout',
+          name: 'Cardio / Workout',
           category: 'exercise',
           normalTarget: 45,
           adjustedTarget: 0,
@@ -444,7 +498,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         {
           id: 'goal-sleep',
-          name: 'Recovery & Sleep',
+          title: 'Sleep Duration',
+          name: 'Sleep Duration',
           category: 'sleep',
           normalTarget: 7.5,
           adjustedTarget: 9.0,
@@ -455,6 +510,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         {
           id: 'goal-hydration',
+          title: 'Hydration Intake',
           name: 'Hydration Intake',
           category: 'hydration',
           normalTarget: 2000,
@@ -466,7 +522,8 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         },
         {
           id: 'goal-focus',
-          name: 'Deep Screen Focus',
+          title: 'Screen & Deep Focus',
+          name: 'Screen & Deep Focus',
           category: 'focus',
           normalTarget: 6.0,
           adjustedTarget: 2.0,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRecovery, GOAL_LIMITS } from '../context/RecoveryContext';
+import { useRecovery, GOAL_LIMITS, getGoalDisplayTitle } from '../context/RecoveryContext';
 import { DailyGoal } from '../types';
 import { 
   HeartPulse, 
@@ -584,7 +584,7 @@ const RecoveryGoalRow: React.FC<RecoveryGoalRowProps> = ({
           </div>
           <div>
             <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-tight">
-              {goal.title}
+              {getGoalDisplayTitle(goal)}
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
               {goal.recoveryAdjustmentReason || "Daily target baseline"}

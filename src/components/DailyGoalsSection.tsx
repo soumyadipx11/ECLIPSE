@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRecovery } from '../context/RecoveryContext';
+import { useRecovery, getGoalDisplayTitle } from '../context/RecoveryContext';
 import { DailyGoal } from '../types';
 import { 
   Footprints, 
@@ -216,7 +216,7 @@ const GoalStatusCard: React.FC<GoalStatusCardProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-tight group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
-              {goal.title}
+              {getGoalDisplayTitle(goal)}
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
               {goal.isPausedOrReduced && isRecoveryActive

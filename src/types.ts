@@ -192,6 +192,7 @@ export interface RecoveryPlan {
 
 export interface DailyGoal {
   id: string;
+  title: string;
   name: string;
   category: 'movement' | 'exercise' | 'sleep' | 'hydration' | 'mindfulness' | 'focus';
   normalTarget: number;
@@ -200,6 +201,7 @@ export interface DailyGoal {
   unit: string;
   isPausedOrReduced: boolean;
   recoveryNote: string;
+  recoveryAdjustmentReason?: string;
 }
 
 export interface EnergyCheckIn {
