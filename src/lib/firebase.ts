@@ -37,10 +37,9 @@ import {
   onSnapshot,
   serverTimestamp 
 } from 'firebase/firestore';
-// Safely attempt to load local firebase-applet-config.json if present (AI Studio runtime)
-const configModules = import.meta.glob(['/firebase-applet-config.json', '../../firebase-applet-config.json', '../../*firebase*.json'], { eager: true });
-const rawConfig = Object.values(configModules)[0] as Record<string, unknown> | undefined;
-const configJson: Record<string, string> = (rawConfig?.default || rawConfig || {}) as Record<string, string>;
+import appletConfig from '../../firebase-applet-config.json';
+
+const configJson: Record<string, any> = appletConfig || {};
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || configJson.apiKey || '',
@@ -53,10 +52,11 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-const firestoreDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || configJson.firestoreDatabaseId || undefined;
+const rawDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || configJson.firestoreDatabaseId;
+const firestoreDbId = (rawDbId && rawDbId !== '(default)' && rawDbId !== '') ? rawDbId : undefined;
 
 // Use the databaseId provisioned by AI Studio or configured via environment
-export const db = getFirestore(app, firestoreDbId);
+export const db = firestoreDbId ? getFirestore(app, firestoreDbId) : getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

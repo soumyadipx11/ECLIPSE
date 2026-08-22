@@ -309,6 +309,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       await setDoc(doc(db, 'recovery_states', user.uid), payload, { merge: true });
       setIsCloudSynced(true);
+      setLastSyncedAt(new Date());
     } catch (err) {
       console.warn("Error syncing recovery state to Firestore:", err);
     }
@@ -703,9 +704,10 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const saveAndSyncToFirebase = async (): Promise<boolean> => {
     setIsSaving(true);
     try {
+      const currentState = stateRef.current;
       if (user?.uid) {
         const payload = cleanUndefined({
-          ...state,
+          ...currentState,
           userId: user.uid,
           updatedAt: new Date().toISOString()
         });
@@ -713,7 +715,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsCloudSynced(true);
       }
       try {
-        localStorage.setItem('aroveda_recovery_state', JSON.stringify(state));
+        localStorage.setItem('aroveda_recovery_state', JSON.stringify(currentState));
       } catch (e) {}
       setLastSyncedAt(new Date());
       setIsSaving(false);

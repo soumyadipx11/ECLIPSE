@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRecovery, GOAL_LIMITS, getGoalDisplayTitle } from '../context/RecoveryContext';
+import { useAuth } from '../context/AuthContext';
 import { DailyGoal } from '../types';
 import { 
   HeartPulse, 
@@ -40,6 +41,7 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
   onNavigateToDashboard,
   onNavigateToCoachView 
 }) => {
+  const { user } = useAuth();
   const { 
     state, 
     isCloudSynced,
@@ -62,10 +64,14 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
   const handleManualSave = async () => {
     const success = await saveAndSyncToFirebase();
     if (success) {
-      setSaveSuccessNotification("Goals and target limits saved! Synced in real-time across all devices via Firebase.");
+      if (user) {
+        setSaveSuccessNotification(`Goals and target limits saved! Synced in real-time to Firebase across all devices for ${user.email}.`);
+      } else {
+        setSaveSuccessNotification("Goals saved locally. To synchronize in real-time across your phone, tablet, and other devices, please sign in.");
+      }
       setTimeout(() => {
         setSaveSuccessNotification(null);
-      }, 3500);
+      }, 4000);
     }
   };
 
@@ -345,12 +351,23 @@ export const RecoveryModeView: React.FC<RecoveryModeViewProps> = ({
             {/* Bottom Save Bar with Last Synced Timestamp */}
             <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>
-                  {lastSyncedAt 
-                    ? `Last synced to Firebase: ${lastSyncedAt.toLocaleTimeString()}`
-                    : "Auto-synced with Firestore database"}
-                </span>
+                {user ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                      {lastSyncedAt 
+                        ? `Live Firestore Synced for ${user.email} (${lastSyncedAt.toLocaleTimeString()})`
+                        : `Live Firestore Sync active for ${user.email}`}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span className="text-amber-700 dark:text-amber-300">
+                      Local mode. Sign in to synchronize goals live across multiple devices.
+                    </span>
+                  </>
+                )}
               </div>
 
               <button

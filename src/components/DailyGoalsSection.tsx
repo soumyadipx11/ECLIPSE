@@ -1,5 +1,6 @@
 import React from 'react';
 import { useRecovery, getGoalDisplayTitle } from '../context/RecoveryContext';
+import { useAuth } from '../context/AuthContext';
 import { DailyGoal } from '../types';
 import { 
   Footprints, 
@@ -10,11 +11,13 @@ import {
   Check, 
   ShieldCheck, 
   Sparkles, 
-  ArrowRight,
-  Flame,
-  Cloud,
-  Sliders,
-  CheckCircle2
+  ArrowRight, 
+  Flame, 
+  Cloud, 
+  CloudOff,
+  Sliders, 
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -29,7 +32,8 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
   title = "Daily Health & Restorative Goals",
   subtitle
 }) => {
-  const { state } = useRecovery();
+  const { state, isCloudSynced } = useRecovery();
+  const { user } = useAuth();
   const goals = state.adjustedGoals || [];
   
   // Calculate completion stats
@@ -50,10 +54,16 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
             </span>
             
             {/* Real-time cross-device sync badge */}
-            <span className="bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
-              <Cloud className="w-3 h-3 text-teal-500" /> Synced Across Devices
-            </span>
+            {user ? (
+              <span className="bg-teal-500/10 border border-teal-500/25 text-teal-700 dark:text-teal-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1" title={`Live cross-device Firestore sync active for ${user.email}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+                <Cloud className="w-3 h-3 text-teal-500" /> Firebase Synced
+              </span>
+            ) : (
+              <span className="bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1" title="Log in to synchronize goals across your phone, tablet, and computer">
+                <CloudOff className="w-3 h-3 text-amber-500" /> Sign in to sync devices
+              </span>
+            )}
 
             {state.isActive ? (
               <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1">
