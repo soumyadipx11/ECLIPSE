@@ -48,7 +48,7 @@ export const StreakCalendar: React.FC<StreakCalendarProps> = ({
     const today = new Date();
     const todayStr = getLocalDateString(today);
     const history = state.streakHistory || {};
-    const isPeriod = Boolean(isFemaleUser && state.menstrualState?.isPeriodActive);
+    const isPeriod = Boolean(state.menstrualState?.isPeriodActive);
 
     // Determine today's live completion status
     const todayGoals = state.adjustedGoals || [];
