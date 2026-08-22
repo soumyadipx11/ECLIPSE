@@ -93,9 +93,9 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
         </div>
 
         {/* Completion Progress Bar & Link to Edit in Recovery Mode */}
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="text-right">
-            <div className="flex items-center gap-2 justify-end">
+        <div className="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center justify-between sm:justify-end gap-3 w-full md:w-auto shrink-0">
+          <div className="text-left xs:text-right">
+            <div className="flex items-center gap-2 justify-between xs:justify-end">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 {completedCount}/{totalGoals} Completed
               </span>
@@ -104,7 +104,7 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
               </span>
             </div>
             {/* Progress bar */}
-            <div className="w-32 sm:w-40 h-2 bg-slate-200/80 dark:bg-slate-800 rounded-full overflow-hidden mt-1.5 border border-slate-300/40 dark:border-slate-700/40">
+            <div className="w-full xs:w-32 sm:w-40 h-2 bg-slate-200/80 dark:bg-slate-800 rounded-full overflow-hidden mt-1 border border-slate-300/40 dark:border-slate-700/40">
               <motion.div 
                 className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"
                 initial={{ width: 0 }}
@@ -117,12 +117,12 @@ export const DailyGoalsSection: React.FC<DailyGoalsSectionProps> = ({
           {onNavigateToRecovery && (
             <button
               onClick={onNavigateToRecovery}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm shadow-emerald-500/20 shrink-0"
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm shadow-emerald-500/20 w-full xs:w-auto shrink-0"
               title="Open Recovery Mode to edit progress, customize limits, and sync"
             >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>Edit Goals in Recovery Mode</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Sliders className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">Edit Goals <span className="hidden sm:inline">in Recovery Mode</span></span>
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </button>
           )}
         </div>
